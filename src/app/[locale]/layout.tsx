@@ -32,9 +32,10 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   title: "Crystal Blinds | Luxury Window Treatments",
   description: "Curated collections of premium curtains, blinds, and window treatments crafted for the discerning home.",
-  icons: {
-    icon: "/favicon.ico",
-  },
+  icons: [
+    { rel: "icon", url: "/favicon.ico?v=2", sizes: "any" },
+    { rel: "apple-touch-icon", url: "/logo.png?v=2" },
+  ],
 };
 
 export default async function RootLayout({
