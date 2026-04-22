@@ -40,7 +40,7 @@ export default function SplashScreen() {
         {/* Animated Logo */}
         <img 
           src="/logo.png" 
-          alt="Al Mostaqbal Modern Blinds" 
+          alt="Crystal Blinds" 
           className="h-28 md:h-40 object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.2)] animate-pulse duration-[2000ms]" 
         />
         

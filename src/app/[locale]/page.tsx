@@ -24,7 +24,7 @@ export default async function HomePage({
               {isAr ? "لماذا نحن" : "Why Choose Us"}
             </span>
             <h3 className="font-headline text-3xl md:text-5xl mt-2 text-primary">
-              {isAr ? "اختلاف يصنع التميز" : "The Al Mostaqbal Difference"}
+              {isAr ? "اختلاف كريستال للستائر" : "The Crystal Blinds Difference"}
             </h3>
           </div>
           <div className={`grid grid-cols-1 md:grid-cols-12 gap-8 ${isAr ? "rtl" : ""}`}>

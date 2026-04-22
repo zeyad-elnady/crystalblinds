@@ -30,7 +30,7 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "Al Mostaqbal Modern Blinds | Luxury Window Treatments",
+  title: "Crystal Blinds | Luxury Window Treatments",
   description: "Curated collections of premium curtains, blinds, and window treatments crafted for the discerning home.",
   icons: {
     icon: "/favicon.ico",
@@ -116,7 +116,7 @@ export default async function RootLayout({
         {/* Footer */}
         <footer className={`w-full pt-16 md:pt-24 pb-12 px-8 bg-[#26170c] text-[#faf8f5] flex flex-col items-center text-center gap-6 ${locale === 'ar' ? 'rtl' : ''} rounded-t-[3rem] md:rounded-t-[0] border-t-[3px] border-[#d4af37] relative mt-10`}>
           {/* Logo */}
-          <img src="/logo.png" alt="Al Mostaqbal Modern Blinds" className="h-16 md:h-24 object-contain" />
+          <img src="/logo.png" alt="Crystal Blinds" className="h-16 md:h-24 object-contain" />
           
           <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-[10px] md:text-xs tracking-widest uppercase mt-4">
             <a className="text-[#faf8f5]/70 hover:text-[#d4af37] transition-colors" href="#">{locale === 'ar' ? 'الخصوصية' : 'Privacy Policy'}</a>
@@ -127,7 +127,7 @@ export default async function RootLayout({
           <div className="w-16 md:w-24 h-[1px] bg-[#d4af37]/30 my-2 md:my-4" />
 
           <p className="text-[#faf8f5]/40 text-[10px] md:text-xs tracking-widest uppercase">
-            {locale === 'ar' ? '© ٢٠٢٤ المستقبل للستائر الحديثة. جميع الحقوق محفوظة.' : '© 2024 Al Mostaqbal Modern Blinds. All rights reserved.'}
+            {locale === 'ar' ? '© ٢٠٢٤ كريستال للستائر. جميع الحقوق محفوظة.' : '© 2024 Crystal Blinds. All rights reserved.'}
           </p>
         </footer>
 

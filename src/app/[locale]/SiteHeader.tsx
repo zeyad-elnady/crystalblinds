@@ -71,7 +71,7 @@ export default function SiteHeader({
               className="flex items-center justify-center transition-opacity hover:opacity-80 pointer-events-auto mt-1"
               onClick={() => setMenuOpen(false)}
             >
-              <img src="/logo.png" alt="Al Mostaqbal Modern Blinds" className="h-8 md:h-10 object-contain" />
+              <img src="/logo.png" alt="Crystal Blinds" className="h-8 md:h-10 object-contain" />
             </a>
           </div>
 
