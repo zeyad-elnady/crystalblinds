@@ -45,15 +45,18 @@ export default function RollCurtainHero({ isAr }: { isAr: boolean }) {
 
         {/* The 2D Curtain */}
         <div 
-          className="absolute top-0 left-0 w-full h-full bg-[#26170c] z-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center"
-          style={{ transform: `translateY(${translateY})` }}
+          className="absolute top-0 left-0 w-full h-full bg-[#26170c] z-10 flex flex-col items-center justify-center shadow-[0_30px_60px_-10px_rgba(0,0,0,0.8)]"
+          style={{ 
+            transform: `translateY(${translateY})`,
+            backgroundImage: `
+              linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 8%, transparent 92%, rgba(0,0,0,0.4) 100%),
+              repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.03) 3px, rgba(255,255,255,0.03) 6px)
+            `
+          }}
         >
-          {/* Subtle horizontal lines to make it look like a roller blind fabric */}
-          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px)' }}></div>
-          
           {/* Curtain Bottom Weight Bar */}
-          <div className="absolute bottom-0 left-0 w-full h-6 bg-[#1a0f08] border-t border-white/10 shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex items-center justify-center">
-             <div className="w-1/3 h-1 bg-white/5 rounded-full"></div>
+          <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-b from-[#1a0f08] to-[#0a0603] border-t border-[#d4af37]/20 shadow-[0_10px_20px_rgba(0,0,0,0.9)] flex items-center justify-center">
+             <div className="w-1/4 h-[2px] bg-[#d4af37]/20 rounded-full"></div>
           </div>
 
           <div className="relative z-20 text-center px-6 mt-16">
@@ -78,28 +81,29 @@ export default function RollCurtainHero({ isAr }: { isAr: boolean }) {
         </div>
 
         {/* The Pull Chain (Cord) */}
-        <div className={`absolute top-[-50px] ${isAr ? 'left-8 md:left-16' : 'right-8 md:right-16'} w-6 h-[70vh] z-20 pointer-events-none flex justify-center`}>
+        <div className={`absolute top-0 ${isAr ? 'left-3 md:left-6' : 'right-3 md:right-6'} w-5 h-[65vh] z-20 pointer-events-none flex justify-center`}>
           {/* Left side of the loop (moves down) */}
           <div 
-            className="w-1.5 h-full opacity-80"
+            className="w-1 h-full opacity-90"
             style={{ 
-              backgroundImage: 'radial-gradient(circle, #d4af37 45%, transparent 55%)',
-              backgroundSize: '100% 12px',
+              backgroundImage: 'radial-gradient(circle, #b89730 45%, transparent 55%)',
+              backgroundSize: '100% 8px',
               backgroundPosition: `0 ${progress * 800}px` 
             }}
           />
           {/* Right side of the loop (moves up) */}
           <div 
-            className="w-1.5 h-full opacity-50 ml-1.5"
+            className="w-1 h-full opacity-60 ml-1.5"
             style={{ 
-              backgroundImage: 'radial-gradient(circle, #d4af37 45%, transparent 55%)',
-              backgroundSize: '100% 12px',
+              backgroundImage: 'radial-gradient(circle, #b89730 45%, transparent 55%)',
+              backgroundSize: '100% 8px',
               backgroundPosition: `0 ${-progress * 800}px` 
             }}
           />
-          {/* Bottom tensioner/weight */}
-          <div className="absolute bottom-[-12px] w-5 h-10 border-2 border-[#d4af37] rounded-full bg-[#1a0f08] shadow-md flex items-center justify-center">
-            <div className="w-1 h-4 bg-[#d4af37]/50 rounded-full"></div>
+          {/* Sleek metallic bottom tensioner/weight */}
+          <div className="absolute bottom-[-20px] w-4 h-16 bg-gradient-to-b from-[#d4af37] via-[#8a6d3b] to-[#4a3a1f] rounded-full shadow-[0_5px_10px_rgba(0,0,0,0.6)] border border-[#f5d97d]/40 flex flex-col items-center justify-center gap-2">
+            <div className="w-1.5 h-1.5 bg-[#26170c]/40 rounded-full"></div>
+            <div className="w-1.5 h-1.5 bg-[#26170c]/40 rounded-full"></div>
           </div>
         </div>
 

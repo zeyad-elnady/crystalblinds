@@ -68,10 +68,10 @@ export default function SiteHeader({
             </span>
             <a
               href={`/${locale}`}
-              className="font-headline text-lg md:text-xl font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] text-[#26170c] hover:text-[#3d2b1f] transition-colors whitespace-nowrap pointer-events-auto"
+              className="flex items-center justify-center transition-opacity hover:opacity-80 pointer-events-auto mt-1"
               onClick={() => setMenuOpen(false)}
             >
-              {isAr ? "المستقبل للستائر الحديثة" : "Al Mostaqbal Modern Blinds"}
+              <img src="/logo.png" alt="Al Mostaqbal Modern Blinds" className="h-8 md:h-10 object-contain" />
             </a>
           </div>
 
@@ -94,16 +94,17 @@ export default function SiteHeader({
               <span className="material-symbols-outlined">search</span>
             </button>
             {/* Shopping bag */}
-            <button
+            <a
+              href={`/${locale}/cart`}
               id="cart-btn"
               aria-label="View cart"
-              className="relative text-[#26170c] hover:opacity-60 transition-opacity z-50"
+              className="relative text-[#26170c] hover:opacity-60 transition-opacity z-50 flex items-center justify-center"
             >
               <span className="material-symbols-outlined">shopping_bag</span>
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#d4af37] text-[#26170c] text-[9px] font-bold flex items-center justify-center leading-none">
                 0
               </span>
-            </button>
+            </a>
           </div>
         </div>
       </header>

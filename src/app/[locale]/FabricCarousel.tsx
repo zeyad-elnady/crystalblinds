@@ -218,12 +218,12 @@ export default function FabricCarousel({ isAr }: { isAr: boolean }) {
           </p>
 
           {/* Explore link */}
-          <button className="flex items-center gap-2 text-[#d4af37] font-bold text-sm md:text-base uppercase tracking-wider hover:opacity-70 transition-opacity group">
+          <a href={isAr ? "/ar/cart" : "/en/cart"} className="flex items-center gap-2 text-[#d4af37] font-bold text-sm md:text-base uppercase tracking-wider hover:opacity-70 transition-opacity group">
             <span>{isAr ? slide.tagAr : slide.tagEn}</span>
             <span className={`material-symbols-outlined text-base transition-transform group-hover:translate-x-1 ${isAr ? "rotate-180 group-hover:-translate-x-1 group-hover:translate-x-0" : ""}`}>
               chevron_right
             </span>
-          </button>
+          </a>
 
           {/* ── Controls ── */}
           <div className={`flex items-center gap-6 mt-8 md:mt-10 ${isAr ? "flex-row-reverse" : ""}`}>
