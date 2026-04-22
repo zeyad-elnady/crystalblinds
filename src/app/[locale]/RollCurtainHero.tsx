@@ -23,29 +23,11 @@ export default function RollCurtainHero({ isAr }: { isAr: boolean }) {
   return (
     <div className="relative w-full" style={{ height: "200vh" }}>
       {/* Sticky wrapper that holds the viewport */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-surface">
-        
-        {/* The content revealed BEHIND the curtain */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#faf8f5] px-6 z-0">
-          <div 
-            className="text-center transition-all duration-1000"
-            style={{ opacity: progress > 0.3 ? 1 : 0, transform: `translateY(${(1 - progress) * 50}px)` }}
-          >
-            <span className="material-symbols-outlined text-6xl text-[#d4af37] mb-6 block">light_mode</span>
-            <h2 className="font-headline text-3xl md:text-5xl text-[#26170c] font-bold mb-4">
-              {isAr ? "دع النور يدخل" : "Let The Light In"}
-            </h2>
-            <p className="text-[#26170c]/60 max-w-lg mx-auto font-body text-sm md:text-base">
-              {isAr 
-                ? "اكتشف مجموعتنا الحصرية من الستائر المصممة للتحكم الدقيق في الإضاءة والخصوصية." 
-                : "Discover our exclusive collection of blinds designed for precise light and privacy control."}
-            </p>
-          </div>
-        </div>
+      <div className="sticky top-0 h-screen w-full overflow-hidden pointer-events-none">
 
         {/* The 2D Curtain */}
         <div 
-          className="absolute top-0 left-0 w-full h-full bg-[#26170c] z-10 flex flex-col items-center justify-center shadow-[0_30px_60px_-10px_rgba(0,0,0,0.8)]"
+          className="absolute top-0 left-0 w-full h-full bg-[#26170c] z-10 flex flex-col items-center justify-center shadow-[0_30px_60px_-10px_rgba(0,0,0,0.8)] pointer-events-auto"
           style={{ 
             transform: `translateY(${translateY})`,
             backgroundImage: `
@@ -59,7 +41,8 @@ export default function RollCurtainHero({ isAr }: { isAr: boolean }) {
              <div className="w-1/4 h-[2px] bg-[#d4af37]/20 rounded-full"></div>
           </div>
 
-          <div className="relative z-20 text-center px-6 mt-16">
+          <div className="relative z-20 text-center px-6 mt-12 md:mt-16 flex flex-col items-center">
+            <img src="/logo.png" alt="Crystal Blinds" className="h-20 md:h-28 object-contain mb-8 drop-shadow-[0_0_15px_rgba(212,175,55,0.1)]" />
             <h1 className="font-headline text-4xl md:text-6xl lg:text-7xl text-white font-bold leading-[1.2] md:leading-[1.1] tracking-tight">
               {isAr 
                 ? <>مستقبل تغطية النوافذ:<br/>هندسة الإضاءة والخصوصية</>

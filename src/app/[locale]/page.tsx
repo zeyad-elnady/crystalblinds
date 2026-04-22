@@ -12,12 +12,12 @@ export default async function HomePage({
   return (
     <>
       {/* ── 2D Roll-Up Curtain Hero ── */}
-      <section id="home">
+      <section id="home" className="relative z-30 pointer-events-none">
         <RollCurtainHero isAr={isAr} />
       </section>
 
       {/* ── Collections ── */}
-      <section id="collections" className="py-24 px-6 md:px-12 bg-surface">
+      <section id="collections" className="py-24 px-6 md:px-12 bg-surface relative z-20 -mt-[100vh]">
         <div className="max-w-7xl mx-auto">
           <div className="mb-16">
             <span className="text-on-secondary-container uppercase tracking-widest text-xs font-semibold">

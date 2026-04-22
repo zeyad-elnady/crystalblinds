@@ -64,7 +64,7 @@ export default function SiteHeader({
           {/* ── Centre: Brand ── */}
           <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center leading-none select-none z-50 pointer-events-none">
             <span className="font-headline text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-[#26170c]/60 mb-0.5">
-              {isAr ? "مستقبل الستائر" : "The Future of Blinds"}
+              {isAr ? "كريستال للستائر" : "Crystal Blinds"}
             </span>
             <a
               href={`/${locale}`}
