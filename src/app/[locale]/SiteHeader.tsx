@@ -93,18 +93,7 @@ export default function SiteHeader({
             >
               <span className="material-symbols-outlined">search</span>
             </button>
-            {/* Shopping bag */}
-            <a
-              href={`/${locale}/cart`}
-              id="cart-btn"
-              aria-label="View cart"
-              className="relative text-[#26170c] hover:opacity-60 transition-opacity z-50 flex items-center justify-center"
-            >
-              <span className="material-symbols-outlined">shopping_bag</span>
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#d4af37] text-[#26170c] text-[9px] font-bold flex items-center justify-center leading-none">
-                0
-              </span>
-            </a>
+
           </div>
         </div>
       </header>
