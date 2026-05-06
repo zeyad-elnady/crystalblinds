@@ -1,5 +1,6 @@
 import ProductCards from "./ProductCards";
 import ModernHero from "./ModernHero";
+import AboutUs from "./AboutUs";
 
 export default async function HomePage({
   params,
@@ -156,6 +157,9 @@ export default async function HomePage({
         </div>
       </section>
 
+      {/* ── About Us ── */}
+      <AboutUs isAr={isAr} />
+
       {/* ── Consult CTA ── */}
       <section id="consult" className="py-24 md:py-32 px-6 md:px-12 relative overflow-hidden bg-surface flex justify-center items-center">
         {/* Subtle background texture/lines */}
@@ -237,7 +241,7 @@ export default async function HomePage({
                       {isAr ? "زيارة معرضنا" : "Visit Our Showroom"}
                     </p>
                     <p className="text-[#26170c] font-medium text-sm md:text-base">
-                      {isAr ? "١٢ شارع التحرير، القاهرة" : "12 El Tahrir Street, Cairo"}
+                      {isAr ? "شبرآ الخيمة، 74 شارع 15 مايو، أمام مجمع الصوالحة الإسلامي" : "Shubra El Kheima, 74 15 May Street, in front of El Sawalha Islamic Complex"}
                     </p>
                     <p className="text-[#26170c]/50 text-xs mt-1">
                       {isAr ? "السبت – الخميس، ١٠ص – ٨م" : "Sat – Thu, 10 AM – 8 PM"}
@@ -254,8 +258,8 @@ export default async function HomePage({
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-[#26170c]/50 mb-1">
                       {isAr ? "اتصل بنا" : "Call Us"}
                     </p>
-                    <a href="tel:+201234567890" className="text-[#26170c] font-medium text-sm md:text-base hover:text-[#d4af37] transition-colors">
-                      +20 12 3456 7890
+                    <a href="tel:01100080609" className="text-[#26170c] font-medium text-sm md:text-base hover:text-[#d4af37] transition-colors">
+                      01100080609 - 01020909498
                     </a>
                     <p className="text-[#26170c]/50 text-xs mt-1">
                       {isAr ? "نرد على مكالماتك خلال ٢٤ ساعة" : "We respond within 24 hours"}
