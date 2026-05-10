@@ -30,7 +30,11 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: "Crystal Blinds Egypt - Curtains | كريستال بليندز مصر - ستائر",
+  metadataBase: new URL("https://crystalblinds-eg.com"),
+  title: {
+    default: "Crystal Blinds Egypt - Curtains | كريستال بليندز مصر - ستائر",
+    template: "%s | Crystal Blinds",
+  },
   description: "Crystal Blinds Egypt offers premium curtains, blinds, and window treatments. كريستال بليندز مصر الخيار الأول لأحدث ستائر المكاتب، ستائر رول، والستائر المطبوعة.",
   keywords: [
     "crystal blinds egypt",
@@ -43,8 +47,59 @@ export const metadata: Metadata = {
     "blinds",
     "ستائر مكتبية",
     "ستائر رول",
-    "egypt blinds"
+    "egypt blinds",
+    "office blinds egypt",
+    "premium window treatments"
   ],
+  authors: [{ name: "Crystal Blinds" }],
+  creator: "Crystal Blinds",
+  publisher: "Crystal Blinds",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: '/',
+    languages: {
+      'en-US': '/en',
+      'ar-EG': '/ar',
+    },
+  },
+  openGraph: {
+    title: "Crystal Blinds Egypt - Premium Curtains & Window Treatments",
+    description: "Discover luxury window treatments with Crystal Blinds Egypt. كريستال بليندز مصر لتصميم وتنفيذ أحدث الستائر.",
+    url: "https://crystalblinds-eg.com",
+    siteName: "Crystal Blinds Egypt",
+    images: [
+      {
+        url: "/logo2.png",
+        width: 1200,
+        height: 630,
+        alt: "Crystal Blinds Egypt Logo",
+      },
+    ],
+    locale: "en_US",
+    alternateLocale: ["ar_EG"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Crystal Blinds Egypt - Curtains & Blinds",
+    description: "Premium office blinds and luxury window treatments in Egypt.",
+    images: ["/logo2.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: [
     { rel: "icon", url: "/favicon.ico?v=2", sizes: "any" },
     { rel: "apple-touch-icon", url: "/logo2.png?v=2" },
