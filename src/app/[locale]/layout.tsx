@@ -30,8 +30,21 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: "Crystal Blinds | Luxury Window Treatments",
-  description: "Curated collections of premium curtains, blinds, and window treatments crafted for the discerning home.",
+  title: "Crystal Blinds Egypt - Curtains | كريستال بليندز مصر - ستائر",
+  description: "Crystal Blinds Egypt offers premium curtains, blinds, and window treatments. كريستال بليندز مصر الخيار الأول لأحدث ستائر المكاتب، ستائر رول، والستائر المطبوعة.",
+  keywords: [
+    "crystal blinds egypt",
+    "crystal blinds egypt curtains",
+    "crystal blinds egypt - certain",
+    "كريستال بليندز مصر",
+    "كريستال بليندز مصر - ستائر",
+    "ستائر",
+    "curtains",
+    "blinds",
+    "ستائر مكتبية",
+    "ستائر رول",
+    "egypt blinds"
+  ],
   icons: [
     { rel: "icon", url: "/favicon.ico?v=2", sizes: "any" },
     { rel: "apple-touch-icon", url: "/logo2.png?v=2" },
