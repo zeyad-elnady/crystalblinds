@@ -54,6 +54,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Crystal Blinds" }],
   creator: "Crystal Blinds",
   publisher: "Crystal Blinds",
+  verification: {
+    google: "HR7XKoJZTw65xihfyBvazGA1v4xniqq_8EY754eaq34",
+  },
   formatDetection: {
     email: false,
     address: false,
