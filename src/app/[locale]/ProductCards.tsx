@@ -119,25 +119,61 @@ const PRODUCTS: Product[] = [
     category: "Modern",
     price: 2100,
   },
+  {
+    id: "7",
+    images: [
+      "/photos for crystal/printed_roller.png",
+      "/photos for crystal/2.jpeg",
+      "/photos for crystal/4.jpeg",
+    ],
+    alt: "Printed Roller Blinds",
+    labelEn: "Printed Roller Blinds",
+    labelAr: "ستائر رول مطبوعه",
+    descEn: "Custom Designs & Patterns",
+    descAr: "تصاميم ونقوش مخصصة",
+    detailsEn: "Add a personalized touch to your space with our premium printed roller blinds, featuring high-quality customized patterns and UV-resistant prints.",
+    detailsAr: "أضف لمسة شخصية لمساحتك مع ستائر الرول المطبوعة الفاخرة، تتميز بنقوش مخصصة عالية الجودة وطباعة مقاومة للأشعة فوق البنفسجية.",
+    category: "Printed",
+    price: 1550,
+  },
+  {
+    id: "8",
+    images: [
+      "/photos for crystal/hospital_curtain.png",
+      "/photos for crystal/1.jpeg",
+      "/photos for crystal/3.jpeg",
+    ],
+    alt: "Bed Dividing Curtains",
+    labelEn: "Bed Dividing Curtains",
+    labelAr: "ستائر بين اسره",
+    descEn: "Professional Privacy Solutions",
+    descAr: "حلول احترافية للخصوصية",
+    detailsEn: "Professional-grade dividing curtains for hospitals and clinics. Designed for ultimate privacy, easy maintenance, and smooth track operation.",
+    detailsAr: "ستائر فواصل احترافية للمستشفيات والعيادات. مصممة لتوفير أقصى درجات الخصوصية، سهولة الصيانة، وحركة سلسة على المجرى.",
+    category: "Medical",
+    price: 1200,
+  },
 ];
 
 const CATEGORIES = [
   { id: "All", labelEn: "All", labelAr: "الكل" },
-  { id: "Roller", labelEn: "Roller Blinds", labelAr: "ستائر رول" },
+  { id: "Roller", labelEn: "Roller", labelAr: "رول" },
+  { id: "Printed", labelEn: "Printed", labelAr: "مطبوعه" },
   { id: "Modern", labelEn: "Modern", labelAr: "عصري" },
   { id: "Classic", labelEn: "Classic", labelAr: "كلاسيك" },
+  { id: "Medical", labelEn: "Dividers", labelAr: "بين اسره" },
 ];
 
-function ProductCardItem({ 
-  product, 
-  isExpanded, 
-  onToggleExpand, 
-  isAr 
-}: { 
-  product: Product; 
-  isExpanded: boolean; 
-  onToggleExpand: () => void; 
-  isAr: boolean; 
+function ProductCardItem({
+  product,
+  isExpanded,
+  onToggleExpand,
+  isAr
+}: {
+  product: Product;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  isAr: boolean;
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -162,30 +198,30 @@ function ProductCardItem({
           alt={`${product.alt} - ${currentImageIndex + 1}`}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        
+
         {/* Carousel Controls */}
         {product.images.length > 1 && (
           <>
-            <button 
+            <button
               onClick={prevImage}
               className="absolute top-1/2 -translate-y-1/2 left-2 w-8 h-8 rounded-full bg-black/20 text-white flex items-center justify-center opacity-0 group-hover/image:opacity-100 hover:bg-black/40 transition-all duration-300"
               aria-label="Previous image"
             >
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
             </button>
-            <button 
+            <button
               onClick={nextImage}
               className="absolute top-1/2 -translate-y-1/2 right-2 w-8 h-8 rounded-full bg-black/20 text-white flex items-center justify-center opacity-0 group-hover/image:opacity-100 hover:bg-black/40 transition-all duration-300"
               aria-label="Next image"
             >
               <span className="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
-            
+
             {/* Dots */}
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pointer-events-none">
               {product.images.map((_, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === currentImageIndex ? 'w-4 bg-[#d4af37]' : 'w-1.5 bg-white/70'}`}
                 />
               ))}
@@ -205,24 +241,24 @@ function ProductCardItem({
             {product.price.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
           </span>
         </div>
-        
+
         <h4 className="font-headline text-xl text-[#26170c] font-bold mb-3">
           {isAr ? product.labelAr : product.labelEn}
         </h4>
         <p className="text-[#26170c]/70 text-sm leading-relaxed mb-4 flex-1">
           {isAr ? product.descAr : product.descEn}
         </p>
-        
+
         {/* Expandable Details Section */}
-        <div 
+        <div
           className={`grid transition-all duration-500 ease-in-out w-full ${isExpanded ? "grid-rows-[1fr] opacity-100 mb-6" : "grid-rows-[0fr] opacity-0 mb-0"}`}
         >
           <div className="overflow-hidden flex flex-col gap-4">
             <p className="text-[#26170c]/60 text-sm leading-relaxed border-t border-[#26170c]/10 pt-4">
               {isAr ? product.detailsAr : product.detailsEn}
             </p>
-            <a 
-              href="#consult" 
+            <a
+              href="#consult"
               className={`inline-block text-center px-6 py-2.5 border border-[#26170c] text-[#26170c] text-xs font-bold uppercase tracking-widest rounded hover:bg-[#26170c] hover:text-[#faf8f5] transition-colors self-start ${isAr ? "self-end" : "self-start"}`}
             >
               {isAr ? "احجز استشارتك" : "Book Consultation"}
@@ -230,13 +266,13 @@ function ProductCardItem({
           </div>
         </div>
 
-        <button 
+        <button
           onClick={onToggleExpand}
           className="flex items-center gap-2 text-[#d4af37] font-bold text-xs uppercase tracking-wider hover:opacity-70 transition-opacity mt-auto"
         >
           <span>
-            {isExpanded 
-              ? (isAr ? "إخفاء التفاصيل" : "Show Less") 
+            {isExpanded
+              ? (isAr ? "إخفاء التفاصيل" : "Show Less")
               : (isAr ? "اكتشف المزيد" : "Explore More")}
           </span>
           <span className={`material-symbols-outlined text-sm transition-transform duration-300 ${isExpanded ? "rotate-[-90deg]" : (isAr ? "rotate-180" : "rotate-0")}`}>
@@ -252,8 +288,8 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
   const [activeCategory, setActiveCategory] = useState("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const filteredProducts = activeCategory === "All" 
-    ? PRODUCTS 
+  const filteredProducts = activeCategory === "All"
+    ? PRODUCTS
     : PRODUCTS.filter(p => p.category === activeCategory);
 
   return (
@@ -270,10 +306,9 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
             className={`
               px-6 py-2.5 rounded-full text-sm tracking-wider font-semibold transition-all duration-300
               border
-              ${
-                activeCategory === cat.id
-                  ? "bg-[#26170c] border-[#26170c] text-[#faf8f5]"
-                  : "bg-white/50 border-[#26170c]/20 text-[#26170c]/70 hover:border-[#d4af37] hover:text-[#d4af37]"
+              ${activeCategory === cat.id
+                ? "bg-[#26170c] border-[#26170c] text-[#faf8f5]"
+                : "bg-white/50 border-[#26170c]/20 text-[#26170c]/70 hover:border-[#d4af37] hover:text-[#d4af37]"
               }
             `}
           >
@@ -283,9 +318,9 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
       </div>
 
       {/* Grid of Cards */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl ${isAr ? "rtl text-right" : "ltr text-left"}`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl items-start ${isAr ? "rtl text-right" : "ltr text-left"}`}>
         {filteredProducts.map((product) => (
-          <ProductCardItem 
+          <ProductCardItem
             key={product.id}
             product={product}
             isExpanded={expandedId === product.id}

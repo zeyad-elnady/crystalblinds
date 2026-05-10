@@ -100,9 +100,6 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
           mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}
       >
-        <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-semibold">
-          {isAr ? "اكتشف المزيد" : "Scroll Down"}
-        </span>
         <div className="w-[1px] h-12 md:h-16 bg-[#faf8f5]/20 overflow-hidden relative">
           <div className="absolute top-0 left-0 w-full h-1/2 bg-[#d4af37] animate-[scrollDown_2s_ease-in-out_infinite]" />
         </div>

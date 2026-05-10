@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Serif, Plus_Jakarta_Sans, Amiri, Cairo } from "next/font/google";
+import { Noto_Serif, Plus_Jakarta_Sans, Alexandria, Tajawal } from "next/font/google";
 import "../globals.css";
 import SiteHeader from "./SiteHeader";
 import SplashScreen from "./SplashScreen";
@@ -17,16 +17,16 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
 });
 
-const amiri = Amiri({
-  subsets: ["arabic"],
-  weight: ["400", "700"],
-  variable: "--font-amiri",
-});
-
-const cairo = Cairo({
+const alexandria = Alexandria({
   subsets: ["arabic"],
   weight: ["300", "400", "500", "700"],
-  variable: "--font-cairo",
+  variable: "--font-alexandria",
+});
+
+const tajawal = Tajawal({
+  subsets: ["arabic"],
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-tajawal",
 });
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   description: "Curated collections of premium curtains, blinds, and window treatments crafted for the discerning home.",
   icons: [
     { rel: "icon", url: "/favicon.ico?v=2", sizes: "any" },
-    { rel: "apple-touch-icon", url: "/logo.png?v=2" },
+    { rel: "apple-touch-icon", url: "/logo2.png?v=2" },
   ],
 };
 
@@ -67,7 +67,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${notoSerif.variable} ${plusJakartaSans.variable} ${amiri.variable} ${cairo.variable} h-full antialiased light`}
+      className={`${notoSerif.variable} ${plusJakartaSans.variable} ${alexandria.variable} ${tajawal.variable} h-full antialiased light`}
       suppressHydrationWarning
     >
       <head>

@@ -1,6 +1,7 @@
 import ProductCards from "./ProductCards";
 import ModernHero from "./ModernHero";
 import AboutUs from "./AboutUs";
+import ClientsMarquee from "./ClientsMarquee";
 
 export default async function HomePage({
   params,
@@ -159,6 +160,9 @@ export default async function HomePage({
 
       {/* ── About Us ── */}
       <AboutUs isAr={isAr} />
+
+      {/* ── Clients Marquee ── */}
+      <ClientsMarquee isAr={isAr} />
 
       {/* ── Consult CTA ── */}
       <section id="consult" className="py-24 md:py-32 px-6 md:px-12 relative overflow-hidden bg-surface flex justify-center items-center">

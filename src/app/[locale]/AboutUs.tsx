@@ -10,18 +10,30 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
       <div className={`max-w-7xl mx-auto relative z-10 ${isAr ? "text-right rtl" : "text-left ltr"}`}>
         
         {/* Section Heading */}
-        <div className="mb-20 flex flex-col items-center text-center">
-          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-4 block">
-            {isAr ? "من نحن" : "About Us"}
-          </span>
-          <h2 className="font-headline text-4xl md:text-5xl lg:text-6xl text-[#26170c] leading-tight max-w-4xl">
+        <div className="mb-24 flex flex-col items-center text-center relative">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[#d4af37]" />
+            <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-bold">
+              {isAr ? "من نحن" : "About Us"}
+            </span>
+            <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-[#d4af37]" />
+          </div>
+          
+          <h2 className="font-headline text-4xl md:text-5xl lg:text-6xl bg-gradient-to-br from-[#1c1109] to-[#5d4201] bg-clip-text text-transparent leading-tight max-w-4xl pb-2">
             {isAr ? "نهندس الضوء لخصوصية تليق بمكاتبكم" : "Engineering Light for Privacy Worthy of Your Offices"}
           </h2>
-          <p className="mt-6 text-[#26170c]/70 text-sm md:text-base max-w-2xl leading-relaxed">
-            {isAr 
-              ? "في قلب عام 2021، ومن رحم الخبرة العميقة والعمل الدؤوب، قرر محمود عباس أن ينقل شغفه بالستائر المكتبية من مجرد \"وظيفة\" إلى \"رسالة\". بدأت كريستال للستائر برؤية رجل واحد يمتلك \"عين الصقر\" في القياس و\"يد الجراح\" في التركيب. نحن لا نبيع مجرد ستائر، بل نقدم هندسة للضوء وخصوصية تليق بمكاتبكم، معتمدين على تاريخ من الكفاح جعلنا اليوم الخيار الأول لمن يبحث عن \"الراحة من أول خرم في الحيطة\"."
-              : "In the heart of 2021, born from deep experience and hard work, Mahmoud Abbas decided to turn his passion for office blinds from just a 'job' into a 'mission'. Crystal Blinds began with the vision of one man possessing the 'eagle eye' in measurement and the 'surgeon's hand' in installation. We don't just sell blinds; we offer light engineering and privacy worthy of your offices, relying on a history of struggle that has made us today the first choice for anyone looking for 'comfort from the first hole in the wall'."}
-          </p>
+          
+          <div className="mt-10 relative max-w-3xl">
+            {/* Subtle quotation watermark */}
+            <span className="material-symbols-outlined absolute -top-8 -left-6 text-6xl text-[#d4af37]/10 -z-10 rotate-180">format_quote</span>
+            <span className="material-symbols-outlined absolute -bottom-8 -right-6 text-6xl text-[#d4af37]/10 -z-10">format_quote</span>
+            
+            <p className="text-[#26170c]/75 text-sm md:text-[15px] leading-[1.8] md:leading-[2] font-medium relative z-10 px-4 md:px-8">
+              {isAr 
+                ? "في قلب عام 2021، ومن رحم الخبرة العميقة والعمل الدؤوب، قرر محمود عباس أن ينقل شغفه بالستائر المكتبية من مجرد \"وظيفة\" إلى \"رسالة\". بدأت كريستال للستائر برؤية رجل واحد يمتلك \"عين الصقر\" في القياس و\"يد الجراح\" في التركيب. نحن لا نبيع مجرد ستائر، بل نقدم هندسة للضوء وخصوصية تليق بمكاتبكم، معتمدين على تاريخ من الكفاح جعلنا اليوم الخيار الأول لمن يبحث عن \"الراحة من أول خرم في الحيطة\"."
+                : "In the heart of 2021, born from deep experience and hard work, Mahmoud Abbas decided to turn his passion for office blinds from just a 'job' into a 'mission'. Crystal Blinds began with the vision of one man possessing the 'eagle eye' in measurement and the 'surgeon's hand' in installation. We don't just sell blinds; we offer light engineering and privacy worthy of your offices, relying on a history of struggle that has made us today the first choice for anyone looking for 'comfort from the first hole in the wall'."}
+            </p>
+          </div>
         </div>
 
         {/* Vision & Mission Grid */}

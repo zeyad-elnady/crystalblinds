@@ -61,17 +61,13 @@ export default function SiteHeader({
             </button>
           </div>
 
-          {/* ── Centre: Brand ── */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center leading-none select-none z-50 pointer-events-none">
-            <span className="font-headline text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-[#26170c]/60 mb-0.5">
-              {isAr ? "كريستال للستائر" : "Crystal Blinds"}
-            </span>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center leading-none select-none z-50 pointer-events-none">
             <a
               href={`/${locale}`}
-              className="flex items-center justify-center transition-opacity hover:opacity-80 pointer-events-auto mt-1"
+              className="flex items-center justify-center transition-opacity hover:opacity-80 pointer-events-auto"
               onClick={() => setMenuOpen(false)}
             >
-              <img src="/logo.png" alt="Crystal Blinds" className="h-8 md:h-10 object-contain" />
+              <img src="/logo2.png" alt="Crystal Blinds" className="w-[160px] md:w-[260px] h-auto object-contain" />
             </a>
           </div>
 

@@ -56,9 +56,9 @@
   --radius-xl: 0.5rem;
   --radius-full: 0.75rem;
 
-  --font-headline: Amiri, "Noto Serif", serif;
-  --font-body: Cairo, "Plus Jakarta Sans", sans-serif;
-  --font-label: Cairo, "Plus Jakarta Sans", sans-serif;
+  --font-headline: Alexandria, "Noto Serif", serif;
+  --font-body: Tajawal, "Plus Jakarta Sans", sans-serif;
+  --font-label: Tajawal, "Plus Jakarta Sans", sans-serif;
 }
 
 body {
