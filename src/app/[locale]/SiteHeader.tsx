@@ -67,7 +67,8 @@ export default function SiteHeader({
               <img 
                 src="/logo2.png" 
                 alt="Crystal Blinds" 
-                className="w-[120px] md:w-[160px] h-auto object-contain filter brightness-0 invert opacity-90" 
+                className="w-[120px] md:w-[160px] h-auto object-contain opacity-90" 
+                style={{ filter: "brightness(0) invert(1)", WebkitFilter: "brightness(0) invert(1)" }}
               />
             </a>
           </div>

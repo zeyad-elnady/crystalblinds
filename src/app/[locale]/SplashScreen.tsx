@@ -41,7 +41,8 @@ export default function SplashScreen() {
         <img 
           src="/logo2.png" 
           alt="Crystal Blinds" 
-          className="h-40 md:h-64 object-contain drop-shadow-[0_0_20px_rgba(212,175,55,0.3)] animate-pulse duration-[2000ms] filter brightness-0 invert opacity-90" 
+          className="h-40 md:h-64 object-contain drop-shadow-[0_0_20px_rgba(212,175,55,0.3)] animate-pulse duration-[2000ms] opacity-90" 
+          style={{ filter: "brightness(0) invert(1)", WebkitFilter: "brightness(0) invert(1)" }}
         />
         
         {/* Loading Progress Bar */}
