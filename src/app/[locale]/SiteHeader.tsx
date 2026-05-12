@@ -40,7 +40,7 @@ export default function SiteHeader({
                 <a
                   key={link.href}
                   href={link.href}
-                  className="relative text-[13px] font-medium uppercase tracking-[0.12em] text-[#faf8f5]/80 hover:text-white transition-colors duration-200 group"
+                  className={`relative text-[13px] font-medium uppercase text-[#faf8f5]/80 hover:text-white transition-colors duration-200 group ${isAr ? "tracking-normal" : "tracking-[0.12em]"}`}
                 >
                   {link.label}
                   <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#d4af37] group-hover:w-full transition-[width] duration-300 ease-out" />
@@ -100,7 +100,7 @@ export default function SiteHeader({
               key={link.href}
               href={link.href}
               onClick={() => setMenuOpen(false)}
-              className="text-3xl font-headline text-white uppercase tracking-[0.2em] hover:text-[#d4af37] transition-colors"
+              className={`text-3xl font-headline text-white uppercase hover:text-[#d4af37] transition-colors ${isAr ? "tracking-normal" : "tracking-[0.2em]"}`}
             >
               {link.label}
             </a>

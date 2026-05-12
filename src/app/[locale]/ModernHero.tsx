@@ -61,7 +61,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
         </div>
 
         {/* Main Headline */}
-        <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl text-[#faf8f5] font-extrabold leading-[1.1] mb-8 tracking-tight drop-shadow-2xl">
+        <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl text-[#faf8f5] font-extrabold leading-[1.3] md:leading-[1.1] mb-8 tracking-tight drop-shadow-2xl">
           {isAr 
             ? <>
                 كريستال للستائر
