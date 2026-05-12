@@ -3,14 +3,14 @@
 import React from "react";
 
 const CLIENTS = [
-  { name: "Gotex", src: "/out clients/Gotex_logo.png" },
-  { name: "Almatar", src: "/out clients/almatar_logo_page.png" },
-  { name: "Arabcomed", src: "/out clients/arabcomed logo.png" },
-  { name: "Bo5arest", src: "/out clients/bo5arest logo.png" },
-  { name: "Jana Foam", src: "/out clients/jana_foam_logo.png" },
-  { name: "Markoon", src: "/out clients/markoon logo.png" },
-  { name: "Mazaya", src: "/out clients/mazaya logo.png" },
-  { name: "موسسه فاتبع سببا - طيبه", src: "/out clients/موسسه فاتبع سببا - طيبه logo.png" },
+  { nameAr: "جوتكس", nameEn: "Gotex", src: "/out clients/Gotex_logo.png" },
+  { nameAr: "المطار", nameEn: "Almatar", src: "/out clients/almatar_logo_page.png" },
+  { nameAr: "ارابكوميد", nameEn: "Arabcomed", src: "/out clients/arabcomed logo.png" },
+  { nameAr: "بوخارست", nameEn: "Bucharest", src: "/out clients/bo5arest logo.png" },
+  { nameAr: "جانا فوم", nameEn: "Jana Foam", src: "/out clients/jana_foam_logo.png" },
+  { nameAr: "ماركون", nameEn: "Markoon", src: "/out clients/markoon logo.png" },
+  { nameAr: "مزايا", nameEn: "Mazaya", src: "/out clients/mazaya logo.png" },
+  { nameAr: "مؤسسة فاتبع سبباً - طيبة", nameEn: "Tayba Foundation", src: "/out clients/موسسه فاتبع سببا - طيبه logo.png" },
 ];
 
 export default function ClientsMarquee({ isAr }: { isAr: boolean }) {
@@ -33,20 +33,44 @@ export default function ClientsMarquee({ isAr }: { isAr: boolean }) {
 
         <div className="flex w-max animate-[marquee_40s_linear_infinite] items-center hover:[animation-play-state:paused]">
           {/* We duplicate the list to make the loop seamless */}
-          {[...CLIENTS, ...CLIENTS].map((client, i) => (
-            <div
-              key={i}
-              tabIndex={0}
-              className="flex shrink-0 items-center justify-center mx-6 md:mx-10 w-[140px] md:w-[200px] h-[90px] bg-white/90 rounded-2xl p-4 grayscale hover:grayscale-0 focus:grayscale-0 active:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100 focus:opacity-100 active:opacity-100 hover:scale-105 cursor-pointer outline-none shadow-lg"
-            >
-              <img
-                src={client.src}
-                alt={client.name}
-                title={client.name}
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
-          ))}
+          {[...CLIENTS, ...CLIENTS].map((client, i) => {
+            const isMarkoon = client.nameEn === "Markoon";
+            const isTayba = client.nameEn === "Tayba Foundation";
+            
+            let sizeClasses = "w-[120px] md:w-[160px] h-[80px]";
+            if (isTayba) {
+              sizeClasses = "w-[200px] md:w-[300px] h-[140px]";
+            } else if (isMarkoon) {
+              sizeClasses = "w-[160px] md:w-[220px] h-[100px]";
+            }
+
+            return (
+              <div
+                key={i}
+                className="flex flex-col items-center justify-center mx-6 md:mx-10 group"
+              >
+                <div
+                  tabIndex={0}
+                  className={`flex shrink-0 items-center justify-center transition-all duration-500 hover:scale-110 cursor-pointer outline-none ${sizeClasses}`}
+                >
+                  <img
+                    src={client.src}
+                    alt={client.nameEn}
+                    title={client.nameEn}
+                    className="max-w-full max-h-full object-contain transition-all duration-500"
+                  />
+                </div>
+                <div className="mt-4 flex flex-col items-center text-center">
+                  <span className="text-[#faf8f5] text-[10px] md:text-xs font-semibold tracking-wide">
+                    {client.nameAr}
+                  </span>
+                  <span className="text-[#faf8f5]/60 text-[9px] md:text-[10px] font-medium tracking-widest uppercase mt-0.5">
+                    {client.nameEn}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -2,7 +2,7 @@ import React from "react";
 
 export default function AboutUs({ isAr }: { isAr: boolean }) {
   return (
-    <section id="about" className="py-24 md:py-32 px-6 md:px-12 bg-white relative overflow-hidden text-[#26170c]">
+    <section id="about" className="py-24 md:py-32 px-6 md:px-12 bg-[#faf8f5] relative overflow-hidden text-[#26170c]">
       {/* Decorative background elements */}
       <div className="absolute top-1/4 left-0 w-[500px] h-[500px] bg-[#d4af37]/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-0 w-[500px] h-[500px] bg-[#e9c176]/10 rounded-full blur-[120px] pointer-events-none" />
@@ -20,7 +20,7 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
           </div>
           
           <h2 className="font-headline text-4xl md:text-5xl lg:text-6xl bg-gradient-to-br from-[#1c1109] to-[#5d4201] bg-clip-text text-transparent leading-tight max-w-4xl pb-2">
-            {isAr ? "نهندس الضوء لخصوصية تليق بمكاتبكم" : "Engineering Light for Privacy Worthy of Your Offices"}
+            {isAr ? "ننسج الجمال والخصوصية لتكتمل أناقة مساحتك" : "Weaving Beauty and Privacy to Complete the Elegance of Your Space"}
           </h2>
           
           <div className="mt-10 relative max-w-3xl">
@@ -30,8 +30,8 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
             
             <p className="text-[#26170c]/75 text-sm md:text-[15px] leading-[1.8] md:leading-[2] font-medium relative z-10 px-4 md:px-8">
               {isAr 
-                ? "في قلب عام 2021، ومن رحم الخبرة العميقة والعمل الدؤوب، قرر محمود عباس أن ينقل شغفه بالستائر المكتبية من مجرد \"وظيفة\" إلى \"رسالة\". بدأت كريستال للستائر برؤية رجل واحد يمتلك \"عين الصقر\" في القياس و\"يد الجراح\" في التركيب. نحن لا نبيع مجرد ستائر، بل نقدم هندسة للضوء وخصوصية تليق بمكاتبكم، معتمدين على تاريخ من الكفاح جعلنا اليوم الخيار الأول لمن يبحث عن \"الراحة من أول خرم في الحيطة\"."
-                : "In the heart of 2021, born from deep experience and hard work, Mahmoud Abbas decided to turn his passion for office blinds from just a 'job' into a 'mission'. Crystal Blinds began with the vision of one man possessing the 'eagle eye' in measurement and the 'surgeon's hand' in installation. We don't just sell blinds; we offer light engineering and privacy worthy of your offices, relying on a history of struggle that has made us today the first choice for anyone looking for 'comfort from the first hole in the wall'."}
+                ? "انطلقت رحلة \"كريستال للستائر\" في عام ٢٠٢١ برؤية طموحة لمؤسسها محمود عباس، لتتحول من شغف عميق بالتفاصيل إلى علامة رائدة في عالم الستائر وتغطية النوافذ. نحن لا نقدم مجرد منتجات، بل نصنع تجربة متكاملة تجمع بين التصميم المبتكر والخامات الفاخرة لتناسب المكاتب والمنازل على حد سواء. برؤية هندسية دقيقة، وحرفية عالية في التركيب، نضمن لك حلاً يجمع بين الأداء العملي والمظهر الجمالي الجذاب، لنكون شركاءك في تحويل كل نافذة إلى لوحة فنية تعكس ذوقك الرفيع."
+                : "The journey of Crystal Blinds began in 2021 with an ambitious vision by its founder, Mahmoud Abbas, transforming a deep passion for details into a leading brand in the world of window coverings. We don't just offer products; we craft a complete experience combining innovative design with premium materials suited for both offices and homes. With precise engineering and masterful installation, we guarantee a solution that unites practical performance with a captivating aesthetic, partnering with you to turn every window into a masterpiece that reflects your refined taste."}
             </p>
           </div>
         </div>
@@ -115,9 +115,7 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
 
         {/* Specialties */}
         <div className="mb-24 bg-[#26170c] rounded-3xl p-8 md:p-16 text-[#faf8f5] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-full h-full opacity-5 pointer-events-none" 
-               style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} 
-          />
+
           <div className="relative z-10">
             <h3 className="font-headline text-3xl md:text-4xl text-[#d4af37] mb-2">{isAr ? "تخصصاتنا" : "Our Specialties"}</h3>
             <p className="text-[#faf8f5]/70 mb-10 text-sm md:text-base max-w-2xl">{isAr ? "نحن ملوك \"التفاصيل\" في كافة أنواع الستائر المكتبية، ونتعامل مع كل خامة بأسلوبها الخاص:" : "We excel in the 'details' of all types of office blinds, handling each material with its unique style:"}</p>

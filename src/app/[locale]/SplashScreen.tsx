@@ -39,9 +39,9 @@ export default function SplashScreen() {
       <div className="relative z-10 flex flex-col items-center">
         {/* Animated Logo */}
         <img 
-          src="/logo.png" 
+          src="/logo2.png" 
           alt="Crystal Blinds" 
-          className="h-28 md:h-40 object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.2)] animate-pulse duration-[2000ms]" 
+          className="h-40 md:h-64 object-contain drop-shadow-[0_0_20px_rgba(212,175,55,0.3)] animate-pulse duration-[2000ms] filter brightness-0 invert opacity-90" 
         />
         
         {/* Loading Progress Bar */}

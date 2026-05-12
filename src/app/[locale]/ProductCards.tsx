@@ -261,7 +261,7 @@ function ProductCardItem({
               href="#consult"
               className={`inline-block text-center px-6 py-2.5 border border-[#26170c] text-[#26170c] text-xs font-bold uppercase tracking-widest rounded hover:bg-[#26170c] hover:text-[#faf8f5] transition-colors self-start ${isAr ? "self-end" : "self-start"}`}
             >
-              {isAr ? "احجز استشارتك" : "Book Consultation"}
+              {isAr ? "احجز زيارة" : "Book a Visit"}
             </a>
           </div>
         </div>

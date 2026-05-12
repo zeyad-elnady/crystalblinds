@@ -29,12 +29,9 @@ export default function SiteHeader({
     <>
       <header
         id="site-header"
-        className="fixed top-0 w-full z-50 bg-[#faf8f5]/90 backdrop-blur-lg border-b border-[#26170c]/8 transition-shadow duration-300"
+        className="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[95%] max-w-[1400px] z-50 bg-[#352517]/95 backdrop-blur-md rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 border border-[#d4af37]/20"
       >
-        {/* Top accent line */}
-        <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[#d4af37] to-transparent opacity-60" />
-
-        <div className="max-w-screen-xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between gap-8">
+        <div className="px-6 md:px-8 h-16 md:h-20 flex items-center justify-between gap-8">
           {/* ── Left: Nav Links (desktop) / Hamburger (mobile) ── */}
           <div className={`flex items-center gap-6 ${isAr ? "order-3" : "order-1"}`}>
             {/* Desktop nav */}
@@ -43,10 +40,10 @@ export default function SiteHeader({
                 <a
                   key={link.href}
                   href={link.href}
-                  className="relative text-[13px] font-medium uppercase tracking-[0.12em] text-[#26170c]/75 hover:text-[#26170c] transition-colors duration-200 group"
+                  className="relative text-[13px] font-medium uppercase tracking-[0.12em] text-[#faf8f5]/80 hover:text-white transition-colors duration-200 group"
                 >
                   {link.label}
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-[#d4af37] group-hover:w-full transition-[width] duration-300 ease-out" />
+                  <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#d4af37] group-hover:w-full transition-[width] duration-300 ease-out" />
                 </a>
               ))}
             </nav>
@@ -54,10 +51,10 @@ export default function SiteHeader({
             <button
               id="nav-menu-btn"
               aria-label="Open menu"
-              className="md:hidden text-[#26170c] hover:opacity-60 transition-opacity z-50 relative"
+              className="md:hidden text-white hover:text-[#d4af37] transition-colors z-50 relative"
               onClick={() => setMenuOpen(!menuOpen)}
             >
-              <span className="material-symbols-outlined">{menuOpen ? "close" : "menu"}</span>
+              <span className="material-symbols-outlined text-2xl">{menuOpen ? "close" : "menu"}</span>
             </button>
           </div>
 
@@ -67,7 +64,11 @@ export default function SiteHeader({
               className="flex items-center justify-center transition-opacity hover:opacity-80 pointer-events-auto"
               onClick={() => setMenuOpen(false)}
             >
-              <img src="/logo2.png" alt="Crystal Blinds" className="w-[160px] md:w-[260px] h-auto object-contain" />
+              <img 
+                src="/logo2.png" 
+                alt="Crystal Blinds" 
+                className="w-[120px] md:w-[160px] h-auto object-contain filter brightness-0 invert opacity-90" 
+              />
             </a>
           </div>
 
@@ -77,26 +78,18 @@ export default function SiteHeader({
             <a
               href={isAr ? "/en" : "/ar"}
               id="lang-toggle"
-              className="hidden md:flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-widest text-[#26170c]/60 hover:text-[#26170c] transition-colors duration-200 border border-[#26170c]/15 rounded-full px-3 py-1 hover:border-[#26170c]/40"
+              className="flex items-center gap-1.5 text-[10px] md:text-[12px] font-medium uppercase tracking-widest text-[#faf8f5]/80 hover:text-white transition-colors duration-200 border border-[#faf8f5]/20 rounded-full px-2 py-1 md:px-4 md:py-1.5 hover:border-[#d4af37] hover:bg-[#d4af37]/10"
             >
-              <span className="material-symbols-outlined text-[14px]">language</span>
+              <span className="material-symbols-outlined text-[14px] md:text-[16px]">language</span>
               {isAr ? "EN" : "عر"}
             </a>
-            {/* Search */}
-            <button
-              aria-label="Search"
-              className="text-[#26170c] hover:opacity-60 transition-opacity z-50"
-            >
-              <span className="material-symbols-outlined">search</span>
-            </button>
-
           </div>
         </div>
       </header>
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-[#faf8f5] flex flex-col pt-32 px-8 md:hidden transition-transform duration-500 ease-in-out ${
+        className={`fixed inset-0 z-40 bg-[#26170c] flex flex-col pt-32 px-8 md:hidden transition-transform duration-500 ease-in-out ${
           menuOpen ? "translate-x-0" : isAr ? "translate-x-full" : "-translate-x-full"
         }`}
       >
@@ -106,7 +99,7 @@ export default function SiteHeader({
               key={link.href}
               href={link.href}
               onClick={() => setMenuOpen(false)}
-              className="text-3xl font-headline text-[#26170c] uppercase tracking-[0.2em] hover:text-[#d4af37] transition-colors"
+              className="text-3xl font-headline text-white uppercase tracking-[0.2em] hover:text-[#d4af37] transition-colors"
             >
               {link.label}
             </a>
@@ -117,7 +110,7 @@ export default function SiteHeader({
           {/* Language toggle inside mobile menu */}
           <a
             href={isAr ? "/en" : "/ar"}
-            className="flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-widest text-[#26170c]/70 hover:text-[#26170c] transition-colors"
+            className="flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-widest text-white/70 hover:text-white transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">language</span>
             {isAr ? "English" : "العربية"}

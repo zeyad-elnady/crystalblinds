@@ -82,8 +82,8 @@ export const metadata: Metadata = {
         alt: "Crystal Blinds Egypt Logo",
       },
     ],
-    locale: "en_US",
-    alternateLocale: ["ar_EG"],
+    locale: "ar_EG",
+    alternateLocale: ["en_US"],
     type: "website",
   },
   twitter: {
@@ -174,14 +174,27 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-background text-on-background font-body min-h-full" suppressHydrationWarning>
-
         {/* Premium Splash Screen */}
         <SplashScreen />
+
+        {/* Floating WhatsApp */}
+        <a 
+          href="https://wa.me/201100080609" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="fixed bottom-6 left-6 z-[45] w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform duration-300 group"
+          aria-label="Contact on WhatsApp"
+        >
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-8 h-8" alt="WhatsApp" />
+          <span className="absolute left-full ml-4 px-3 py-1 bg-[#26170c] text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap rounded">
+            {locale === 'ar' ? 'تواصل معنا' : 'Chat with us'}
+          </span>
+        </a>
 
         {/* ── Web Header ── */}
         <SiteHeader locale={locale} isAr={isAr} navLinks={navLinks} />
 
-        <main className="pt-[66px]">
+        <main className="pt-0">
           {children}
         </main>
 
@@ -196,6 +209,29 @@ export default async function RootLayout({
             <a className="text-[#faf8f5]/70 hover:text-[#d4af37] transition-colors" href="#">{locale === 'ar' ? 'الضمان والصيانة' : 'Warranty & Care'}</a>
           </div>
 
+          {/* Social Links */}
+          <div className="flex gap-4 mt-2">
+            {[
+              { icon: 'facebook', href: 'https://facebook.com/crystalblinds.eg' },
+              { icon: 'instagram', href: 'https://instagram.com/crystalblinds.eg' },
+              { icon: 'tiktok', href: 'https://tiktok.com/@crystalblinds.eg' }
+            ].map((social) => (
+              <a 
+                key={social.icon}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full border border-[#faf8f5]/10 flex items-center justify-center hover:bg-[#d4af37] hover:border-[#d4af37] transition-all duration-300 group"
+              >
+                <img 
+                  src={`https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${social.icon}.svg`} 
+                  className="w-4 h-4 invert group-hover:filter-none transition-all" 
+                  alt={social.icon} 
+                />
+              </a>
+            ))}
+          </div>
+
           <div className="w-16 md:w-24 h-[1px] bg-[#d4af37]/30 my-2 md:my-4" />
 
           <p className="text-[#faf8f5]/40 text-[10px] md:text-xs tracking-widest uppercase">
@@ -204,6 +240,7 @@ export default async function RootLayout({
         </footer>
 
       </body>
+
     </html>
   );
 }

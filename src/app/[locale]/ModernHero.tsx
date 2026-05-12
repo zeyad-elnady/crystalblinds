@@ -21,7 +21,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
   }, []);
 
   return (
-    <div className="relative w-full h-[100svh] overflow-hidden bg-[#1a0f08] flex flex-col justify-center items-center">
+    <div className="relative w-full h-screen overflow-hidden bg-[#1a0f08] flex flex-col justify-center items-center">
       
       {/* Background Images with Crossfade & Slow Zoom */}
       {HERO_IMAGES.map((src, index) => (
@@ -61,17 +61,27 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
         </div>
 
         {/* Main Headline */}
-        <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl text-[#faf8f5] font-bold leading-[1.1] mb-8 tracking-tight drop-shadow-2xl">
+        <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl text-[#faf8f5] font-extrabold leading-[1.1] mb-8 tracking-tight drop-shadow-2xl">
           {isAr 
-            ? <>فن الظلال<br/><span className="text-[#e9c176] font-light italic">وروعة النور</span></>
-            : <>The Art of Shade<br/><span className="text-[#e9c176] font-light italic">& Brilliance</span></>}
+            ? <>
+                كريستال للستائر
+                <span className="block text-3xl md:text-5xl lg:text-6xl text-[#e9c176] italic mt-4">
+                  المكتبية والمنزلية
+                </span>
+              </>
+            : <>
+                Crystal Blinds
+                <span className="block text-3xl md:text-5xl lg:text-6xl text-[#e9c176] italic mt-4">
+                  Office & Home Solutions
+                </span>
+              </>}
         </h1>
 
         {/* Subtitle */}
         <p className="font-body text-[#faf8f5]/80 text-sm md:text-lg max-w-2xl leading-relaxed tracking-wide mb-12">
           {isAr 
-            ? "نصمم مساحتك لتتألق بتفاصيل استثنائية. كريستال للستائر تقدم لك حلولاً متطورة تجمع بين التكنولوجيا المتقدمة والجمال الخالد."
-            : "Tailoring your space with exceptional details. Crystal Blinds offers sophisticated solutions that blend advanced technology with timeless beauty."}
+            ? "تركيب احترافي لجميع أنواع الستائر (ستائر رول، شرائح رأسية، زيبرا، شرائح معدنية، خشبية، بامبو، بين أسرة)"
+            : "Professional installation for all types of blinds (Roller, Vertical, Zebra, Venetian, Wood, Bamboo, Cubicle Curtains)"}
         </p>
 
         {/* CTA Buttons */}
@@ -86,7 +96,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
             href="#consult" 
             className="group flex items-center gap-3 px-8 py-4 border border-[#faf8f5]/30 text-[#faf8f5] text-xs md:text-sm font-bold uppercase tracking-widest hover:border-[#d4af37] hover:text-[#d4af37] transition-all duration-300 bg-black/10 backdrop-blur-sm"
           >
-            <span>{isAr ? "احجز استشارتك" : "Book Consultation"}</span>
+            <span>{isAr ? "احجز زيارة" : "Book a Visit"}</span>
             <span className={`material-symbols-outlined text-[16px] transition-transform duration-300 group-hover:translate-x-1 ${isAr ? "rotate-180 group-hover:-translate-x-1 group-hover:translate-x-0" : ""}`}>
               arrow_forward
             </span>
