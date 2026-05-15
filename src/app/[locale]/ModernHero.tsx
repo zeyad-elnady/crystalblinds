@@ -93,7 +93,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
             {isAr ? "اكتشف مجموعتنا" : "Discover Collections"}
           </a>
           <a 
-            href="#consult" 
+            href="#reserve" 
             className="group flex items-center gap-3 px-8 py-4 border border-[#faf8f5]/30 text-[#faf8f5] text-xs md:text-sm font-bold uppercase tracking-widest hover:border-[#d4af37] hover:text-[#d4af37] transition-all duration-300 bg-black/10 backdrop-blur-sm"
           >
             <span>{isAr ? "احجز زيارة" : "Book a Visit"}</span>

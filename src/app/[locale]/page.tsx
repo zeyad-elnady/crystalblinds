@@ -1,4 +1,5 @@
 import ProductCards from "./ProductCards";
+import ReservationSection from "./ReservationSection";
 import ModernHero from "./ModernHero";
 import AboutUs from "./AboutUs";
 import ClientsMarquee from "./ClientsMarquee";
@@ -131,7 +132,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* ── Products ── */}
+      {/* ── Best Sellers ── */}
       <section id="products" className="relative bg-[#faf8f5] text-[#26170c] overflow-hidden flex flex-col py-0">
         {/* Decorative background elements */}
         <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-[#d4af37]/10 rounded-full blur-[150px] pointer-events-none" />
@@ -140,21 +141,34 @@ export default async function HomePage({
         {/* Section heading */}
         <div className="relative z-10 max-w-7xl mx-auto w-full text-center pt-16 md:pt-24 pb-8 px-6 shrink-0">
           <span className="text-[#d4af37] text-xs uppercase tracking-[0.3em] font-semibold">
-            {isAr ? "مجموعة المنتجات" : "Our Products"}
+            {isAr ? "الأكثر مبيعاً" : "Best Sellers"}
           </span>
           <h3 className="font-headline text-3xl md:text-4xl text-[#26170c] mt-2">
-            {isAr ? "حلول مصممة خصيصًا لك" : "Tailored Solutions for You"}
+            {isAr ? "اكتشف منتجاتنا المميزة" : "Discover Our Top Picks"}
           </h3>
           <p className="text-[#26170c]/70 font-light mt-2 md:mt-3 tracking-wide text-sm md:text-base max-w-2xl mx-auto">
             {isAr
-              ? "لكل نافذة وواجهة كبيرة كانت أو صغيرة. لا نكتفي بتركيب الستائر فحسب، بل نُقدّم خدمة طباعة الستائر حسب الطلب."
-              : "For every window and facade, large or small. We don't just install blinds; we offer custom curtain printing services to meet your unique needs."}
+              ? "مجموعة من الستائر الأكثر طلباً التي تجمع بين الأناقة والعملية لتناسب كافة احتياجاتك."
+              : "A selection of our most requested blinds that combine elegance and functionality for all your needs."}
           </p>
         </div>
 
         {/* Product Cards */}
         <div className="relative z-10 w-full">
           <ProductCards isAr={isAr} />
+        </div>
+
+        {/* View All Button */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full flex justify-center pb-16">
+          <a
+            href={`/${locale}/products`}
+            className="group flex items-center gap-3 bg-transparent border-2 border-[#d4af37] text-[#d4af37] px-8 py-3 rounded hover:bg-[#d4af37] hover:text-white transition-all duration-300 font-semibold tracking-widest uppercase text-sm shadow-md"
+          >
+            <span>{isAr ? "عرض كل المنتجات" : "View All Products"}</span>
+            <span className={`material-symbols-outlined text-[18px] transition-transform duration-300 ${isAr ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`}>
+              arrow_forward
+            </span>
+          </a>
         </div>
       </section>
 
@@ -166,157 +180,8 @@ export default async function HomePage({
 
 
 
-      {/* ── Contact ── */}
-      <section id="contact" className="py-24 px-6 md:px-12 bg-[#faf8f5] text-[#26170c] relative overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#d4af37]/20 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#e9c176]/20 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className={`max-w-7xl mx-auto relative z-10 ${isAr ? "text-right" : ""}`}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
-
-            {/* Left: Info */}
-            <div className="flex flex-col justify-center">
-              <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-4">
-                {isAr ? "تواصل معنا" : "Get in Touch"}
-              </span>
-              <h3 className="font-headline text-4xl md:text-5xl lg:text-6xl text-[#26170c] mb-6 leading-tight">
-                {isAr ? "دعنا نبدأ" : "Let's Start a"} <br />
-                <span className="text-[#d4af37] italic font-light">{isAr ? "محادثة" : "Conversation"}</span>
-              </h3>
-              <p className="text-[#26170c]/70 text-sm md:text-base max-w-md leading-relaxed mb-12">
-                {isAr
-                  ? "سواء كنت تصمم منزلاً جديداً أو تجدد مساحتك الحالية، فريقنا هنا لتقديم استشارة مخصصة تلبي تطلعاتك."
-                  : "Whether you're designing a new home or refreshing your current space, our team is here to provide tailored advice for your vision."}
-              </p>
-
-              <div className="flex flex-col gap-8">
-                {/* Visit */}
-                <div className="flex gap-6 items-start group">
-                  <div className="w-12 h-12 shrink-0 rounded-full border border-[#26170c]/10 flex items-center justify-center group-hover:border-[#d4af37] group-hover:bg-[#d4af37]/10 transition-all duration-300">
-                    <span className="material-symbols-outlined text-[#d4af37] text-[20px]">location_on</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#26170c]/50 mb-1">
-                      {isAr ? "زيارة معرضنا" : "Visit Our Showroom"}
-                    </p>
-                    <p className="text-[#26170c] font-medium text-sm md:text-base">
-                      {isAr ? "شبرآ الخيمة، 74 شارع 15 مايو، أمام مجمع الصوالحة الإسلامي" : "Shubra El Kheima, 74 15 May Street, in front of El Sawalha Islamic Complex"}
-                    </p>
-                    <p className="text-[#26170c]/50 text-xs mt-1">
-                      {isAr ? "السبت – الخميس، ١٠ص – ٨م" : "Sat – Thu, 10 AM – 8 PM"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div className="flex gap-6 items-start group">
-                  <div className="w-12 h-12 shrink-0 rounded-full border border-[#26170c]/10 flex items-center justify-center group-hover:border-[#d4af37] group-hover:bg-[#d4af37]/10 transition-all duration-300">
-                    <span className="material-symbols-outlined text-[#d4af37] text-[20px]">call</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#26170c]/50 mb-1">
-                      {isAr ? "اتصل بنا" : "Call Us"}
-                    </p>
-                    <a href="tel:01100080609" className="text-[#26170c] font-medium text-sm md:text-base hover:text-[#d4af37] transition-colors">
-                      01100080609 - 01020909498
-                    </a>
-                    <p className="text-[#26170c]/50 text-xs mt-1">
-                      {isAr ? "نرد على مكالماتك خلال ٢٤ ساعة" : "We respond within 24 hours"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="flex gap-6 items-start group">
-                  <div className="w-12 h-12 shrink-0 rounded-full border border-[#26170c]/10 flex items-center justify-center group-hover:border-[#d4af37] group-hover:bg-[#d4af37]/10 transition-all duration-300">
-                    <span className="material-symbols-outlined text-[#d4af37] text-[20px]">mail</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#26170c]/50 mb-1">
-                      {isAr ? "راسلنا" : "Email Us"}
-                    </p>
-                    <a href="mailto:sales@crystalblinds.com" className="text-[#26170c] font-medium text-sm md:text-base hover:text-[#d4af37] transition-colors">
-                      sales@crystalblinds.com
-                    </a>
-                    <p className="text-[#26170c]/50 text-xs mt-1">
-                      {isAr ? "للمشاريع الخاصة والتعاون" : "For bespoke projects & partnerships"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Form */}
-            <div className="relative">
-              {/* Form Card */}
-              <div className="bg-white/60 border border-white/40 rounded-2xl p-8 md:p-12 backdrop-blur-xl shadow-[0_20px_40px_rgba(38,23,12,0.05)]">
-                <form className="flex flex-col gap-8">
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="contact-name" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-                      {isAr ? "الاسم الكامل" : "Full Name"}
-                    </label>
-                    <input
-                      type="text"
-                      id="contact-name"
-                      placeholder={isAr ? "أدخل اسمك" : "John Doe"}
-                      className="bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] placeholder:text-[#26170c]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="contact-phone" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-                      {isAr ? "رقم الهاتف" : "Phone Number"}
-                    </label>
-                    <input
-                      type="tel"
-                      id="contact-phone"
-                      placeholder={isAr ? "+966 5X XXX XXXX" : "+20 1X XXXX XXXX"}
-                      className="bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] placeholder:text-[#26170c]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="contact-email" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-                      {isAr ? "البريد الإلكتروني" : "Email Address"}
-                    </label>
-                    <input
-                      type="email"
-                      id="contact-email"
-                      placeholder={isAr ? "بريدك الإلكتروني" : "john@example.com"}
-                      className="bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] placeholder:text-[#26170c]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="contact-message" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-                      {isAr ? "رسالتك" : "Your Message"}
-                    </label>
-                    <textarea
-                      id="contact-message"
-                      rows={4}
-                      placeholder={isAr ? "أخبرنا عن مشروعك..." : "Tell us about your space and vision..."}
-                      className="bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] placeholder:text-[#26170c]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm resize-none"
-                    />
-                  </div>
-
-                  <button
-                    id="contact-submit"
-                    type="submit"
-                    className="mt-4 flex items-center justify-center gap-3 bg-[#26170c] text-[#faf8f5] py-4 rounded font-bold tracking-widest uppercase text-xs hover:bg-[#3d2b1f] transition-colors shadow-lg"
-                  >
-                    <span>{isAr ? "أرسل رسالتك" : "Send Message"}</span>
-                    <span className={`material-symbols-outlined text-[16px] ${isAr ? "rotate-180" : ""}`}>
-                      send
-                    </span>
-                  </button>
-                </form>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
+      {/* ── Reservation Section ── */}
+      <ReservationSection isAr={isAr} locale={locale} />
     </>
   );
 }
