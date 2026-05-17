@@ -213,11 +213,24 @@ export default async function RootLayout({
             ))}
           </div>
 
-          <div className="w-16 md:w-24 h-[1px] bg-[#d4af37]/30 my-2 md:my-4" />
+          <div className="w-full max-w-5xl h-[1px] bg-[#d4af37]/20 my-4" />
 
-          <p className="text-[#faf8f5]/40 text-[10px] md:text-xs tracking-widest uppercase">
-            {locale === 'ar' ? '© ٢٠٢٤ كريستال للستائر. جميع الحقوق محفوظة.' : '© 2024 Crystal Blinds. All rights reserved.'}
-          </p>
+          <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-5xl gap-4 text-[#faf8f5]/40 text-[10px] md:text-xs tracking-widest uppercase mt-2">
+            <p>
+              {locale === 'ar' ? '© ٢٠٢٤ كريستال للستائر. جميع الحقوق محفوظة.' : '© 2024 Crystal Blinds. All rights reserved.'}
+            </p>
+            <p className="flex items-center gap-1">
+              <span>{locale === 'ar' ? 'تطوير وتصميم' : 'Created by'}</span>
+              <a 
+                href="https://www.sirad-agancy.com/en" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="font-bold underline decoration-[#d4af37]/60 hover:decoration-[#d4af37] underline-offset-4 text-[#faf8f5]/60 hover:text-[#d4af37] transition-all normal-case tracking-normal"
+              >
+                sirad-agancy.com
+              </a>
+            </p>
+          </div>
         </footer>
 
       </body>
