@@ -181,7 +181,7 @@ export default async function HomePage({
 
 
       {/* ── Reservation Section ── */}
-      <ReservationSection isAr={isAr} locale={locale} />
+      <ReservationSection isAr={isAr} />
     </>
   );
 }
