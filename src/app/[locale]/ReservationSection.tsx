@@ -30,7 +30,7 @@ export default function ReservationSection({ isAr }: Props) {
   const [apptType, setApptType] = useState<AppointmentType>('inspection');
   const [bookedSlots, setBookedSlots] = useState<{ date: string; time: string }[]>([]);
   const [step, setStep]   = useState<1 | 2>(1);
-  const [form, setForm]   = useState({ name: '', phone: '', address: '', notes: '', curtainType: '' });
+  const [form, setForm]   = useState({ name: '', phone: '', address: '', notes: '', curtainType: '', systemType: 'manual', motorBrand: 'somfy' });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone]   = useState(false);
   const [error, setError] = useState('');
@@ -61,12 +61,20 @@ export default function ReservationSection({ isAr }: Props) {
     if (!form.name || !form.phone) { setError(isAr ? 'الاسم والهاتف مطلوبان' : 'Name and phone are required'); return; }
     if (apptType === 'installation' && !form.curtainType) { setError(isAr ? 'يرجى اختيار نوع الستائر' : 'Please select curtain type'); return; }
     setSubmitting(true); setError('');
+
+    let finalNotes = form.notes;
+    if (form.systemType !== 'manual') {
+      const sysStr = form.systemType === 'smart_app' ? 'Smart App' : 'Remote Control';
+      const motorStr = form.motorBrand === 'somfy' ? 'Somfy' : 'Azzaro';
+      finalNotes = `[نظام ذكي: ${sysStr} | موتور: ${motorStr}]\n${finalNotes}`;
+    }
+
     const { error: err } = await supabase.from('appointments').insert([{
       client_name: form.name, client_phone: form.phone,
       client_address: form.address, appointment_type: apptType,
       curtain_type: apptType === 'installation' ? form.curtainType : null,
       appointment_date: selectedDate, appointment_time: selectedTime + ':00',
-      notes: form.notes, status: 'pending',
+      notes: finalNotes, status: 'pending',
     }]);
     if (err) { setError(isAr ? 'حدث خطأ، حاول مرة أخرى' : 'Something went wrong. Try again.'); }
     else { setDone(true); }
@@ -81,7 +89,7 @@ export default function ReservationSection({ isAr }: Props) {
         </div>
         <h3 className="font-headline text-3xl text-[#26170c]">{isAr ? 'تم الحجز بنجاح!' : 'Booking Confirmed!'}</h3>
         <p className="text-[#26170c]/70">{isAr ? 'سنتواصل معك قريباً لتأكيد الموعد.' : 'We will contact you shortly to confirm your appointment.'}</p>
-        <button onClick={() => { setDone(false); setStep(1); setSelectedDate(''); setSelectedTime(''); setForm({ name:'',phone:'',address:'',notes:'', curtainType: '' }); }}
+        <button onClick={() => { setDone(false); setStep(1); setSelectedDate(''); setSelectedTime(''); setForm({ name:'',phone:'',address:'',notes:'', curtainType: '', systemType: 'manual', motorBrand: 'somfy' }); }}
           className="mt-2 px-8 py-3 bg-[#C6AB8E] text-[#26170c] rounded font-bold text-xs uppercase tracking-widest hover:bg-[#3d2b1f] transition-colors">
           {isAr ? 'حجز موعد آخر' : 'Book Another'}
         </button>
@@ -271,6 +279,48 @@ export default function ReservationSection({ isAr }: Props) {
                         <option value="Double System">{isAr ? 'ستائر دبل سيستم' : 'Double System'}</option>
                         <option value="Printed">{isAr ? 'ستائر مطبوعة' : 'Printed'}</option>
                       </select>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className={`text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37] ${isAr ? 'text-right' : ''}`}>
+                      {isAr ? 'نظام التشغيل' : 'Operation System'}
+                    </label>
+                    <select 
+                      value={form.systemType} 
+                      onChange={e => setForm(p => ({ ...p, systemType: e.target.value }))}
+                      className={`bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`}
+                    >
+                      <option value="manual">{isAr ? 'يدوي (Manual)' : 'Manual'}</option>
+                      <option value="smart_app">{isAr ? 'تطبيق ذكي (Smart App)' : 'Smart App'}</option>
+                      <option value="remote">{isAr ? 'ريموت كنترول (Remote Control)' : 'Remote Control'}</option>
+                    </select>
+                  </div>
+
+                  {form.systemType !== 'manual' && (
+                    <div className="flex flex-col gap-1.5 mb-2">
+                      <label className={`text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37] ${isAr ? 'text-right' : ''}`}>
+                        {isAr ? 'الماركة (الموتور)' : 'Motor Brand'}
+                      </label>
+                      <select 
+                        value={form.motorBrand} 
+                        onChange={e => setForm(p => ({ ...p, motorBrand: e.target.value }))}
+                        className={`bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`}
+                      >
+                        <option value="somfy">{isAr ? 'سومفي (ضمان 10 سنوات)' : 'Somfy (10 Years Warranty)'}</option>
+                        <option value="azzaro">{isAr ? 'أزارو (ضمان 5 سنوات)' : 'Azzaro (5 Years Warranty)'}</option>
+                      </select>
+                      
+                      {form.systemType === 'smart_app' && (
+                        <p className={`text-xs text-[#26170c]/80 mt-2 bg-[#d4af37]/20 border border-[#d4af37]/30 p-2.5 rounded-md ${isAr ? 'text-right' : ''}`}>
+                          <span className="font-bold text-[#26170c]">تنبيه:</span> {isAr ? 'تأكد من وجود تأسيس سمارت (Smart Home) في المنزل.' : 'Ensure smart home infrastructure is already set up in your house.'}
+                        </p>
+                      )}
+                      {form.systemType === 'remote' && (
+                        <p className={`text-xs text-[#26170c]/80 mt-2 bg-[#d4af37]/20 border border-[#d4af37]/30 p-2.5 rounded-md ${isAr ? 'text-right' : ''}`}>
+                          <span className="font-bold text-[#26170c]">تنبيه:</span> {isAr ? 'تأكد من توفير وصلة كهرباء (أرضي وكهرباء) بالقرب من الشباك.' : 'Ensure a power connection is available near the window.'}
+                        </p>
+                      )}
                     </div>
                   )}
 

@@ -1,32 +1,14 @@
 import type { Metadata } from "next";
-import { Noto_Serif, Plus_Jakarta_Sans, Alexandria, Tajawal } from "next/font/google";
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import "../globals.css";
 import SiteHeader from "./SiteHeader";
 import SplashScreen from "./SplashScreen";
 import Script from "next/script";
 
-const notoSerif = Noto_Serif({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-noto-serif",
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-plus-jakarta",
-});
-
-const alexandria = Alexandria({
-  subsets: ["arabic"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-alexandria",
-});
-
-const tajawal = Tajawal({
-  subsets: ["arabic"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-tajawal",
+const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
+  subsets: ["latin", "arabic"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-ibm-plex",
 });
 
 export const metadata: Metadata = {
@@ -136,7 +118,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${notoSerif.variable} ${plusJakartaSans.variable} ${alexandria.variable} ${tajawal.variable} h-full antialiased light`}
+      className={`${ibmPlexSansArabic.variable} h-full antialiased light`}
       suppressHydrationWarning
     >
       <head>
@@ -210,9 +192,10 @@ export default async function RootLayout({
           {/* Social Links */}
           <div className="flex gap-4 mt-2">
             {[
-              { icon: 'facebook', href: 'https://facebook.com/crystalblinds.eg' },
-              { icon: 'instagram', href: 'https://instagram.com/crystalblinds.eg' },
-              { icon: 'tiktok', href: 'https://tiktok.com/@crystalblinds.eg' }
+              { icon: 'facebook', href: 'https://www.facebook.com/profile.php?id=100076275195118#' },
+              { icon: 'instagram', href: 'https://www.instagram.com/crystalblinds?igsh=aTh0ZDBvbGl2dWtx' },
+              { icon: 'tiktok', href: 'https://www.tiktok.com/@crystal_blinds' },
+              { icon: 'linkedin', href: 'https://www.linkedin.com/company/crystal-for-blinds/posts/?feedView=all&viewAsMember=true' }
             ].map((social) => (
               <a 
                 key={social.icon}

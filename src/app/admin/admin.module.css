@@ -4,7 +4,7 @@
   height: 100vh;
   background: #faf8f5;
   color: #1e2532;
-  font-family: var(--font-tajawal), 'Tajawal', sans-serif;
+  font-family: var(--font-ibm-plex), 'IBM Plex Sans Arabic', sans-serif;
   direction: rtl;
   overflow: hidden;
 }

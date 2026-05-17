@@ -2,161 +2,12 @@
 
 import { useState } from "react";
 
-interface Product {
-  id: string;
-  images: string[];
-  alt: string;
-  labelEn: string;
-  labelAr: string;
-  descEn: string;
-  descAr: string;
-  detailsEn: string;
-  detailsAr: string;
-  category: string;
-  price: number;
-}
-
-const PRODUCTS: Product[] = [
-  {
-    id: "1",
-    images: [
-      "/photos for crystal/ستائر رول بلاك أوت.jpeg",
-      "/photos for crystal/1.jpeg",
-      "/photos for crystal/3.jpeg",
-    ],
-    alt: "Blackout Roller Blinds",
-    labelEn: "Blackout Roller Blinds",
-    labelAr: "ستائر رول بلاك أوت",
-    descEn: "Absolute Light & Heat Insulation",
-    descAr: "عزل مطلق للضوء والحرارة",
-    detailsEn: "Crafted to completely block out sunlight and UV rays, ensuring maximum privacy and a restful environment anytime.",
-    detailsAr: "مصممة لحجب أشعة الشمس والأشعة فوق البنفسجية بالكامل، مما يضمن أقصى درجات الخصوصية وبيئة مريحة في أي وقت.",
-    category: "Roller",
-    price: 1450,
-  },
-  {
-    id: "2",
-    images: [
-      "/photos for crystal/ستائر رول صن سكرين.jpeg",
-      "/photos for crystal/2.jpeg",
-      "/photos for crystal/4.jpeg",
-    ],
-    alt: "Sunscreen Roller Blinds",
-    labelEn: "Sunscreen Roller Blinds",
-    labelAr: "ستائر رول صن سكرين",
-    descEn: "Smart Protection & Natural Light",
-    descAr: "حماية ذكية وإضاءة طبيعية",
-    detailsEn: "Allows you to maintain your view while reducing glare and heat, perfect for living spaces that need natural lighting.",
-    detailsAr: "تسمح لك بالحفاظ على الرؤية مع تقليل الوهج والحرارة، مثالية لمساحات المعيشة التي تحتاج إلى إضاءة طبيعية.",
-    category: "Roller",
-    price: 1300,
-  },
-  {
-    id: "3",
-    images: [
-      "/photos for crystal/ستائر شرائح راسيه.jpeg",
-      "/photos for crystal/3.jpeg",
-      "/photos for crystal/1.jpeg",
-    ],
-    alt: "Vertical Blinds",
-    labelEn: "Vertical Blinds",
-    labelAr: "ستائر شرائح رأسية",
-    descEn: "Flexible Control for Wide Spaces",
-    descAr: "تحكم مرن للمساحات الواسعة",
-    detailsEn: "Ideal for large windows and sliding doors, offering excellent light control and a sleek, contemporary appearance.",
-    detailsAr: "مثالية للنوافذ الكبيرة والأبواب المنزلقة، توفر تحكماً ممتازاً في الإضاءة ومظهراً عصرياً وأنيقاً.",
-    category: "Classic",
-    price: 1100,
-  },
-  {
-    id: "4",
-    images: [
-      "/photos for crystal/ستائر زيبرا.jpeg",
-      "/photos for crystal/4.jpeg",
-      "/photos for crystal/2.jpeg",
-    ],
-    alt: "Zebra Blinds",
-    labelEn: "Zebra Blinds",
-    labelAr: "ستائر زيبرا",
-    descEn: "Modern Graduated Design",
-    descAr: "تصميم عصري متدرج",
-    detailsEn: "Features alternating sheer and solid fabric bands, giving you flexible control over light filtering and privacy in one brilliant design.",
-    detailsAr: "تتميز بأشرطة قماشية شفافة وصلبة متناوبة، مما يمنحك تحكماً مرناً في ترشيح الضوء والخصوصية في تصميم واحد رائع.",
-    category: "Modern",
-    price: 1650,
-  },
-  {
-    id: "5",
-    images: [
-      "/photos for crystal/ستائر شرائح معدنية.jpeg",
-      "/photos for crystal/1.jpeg",
-      "/photos for crystal/4.jpeg",
-    ],
-    alt: "Metallic Blinds",
-    labelEn: "Metallic/Wooden Blinds",
-    labelAr: "ستائر شرائح معدنية/خشبية",
-    descEn: "Durability & Luxury for Every Taste",
-    descAr: "متانة وفخامة لكل ذوق",
-    detailsEn: "Engineered for longevity and style, these blinds offer a timeless look with effortless adjustability for any modern interior.",
-    detailsAr: "مصممة لتدوم وتتميز بالأناقة، تقدم هذه الستائر مظهراً خالداً مع إمكانية تعديل سهلة لأي تصميم داخلي حديث.",
-    category: "Classic",
-    price: 1850,
-  },
-  {
-    id: "6",
-    images: [
-      "/photos for crystal/ستائر دبل سيستم.jpeg",
-      "/photos for crystal/3.jpeg",
-      "/photos for crystal/2.jpeg",
-    ],
-    alt: "Double System Blinds",
-    labelEn: "Double System Blinds",
-    labelAr: "ستائر دبل سيستم",
-    descEn: "Dual Intelligence & Unlimited Possibilities",
-    descAr: "ذكاء مزدوج وإمكانيات غير محدودة",
-    detailsEn: "A revolutionary design combining two distinct blinds in a single system, allowing seamless transition between sheer daytime elegance and nighttime privacy.",
-    detailsAr: "تصميم ثوري يجمع بين ستارتين مختلفتين في نظام واحد، مما يسمح بالانتقال السلس بين أناقة النهار الشفافة وخصوصية الليل.",
-    category: "Modern",
-    price: 2100,
-  },
-  {
-    id: "7",
-    images: [
-      "/photos for crystal/printed_roller.png",
-      "/photos for crystal/2.jpeg",
-      "/photos for crystal/4.jpeg",
-    ],
-    alt: "Printed Roller Blinds",
-    labelEn: "Printed Roller Blinds",
-    labelAr: "ستائر رول مطبوعه",
-    descEn: "Custom Designs & Patterns",
-    descAr: "تصاميم ونقوش مخصصة",
-    detailsEn: "Add a personalized touch to your space with our premium printed roller blinds, featuring high-quality customized patterns and UV-resistant prints.",
-    detailsAr: "أضف لمسة شخصية لمساحتك مع ستائر الرول المطبوعة الفاخرة، تتميز بنقوش مخصصة عالية الجودة وطباعة مقاومة للأشعة فوق البنفسجية.",
-    category: "Printed",
-    price: 1550,
-  },
-  {
-    id: "8",
-    images: [
-      "/photos for crystal/hospital_curtain.png",
-      "/photos for crystal/1.jpeg",
-      "/photos for crystal/3.jpeg",
-    ],
-    alt: "Bed Dividing Curtains",
-    labelEn: "Bed Dividing Curtains",
-    labelAr: "ستائر بين اسره",
-    descEn: "Professional Privacy Solutions",
-    descAr: "حلول احترافية للخصوصية",
-    detailsEn: "Professional-grade dividing curtains for hospitals and clinics. Designed for ultimate privacy, easy maintenance, and smooth track operation.",
-    detailsAr: "ستائر فواصل احترافية للمستشفيات والعيادات. مصممة لتوفير أقصى درجات الخصوصية، سهولة الصيانة، وحركة سلسة على المجرى.",
-    category: "Medical",
-    price: 1200,
-  },
-];
+import Link from "next/link";
+import { PRODUCTS, type Product } from "@/lib/products";
 
 const CATEGORIES = [
   { id: "All", labelEn: "All", labelAr: "الكل" },
+  { id: "Smart", labelEn: "Smart Blinds", labelAr: "ستائر ذكية" },
   { id: "Roller", labelEn: "Roller", labelAr: "رول" },
   { id: "Printed", labelEn: "Printed", labelAr: "مطبوعه" },
   { id: "Modern", labelEn: "Modern", labelAr: "عصري" },
@@ -166,13 +17,9 @@ const CATEGORIES = [
 
 function ProductCardItem({
   product,
-  isExpanded,
-  onToggleExpand,
   isAr
 }: {
   product: Product;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
   isAr: boolean;
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -249,36 +96,17 @@ function ProductCardItem({
           {isAr ? product.descAr : product.descEn}
         </p>
 
-        {/* Expandable Details Section */}
-        <div
-          className={`grid transition-all duration-500 ease-in-out w-full ${isExpanded ? "grid-rows-[1fr] opacity-100 mb-6" : "grid-rows-[0fr] opacity-0 mb-0"}`}
-        >
-          <div className="overflow-hidden flex flex-col gap-4">
-            <p className="text-[#26170c]/60 text-sm leading-relaxed border-t border-[#26170c]/10 pt-4">
-              {isAr ? product.detailsAr : product.detailsEn}
-            </p>
-            <a
-              href="#consult"
-              className={`inline-block text-center px-6 py-2.5 border border-[#26170c] text-[#26170c] text-xs font-bold uppercase tracking-widest rounded hover:bg-[#26170c] hover:text-[#faf8f5] transition-colors self-start ${isAr ? "self-end" : "self-start"}`}
-            >
-              {isAr ? "احجز زيارة" : "Book a Visit"}
-            </a>
-          </div>
-        </div>
-
-        <button
-          onClick={onToggleExpand}
-          className="flex items-center gap-2 text-[#d4af37] font-bold text-xs uppercase tracking-wider hover:opacity-70 transition-opacity mt-auto"
+        <Link
+          href={`/${isAr ? 'ar' : 'en'}/products/${product.id}`}
+          className={`flex items-center gap-2 text-white bg-[#26170c] px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-[#d4af37] transition-colors mt-auto w-fit shadow-md ${isAr ? "mr-auto flex-row-reverse" : "ml-auto"}`}
         >
           <span>
-            {isExpanded
-              ? (isAr ? "إخفاء التفاصيل" : "Show Less")
-              : (isAr ? "اكتشف المزيد" : "Explore More")}
+            {isAr ? "عرض التفاصيل" : "View Details"}
           </span>
-          <span className={`material-symbols-outlined text-sm transition-transform duration-300 ${isExpanded ? "rotate-[-90deg]" : (isAr ? "rotate-180" : "rotate-0")}`}>
-            {isExpanded ? "expand_less" : "arrow_forward"}
+          <span className={`material-symbols-outlined text-sm ${isAr ? "rotate-180" : ""}`}>
+            arrow_forward
           </span>
-        </button>
+        </Link>
       </div>
     </div>
   );
@@ -290,45 +118,195 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
 
   const filteredProducts = activeCategory === "All"
     ? PRODUCTS
+    : activeCategory === "Smart"
+    ? PRODUCTS.filter(p => !["8"].includes(p.id)) // All except medical
     : PRODUCTS.filter(p => p.category === activeCategory);
 
   return (
     <div className="w-full flex flex-col items-center px-6 md:px-12 pb-16 pt-8">
       {/* Filter Tabs */}
       <div className={`flex flex-wrap items-center justify-center gap-3 md:gap-6 mb-12 ${isAr ? "flex-row-reverse" : ""}`}>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => {
-              setActiveCategory(cat.id);
-              setExpandedId(null);
-            }}
-            className={`
-              px-6 py-2.5 rounded-full text-sm tracking-wider font-semibold transition-all duration-300
-              border
-              ${activeCategory === cat.id
-                ? "bg-[#26170c] border-[#26170c] text-[#faf8f5]"
-                : "bg-white/50 border-[#26170c]/20 text-[#26170c]/70 hover:border-[#d4af37] hover:text-[#d4af37]"
-              }
-            `}
-          >
-            {isAr ? cat.labelAr : cat.labelEn}
-          </button>
-        ))}
+        {CATEGORIES.map((cat) => {
+          const isSmart = cat.id === "Smart";
+          const isActive = activeCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setActiveCategory(cat.id);
+                setExpandedId(null);
+              }}
+              className={`
+                px-6 py-2.5 rounded-full text-sm tracking-wider font-semibold transition-all duration-300 border flex items-center gap-1.5
+                ${isActive
+                  ? (isSmart 
+                      ? "bg-[#d4af37] border-[#d4af37] text-white shadow-[0_0_20px_rgba(212,175,55,0.6)]" 
+                      : "bg-[#26170c] border-[#26170c] text-[#faf8f5]")
+                  : (isSmart 
+                      ? "bg-[#d4af37]/10 border-[#d4af37]/50 text-[#d4af37] hover:bg-[#d4af37]/20 shadow-[0_0_10px_rgba(212,175,55,0.3)] md:animate-pulse" 
+                      : "bg-white/50 border-[#26170c]/20 text-[#26170c]/70 hover:border-[#d4af37] hover:text-[#d4af37]")
+                }
+              `}
+            >
+              {isSmart && <span className="material-symbols-outlined text-[16px]">bolt</span>}
+              <span>{isAr ? cat.labelAr : cat.labelEn}</span>
+            </button>
+          );
+        })}
       </div>
 
+      {/* Smart Living Info Box */}
+      {activeCategory === "Smart" && (
+        <div className={`w-full max-w-7xl mb-16 relative group ${isAr ? "rtl text-right" : "ltr text-left"}`}>
+          {/* Animated Glow Behind */}
+          <div className="hidden md:block absolute -inset-1 bg-gradient-to-r from-[#d4af37]/40 via-[#26170c] to-[#d4af37]/40 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+          
+          <div className="relative bg-[#26170c] bg-gradient-to-br from-[#3d2b1f] via-[#26170c] to-[#110a05] text-white rounded-[2rem] p-5 sm:p-8 md:p-14 overflow-hidden border border-[#d4af37]/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+            
+            {/* Dynamic Background Effects */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#d4af37]/10 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#e9c176]/5 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
+
+            <div className="relative z-10 flex flex-col items-center mb-8 md:mb-12">
+              <div className="inline-flex items-center gap-2 px-5 md:px-6 py-2 md:py-2.5 rounded-full border border-[#d4af37]/30 bg-[#d4af37]/10 text-[#d4af37] shadow-[0_0_20px_rgba(212,175,55,0.2)] md:animate-pulse">
+                <span className="material-symbols-outlined text-[18px] md:text-[20px]">bolt</span>
+                <span className="font-bold tracking-widest uppercase text-[10px] md:text-xs text-center">
+                  {isAr ? "تكنولوجيا المنازل الذكية" : "Smart Home Technology"}
+                </span>
+              </div>
+              <p className="mt-4 md:mt-6 text-white/60 text-xs sm:text-sm md:text-base max-w-2xl text-center leading-relaxed">
+                {isAr 
+                  ? "قم بترقية نمط حياتك مع أنظمة التحكم الذكية للستائر. اختر من بين أفضل المحركات العالمية وأنظمة التشغيل التي تناسب تأسيس منزلك لتجربة مريحة وفخمة."
+                  : "Upgrade your lifestyle with our smart blind control systems. Choose from world-class motors and operating systems tailored to your home's setup for a truly luxurious and convenient experience."}
+              </p>
+            </div>
+            
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+              
+              {/* Brands Column */}
+              <div className="flex flex-col gap-4 md:gap-6">
+                <div className="flex items-center gap-3 md:gap-4 mb-1 md:mb-2">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#b8922a] flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.4)] shrink-0">
+                    <span className="material-symbols-outlined text-white text-[20px] md:text-[24px]">verified</span>
+                  </div>
+                  <h3 className="font-headline text-xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                    {isAr ? 'الماركات والضمان' : 'Brands & Warranty'}
+                  </h3>
+                </div>
+                
+                <div className="group/card bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl p-5 md:p-6 hover:bg-white/[0.06] hover:border-[#d4af37]/50 transition-all duration-300 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#d4af37]/10 blur-[50px] rounded-full group-hover/card:bg-[#d4af37]/20 transition-all"></div>
+                  <div className="relative z-10">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                      <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'ماركة سومفي (Somfy)' : 'Somfy Motors'}</h4>
+                      <span className="text-[9px] md:text-[10px] font-bold tracking-wider text-[#26170c] bg-[#d4af37] px-3 py-1 rounded-full uppercase shadow-[0_0_10px_rgba(212,175,55,0.3)] w-fit whitespace-nowrap">
+                        {isAr ? '10 سنوات ضمان' : '10-Year Warranty'}
+                      </span>
+                    </div>
+                    <p className="text-white/60 text-xs md:text-sm leading-relaxed">
+                      {isAr ? 'الاختيار الأول للأداء الشاق، جودة فرنسية عالمية لتجربة استثنائية وعمر افتراضي طويل.' : 'The premium choice for heavy duty performance, world-class French quality for an exceptional experience.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="group/card bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl p-5 md:p-6 hover:bg-white/[0.06] hover:border-white/30 transition-all duration-300 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-[50px] rounded-full group-hover/card:bg-white/10 transition-all"></div>
+                  <div className="relative z-10">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                      <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'ماركة أزارو (Azzaro)' : 'Azzaro Motors'}</h4>
+                      <span className="text-[9px] md:text-[10px] font-bold tracking-wider text-white bg-white/10 border border-white/20 px-3 py-1 rounded-full uppercase w-fit whitespace-nowrap">
+                        {isAr ? '5 سنوات ضمان' : '5-Year Warranty'}
+                      </span>
+                    </div>
+                    <p className="text-white/60 text-xs md:text-sm leading-relaxed">
+                      {isAr ? 'جودة ممتازة وسعر منافس، عملية وتدوم طويلاً لأداء يومي سلس وموثوق.' : 'Excellent quality at a competitive price, reliable and long-lasting for smooth daily operation.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Operating Systems Column */}
+              <div className="flex flex-col gap-4 md:gap-6">
+                <div className="flex items-center gap-3 md:gap-4 mb-1 md:mb-2">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 flex items-center justify-center backdrop-blur-sm shrink-0">
+                    <span className="material-symbols-outlined text-[#d4af37] text-[20px] md:text-[24px]">settings_remote</span>
+                  </div>
+                  <h3 className="font-headline text-xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                    {isAr ? 'أنظمة التشغيل' : 'Operating Systems'}
+                  </h3>
+                </div>
+                
+                <div className="group/card bg-gradient-to-br from-[#d4af37]/10 to-transparent border border-[#d4af37]/30 rounded-xl md:rounded-2xl p-5 md:p-6 hover:border-[#d4af37]/60 transition-all duration-300 relative overflow-hidden">
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="material-symbols-outlined text-[#d4af37]">smartphone</span>
+                      <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'تطبيق الموبايل' : 'Smart App'}</h4>
+                    </div>
+                    <p className="text-white/70 text-xs md:text-sm leading-relaxed">
+                      {isAr ? 'تحكم كامل من أي مكان عبر هاتفك الذكي وتكامل مع أنظمة المنزل الذكي.' : 'Complete control from anywhere via your smartphone, integrated with your smart home.'}
+                    </p>
+                    <div className="mt-4 flex items-start sm:items-center gap-2 bg-[#26170c]/50 p-3 rounded-lg border border-white/5">
+                      <span className="material-symbols-outlined text-[#d4af37] text-[16px] shrink-0 mt-0.5 sm:mt-0">info</span>
+                      <p className="text-[#d4af37] text-[10px] sm:text-xs font-medium tracking-wide">
+                        {isAr ? 'يتطلب أن يكون المكان متأسساً كمنزل ذكي (Smart Home).' : 'Requires a pre-established Smart Home infrastructure.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group/card bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl p-5 md:p-6 hover:bg-white/[0.06] hover:border-white/30 transition-all duration-300 relative overflow-hidden">
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="material-symbols-outlined text-white/70">router</span>
+                      <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'ريموت كنترول' : 'Remote Control'}</h4>
+                    </div>
+                    <p className="text-white/60 text-xs md:text-sm leading-relaxed mb-4">
+                      {isAr ? 'تشغيل لاسلكي مريح ومباشر للمساحات العادية بدون تعقيدات إضافية.' : 'Convenient wireless control for standard spaces without extra complexity.'}
+                    </p>
+                    <div className="flex items-start sm:items-center gap-2 bg-white/5 p-3 rounded-lg border border-white/5">
+                      <span className="material-symbols-outlined text-white/50 text-[16px] shrink-0 mt-0.5 sm:mt-0">power</span>
+                      <p className="text-white/60 text-[10px] sm:text-xs tracking-wide">
+                        {isAr ? 'يتطلب فقط تأسيس طرفين سلك (أرضي وكهرباء) بجوار الستارة.' : 'Requires only a basic power setup (Live/Neutral) near the window.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            
+            {/* Call to Action Inside the Box */}
+            <div className="relative z-10 mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center bg-white/5">
+                   <span className="material-symbols-outlined text-white/50">support_agent</span>
+                 </div>
+                 <div>
+                   <p className="text-white font-bold text-sm md:text-base">{isAr ? 'تحتاج مساعدة في الاختيار؟' : 'Need help choosing?'}</p>
+                   <p className="text-white/50 text-xs">{isAr ? 'تواصل مع فريقنا الهندسي مجاناً' : 'Contact our engineering team for free'}</p>
+                 </div>
+              </div>
+              <Link href={`/${isAr ? 'ar' : 'en'}/contact`} className="bg-white text-[#26170c] px-8 py-3 rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-[#d4af37] hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0">
+                {isAr ? 'استشارة مجانية' : 'Free Consultation'}
+              </Link>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* Grid of Cards */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl items-start ${isAr ? "rtl text-right" : "ltr text-left"}`}>
-        {filteredProducts.map((product) => (
-          <ProductCardItem
-            key={product.id}
-            product={product}
-            isExpanded={expandedId === product.id}
-            onToggleExpand={() => setExpandedId(expandedId === product.id ? null : product.id)}
-            isAr={isAr}
-          />
-        ))}
-      </div>
+      {activeCategory !== "Smart" && (
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl items-start ${isAr ? "rtl text-right" : "ltr text-left"}`}>
+          {filteredProducts.map((product) => (
+            <ProductCardItem
+              key={product.id}
+              product={product}
+              isAr={isAr}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

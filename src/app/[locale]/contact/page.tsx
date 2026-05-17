@@ -103,9 +103,10 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                 <p className={`text-[10px] font-semibold uppercase tracking-widest text-[#26170c]/50 mb-3 ${isAr ? 'text-right' : ''}`}>{isAr ? 'تابعنا' : 'Follow Us'}</p>
                 <div className={`flex gap-3 ${isAr ? 'flex-row-reverse' : ''}`}>
                   {[
-                    { name: 'facebook',  href: 'https://facebook.com/crystalblinds.eg' },
-                    { name: 'instagram', href: 'https://instagram.com/crystalblinds.eg' },
-                    { name: 'tiktok',    href: 'https://tiktok.com/@crystalblinds.eg' },
+                    { name: 'facebook',  href: 'https://www.facebook.com/profile.php?id=100076275195118#' },
+                    { name: 'instagram', href: 'https://www.instagram.com/crystalblinds?igsh=aTh0ZDBvbGl2dWtx' },
+                    { name: 'tiktok',    href: 'https://www.tiktok.com/@crystal_blinds' },
+                    { name: 'linkedin',  href: 'https://www.linkedin.com/company/crystal-for-blinds/posts/?feedView=all&viewAsMember=true' },
                   ].map(s => (
                     <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
                       className="w-10 h-10 rounded-full border border-[#26170c]/15 flex items-center justify-center hover:bg-[#C6AB8E] hover:border-[#26170c] transition-all duration-300 group">

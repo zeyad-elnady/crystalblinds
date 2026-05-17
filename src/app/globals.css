@@ -56,9 +56,9 @@
   --radius-xl: 0.5rem;
   --radius-full: 9999px;
 
-  --font-headline: Alexandria, "Noto Serif", serif;
-  --font-body: Tajawal, "Plus Jakarta Sans", sans-serif;
-  --font-label: Tajawal, "Plus Jakarta Sans", sans-serif;
+  --font-headline: var(--font-ibm-plex), sans-serif;
+  --font-body: var(--font-ibm-plex), sans-serif;
+  --font-label: var(--font-ibm-plex), sans-serif;
 }
 
 body {
