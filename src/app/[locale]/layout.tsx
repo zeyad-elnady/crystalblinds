@@ -166,7 +166,7 @@ export default async function RootLayout({
           aria-label="Contact on WhatsApp"
         >
           <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-8 h-8" alt="WhatsApp" />
-          <span className="absolute left-full ml-4 px-3 py-1 bg-[#26170c] text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap rounded">
+          <span className="absolute left-full ml-4 px-3 py-1 bg-[#6A311D] text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap rounded">
             {locale === 'ar' ? 'تواصل معنا' : 'Chat with us'}
           </span>
         </a>
@@ -179,7 +179,7 @@ export default async function RootLayout({
         </main>
 
         {/* Footer */}
-        <footer className={`w-full pt-16 md:pt-24 pb-12 px-8 bg-[#26170c] text-[#faf8f5] flex flex-col items-center text-center gap-6 ${locale === 'ar' ? 'rtl' : ''} rounded-t-[3rem] md:rounded-t-[0] border-t-[3px] border-[#d4af37] relative mt-10`}>
+        <footer className={`w-full pt-16 md:pt-24 pb-12 px-8 bg-[#6A311D] text-[#faf8f5] flex flex-col items-center text-center gap-6 ${locale === 'ar' ? 'rtl' : ''} rounded-t-[3rem] md:rounded-t-[0] border-t-[3px] border-[#d4af37] relative mt-10`}>
           {/* Logo */}
           <img src="/logo.png" alt="Crystal Blinds" className="h-16 md:h-24 object-contain" />
           

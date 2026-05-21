@@ -42,7 +42,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
       ))}
 
       {/* Overlays for premium dark/gold aesthetic */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#26170c]/70 via-[#26170c]/40 to-[#1a0f08]/90 z-20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#6A311D]/70 via-[#6A311D]/40 to-[#1a0f08]/90 z-20 pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] z-20 pointer-events-none" />
 
       {/* Content */}
@@ -88,7 +88,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <a 
             href="#collections" 
-            className="px-8 py-4 bg-[#d4af37] text-[#26170c] text-xs md:text-sm font-bold uppercase tracking-widest hover:bg-[#e9c176] transition-colors duration-300 shadow-[0_0_20px_rgba(212,175,55,0.3)]"
+            className="px-8 py-4 bg-[#d4af37] text-[#6A311D] text-xs md:text-sm font-bold uppercase tracking-widest hover:bg-[#e9c176] transition-colors duration-300 shadow-[0_0_20px_rgba(212,175,55,0.3)]"
           >
             {isAr ? "اكتشف مجموعتنا" : "Discover Collections"}
           </a>

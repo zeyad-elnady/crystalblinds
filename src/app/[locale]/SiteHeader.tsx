@@ -90,7 +90,7 @@ export default function SiteHeader({
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-[#26170c] flex flex-col pt-32 px-8 md:hidden transition-transform duration-500 ease-in-out ${
+        className={`fixed inset-0 z-40 bg-[#6A311D] flex flex-col pt-32 px-8 md:hidden transition-transform duration-500 ease-in-out ${
           menuOpen ? "translate-x-0" : isAr ? "translate-x-full" : "-translate-x-full"
         }`}
       >

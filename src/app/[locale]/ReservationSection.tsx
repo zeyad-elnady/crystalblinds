@@ -87,10 +87,10 @@ export default function ReservationSection({ isAr }: Props) {
         <div className="w-20 h-20 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center">
           <span className="material-symbols-outlined text-[#d4af37] text-4xl">check_circle</span>
         </div>
-        <h3 className="font-headline text-3xl text-[#26170c]">{isAr ? 'تم الحجز بنجاح!' : 'Booking Confirmed!'}</h3>
-        <p className="text-[#26170c]/70">{isAr ? 'سنتواصل معك قريباً لتأكيد الموعد.' : 'We will contact you shortly to confirm your appointment.'}</p>
+        <h3 className="font-headline text-3xl text-[#6A311D]">{isAr ? 'تم الحجز بنجاح!' : 'Booking Confirmed!'}</h3>
+        <p className="text-[#6A311D]/70">{isAr ? 'سنتواصل معك قريباً لتأكيد الموعد.' : 'We will contact you shortly to confirm your appointment.'}</p>
         <button onClick={() => { setDone(false); setStep(1); setSelectedDate(''); setSelectedTime(''); setForm({ name:'',phone:'',address:'',notes:'', curtainType: '', systemType: 'manual', motorBrand: 'somfy' }); }}
-          className="mt-2 px-8 py-3 bg-[#C6AB8E] text-[#26170c] rounded font-bold text-xs uppercase tracking-widest hover:bg-[#3d2b1f] transition-colors">
+          className="mt-2 px-8 py-3 bg-[#C6AB8E] text-[#6A311D] rounded font-bold text-xs uppercase tracking-widest hover:bg-[#3d2b1f] transition-colors">
           {isAr ? 'حجز موعد آخر' : 'Book Another'}
         </button>
       </div>
@@ -109,18 +109,18 @@ export default function ReservationSection({ isAr }: Props) {
           <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-4 block">
             {isAr ? 'احجز موعدك' : 'Book an Appointment'}
           </span>
-          <h3 className="font-headline text-4xl md:text-5xl text-[#26170c] leading-tight">
+          <h3 className="font-headline text-4xl md:text-5xl text-[#6A311D] leading-tight">
             {isAr ? 'حدد وقتاً' : 'Schedule a'} <span className="text-[#d4af37] italic font-light">{isAr ? 'مناسباً لك' : 'Visit'}</span>
           </h3>
-          <p className="text-[#26170c]/70 text-sm mt-3 max-w-lg">{isAr ? 'اختر نوع الخدمة والتاريخ والوقت المناسب، وسيتواصل معك فريقنا لتأكيد الموعد.' : 'Choose a service type, date, and time. Our team will contact you to confirm.'}</p>
+          <p className="text-[#6A311D]/70 text-sm mt-3 max-w-lg">{isAr ? 'اختر نوع الخدمة والتاريخ والوقت المناسب، وسيتواصل معك فريقنا لتأكيد الموعد.' : 'Choose a service type, date, and time. Our team will contact you to confirm.'}</p>
         </div>
 
         {/* Step indicators */}
         <div className={`flex items-center gap-4 mb-10 ${isAr ? 'flex-row-reverse' : ''}`}>
           {[1,2].map(s => (
             <div key={s} className={`flex items-center gap-2 ${isAr ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${step >= s ? 'bg-[#C6AB8E] text-[#26170c]' : 'bg-[#C6AB8E]/10 text-[#26170c]/40'}`}>{s}</div>
-              <span className={`text-sm font-medium ${step >= s ? 'text-[#26170c]' : 'text-[#26170c]/40'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${step >= s ? 'bg-[#C6AB8E] text-[#6A311D]' : 'bg-[#C6AB8E]/10 text-[#6A311D]/40'}`}>{s}</div>
+              <span className={`text-sm font-medium ${step >= s ? 'text-[#6A311D]' : 'text-[#6A311D]/40'}`}>
                 {s === 1 ? (isAr ? 'اختر الموعد' : 'Pick a Slot') : (isAr ? 'بياناتك' : 'Your Details')}
               </span>
               {s < 2 && <div className={`w-12 h-px mx-2 ${step > s ? 'bg-[#d4af37]' : 'bg-[#C6AB8E]/10'}`} />}
@@ -136,7 +136,7 @@ export default function ReservationSection({ isAr }: Props) {
             <div className={`flex gap-3 mb-6 ${isAr ? 'flex-row-reverse' : ''}`}>
               {(['inspection','installation'] as AppointmentType[]).map(t => (
                 <button key={t} onClick={() => setApptType(t)}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border transition-all ${apptType === t ? 'bg-[#C6AB8E] text-[#26170c] border-[#26170c]' : 'bg-white/50 border-[#26170c]/20 text-[#26170c]/70 hover:border-[#d4af37]'}`}>
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border transition-all ${apptType === t ? 'bg-[#C6AB8E] text-[#6A311D] border-[#6A311D]' : 'bg-white/50 border-[#6A311D]/20 text-[#6A311D]/70 hover:border-[#d4af37]'}`}>
                   {t === 'inspection' ? (isAr ? 'معاينة' : 'Inspection') : (isAr ? 'تركيب' : 'Installation')}
                 </button>
               ))}
@@ -144,21 +144,21 @@ export default function ReservationSection({ isAr }: Props) {
 
             {/* Month nav */}
             <div className={`flex items-center justify-between mb-5 ${isAr ? 'flex-row-reverse' : ''}`}>
-              <button onClick={prevMonth} className="w-9 h-9 rounded-full border border-[#26170c]/10 flex items-center justify-center hover:border-[#d4af37] transition-colors">
-                <span className="material-symbols-outlined text-[#26170c] text-lg">{isAr ? 'chevron_right' : 'chevron_left'}</span>
+              <button onClick={prevMonth} className="w-9 h-9 rounded-full border border-[#6A311D]/10 flex items-center justify-center hover:border-[#d4af37] transition-colors">
+                <span className="material-symbols-outlined text-[#6A311D] text-lg">{isAr ? 'chevron_right' : 'chevron_left'}</span>
               </button>
-              <span className="font-headline text-[#26170c] font-semibold text-sm">
+              <span className="font-headline text-[#6A311D] font-semibold text-sm">
                 {isAr ? AR_MONTHS[month] : EN_MONTHS[month]} {year}
               </span>
-              <button onClick={nextMonth} className="w-9 h-9 rounded-full border border-[#26170c]/10 flex items-center justify-center hover:border-[#d4af37] transition-colors">
-                <span className="material-symbols-outlined text-[#26170c] text-lg">{isAr ? 'chevron_left' : 'chevron_right'}</span>
+              <button onClick={nextMonth} className="w-9 h-9 rounded-full border border-[#6A311D]/10 flex items-center justify-center hover:border-[#d4af37] transition-colors">
+                <span className="material-symbols-outlined text-[#6A311D] text-lg">{isAr ? 'chevron_left' : 'chevron_right'}</span>
               </button>
             </div>
 
             {/* Day headers */}
             <div className="grid grid-cols-7 mb-2">
               {(isAr ? AR_DAYS : EN_DAYS).map(d => (
-                <div key={d} className="text-center text-[10px] font-semibold text-[#26170c]/40 py-1">{d}</div>
+                <div key={d} className="text-center text-[10px] font-semibold text-[#6A311D]/40 py-1">{d}</div>
               ))}
             </div>
 
@@ -177,10 +177,10 @@ export default function ReservationSection({ isAr }: Props) {
                   <button key={d} disabled={isPast || full}
                     onClick={() => { setSelectedDate(dateStr); setSelectedTime(''); }}
                     className={`relative aspect-square rounded-lg text-sm font-medium flex flex-col items-center justify-center transition-all duration-200
-                      ${isSel ? 'bg-[#C6AB8E] text-[#26170c] shadow-md' : ''}
-                      ${!isSel && isToday ? 'border-2 border-[#d4af37] text-[#26170c]' : ''}
-                      ${!isSel && !isToday && !isPast && !full ? 'hover:bg-[#d4af37]/10 text-[#26170c]' : ''}
-                      ${isPast || full ? 'text-[#26170c]/20 cursor-not-allowed' : ''}
+                      ${isSel ? 'bg-[#C6AB8E] text-[#6A311D] shadow-md' : ''}
+                      ${!isSel && isToday ? 'border-2 border-[#d4af37] text-[#6A311D]' : ''}
+                      ${!isSel && !isToday && !isPast && !full ? 'hover:bg-[#d4af37]/10 text-[#6A311D]' : ''}
+                      ${isPast || full ? 'text-[#6A311D]/20 cursor-not-allowed' : ''}
                     `}>
                     <span>{d}</span>
                     {booked > 0 && !isSel && !isPast && (
@@ -192,7 +192,7 @@ export default function ReservationSection({ isAr }: Props) {
             </div>
 
             {/* Legend */}
-            <div className={`flex items-center gap-4 mt-5 text-[10px] text-[#26170c]/50 ${isAr ? 'flex-row-reverse justify-end' : ''}`}>
+            <div className={`flex items-center gap-4 mt-5 text-[10px] text-[#6A311D]/50 ${isAr ? 'flex-row-reverse justify-end' : ''}`}>
               <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#d4af37]" />{isAr ? 'محجوز جزئياً' : 'Partially booked'}</span>
               <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-red-400" />{isAr ? 'ممتلئ' : 'Full'}</span>
             </div>
@@ -204,7 +204,7 @@ export default function ReservationSection({ isAr }: Props) {
               <>
                 {/* Time slots */}
                 <div className="bg-white/60 border border-white/50 rounded-2xl p-6 backdrop-blur-xl shadow-[0_10px_30px_rgba(38,23,12,0.06)]">
-                  <h4 className={`font-semibold text-[#26170c] mb-4 text-sm ${isAr ? 'text-right' : ''}`}>
+                  <h4 className={`font-semibold text-[#6A311D] mb-4 text-sm ${isAr ? 'text-right' : ''}`}>
                     {selectedDate
                       ? (isAr ? `الأوقات المتاحة — ${new Date(selectedDate+'T12:00').toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long'})}` : `Available Times — ${new Date(selectedDate+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}`)
                       : (isAr ? 'اختر يوماً أولاً' : 'Select a day first')}
@@ -217,9 +217,9 @@ export default function ReservationSection({ isAr }: Props) {
                         return (
                           <button key={t} disabled={booked} onClick={() => setSelectedTime(t)}
                             className={`py-2.5 rounded-lg text-sm font-medium border transition-all duration-200
-                              ${isSel ? 'bg-[#C6AB8E] text-[#26170c] border-[#26170c]' : ''}
-                              ${!isSel && !booked ? 'border-[#26170c]/15 text-[#26170c] hover:border-[#d4af37]' : ''}
-                              ${booked ? 'bg-[#C6AB8E]/5 text-[#26170c]/25 border-transparent cursor-not-allowed line-through' : ''}
+                              ${isSel ? 'bg-[#C6AB8E] text-[#6A311D] border-[#6A311D]' : ''}
+                              ${!isSel && !booked ? 'border-[#6A311D]/15 text-[#6A311D] hover:border-[#d4af37]' : ''}
+                              ${booked ? 'bg-[#C6AB8E]/5 text-[#6A311D]/25 border-transparent cursor-not-allowed line-through' : ''}
                             `}>
                             {t}
                           </button>
@@ -227,7 +227,7 @@ export default function ReservationSection({ isAr }: Props) {
                       })}
                     </div>
                   ) : (
-                    <div className="h-32 flex items-center justify-center text-[#26170c]/30 text-sm">
+                    <div className="h-32 flex items-center justify-center text-[#6A311D]/30 text-sm">
                       {isAr ? 'سيظهر هنا الأوقات المتاحة' : 'Available times will appear here'}
                     </div>
                   )}
@@ -236,16 +236,16 @@ export default function ReservationSection({ isAr }: Props) {
                 {/* Next step btn */}
                 <button disabled={!selectedDate || !selectedTime}
                   onClick={() => setStep(2)}
-                  className="w-full py-4 bg-[#C6AB8E] text-[#26170c] rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#3d2b1f] transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2">
+                  className="w-full py-4 bg-[#C6AB8E] text-[#6A311D] rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#3d2b1f] transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2">
                   <span>{isAr ? 'التالي — أدخل بياناتك' : 'Next — Enter Details'}</span>
                   <span className={`material-symbols-outlined text-base ${isAr ? 'rotate-180' : ''}`}>arrow_forward</span>
                 </button>
 
                 {/* Summary */}
                 {selectedDate && selectedTime && (
-                  <div className={`bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 text-sm text-[#26170c] ${isAr ? 'text-right' : ''}`}>
+                  <div className={`bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 text-sm text-[#6A311D] ${isAr ? 'text-right' : ''}`}>
                     <p className="font-semibold mb-1">{isAr ? 'ملخص الاختيار' : 'Selection Summary'}</p>
-                    <p className="text-[#26170c]/70">{isAr ? (apptType === 'inspection' ? 'معاينة' : 'تركيب') : (apptType === 'inspection' ? 'Inspection' : 'Installation')} · {selectedDate} · {selectedTime}</p>
+                    <p className="text-[#6A311D]/70">{isAr ? (apptType === 'inspection' ? 'معاينة' : 'تركيب') : (apptType === 'inspection' ? 'Inspection' : 'Installation')} · {selectedDate} · {selectedTime}</p>
                   </div>
                 )}
               </>
@@ -253,8 +253,8 @@ export default function ReservationSection({ isAr }: Props) {
               /* Step 2 — form */
               <div className="bg-white/60 border border-white/50 rounded-2xl p-6 md:p-8 backdrop-blur-xl shadow-[0_10px_30px_rgba(38,23,12,0.06)]">
                 <div className={`flex items-center justify-between mb-6 ${isAr ? 'flex-row-reverse' : ''}`}>
-                  <h4 className="font-semibold text-[#26170c] text-base">{isAr ? 'بياناتك' : 'Your Details'}</h4>
-                  <button onClick={() => setStep(1)} className="text-xs text-[#26170c]/50 hover:text-[#d4af37] transition-colors flex items-center gap-1">
+                  <h4 className="font-semibold text-[#6A311D] text-base">{isAr ? 'بياناتك' : 'Your Details'}</h4>
+                  <button onClick={() => setStep(1)} className="text-xs text-[#6A311D]/50 hover:text-[#d4af37] transition-colors flex items-center gap-1">
                     <span className={`material-symbols-outlined text-sm ${isAr ? '' : 'rotate-180'}`}>arrow_forward</span>
                     {isAr ? 'رجوع' : 'Back'}
                   </button>
@@ -269,7 +269,7 @@ export default function ReservationSection({ isAr }: Props) {
                       <select 
                         value={form.curtainType} 
                         onChange={e => setForm(p => ({ ...p, curtainType: e.target.value }))}
-                        className={`bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`}
+                        className={`bg-transparent border-b border-[#6A311D]/10 pb-3 text-[#6A311D] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`}
                       >
                         <option value="">{isAr ? 'اختر النوع' : 'Select Type'}</option>
                         <option value="Roller Blinds">{isAr ? 'ستائر رول' : 'Roller Blinds'}</option>
@@ -289,7 +289,7 @@ export default function ReservationSection({ isAr }: Props) {
                     <select 
                       value={form.systemType} 
                       onChange={e => setForm(p => ({ ...p, systemType: e.target.value }))}
-                      className={`bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`}
+                      className={`bg-transparent border-b border-[#6A311D]/10 pb-3 text-[#6A311D] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`}
                     >
                       <option value="manual">{isAr ? 'يدوي (Manual)' : 'Manual'}</option>
                       <option value="smart_app">{isAr ? 'تطبيق ذكي (Smart App)' : 'Smart App'}</option>
@@ -305,20 +305,20 @@ export default function ReservationSection({ isAr }: Props) {
                       <select 
                         value={form.motorBrand} 
                         onChange={e => setForm(p => ({ ...p, motorBrand: e.target.value }))}
-                        className={`bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`}
+                        className={`bg-transparent border-b border-[#6A311D]/10 pb-3 text-[#6A311D] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`}
                       >
                         <option value="somfy">{isAr ? 'سومفي (ضمان 10 سنوات)' : 'Somfy (10 Years Warranty)'}</option>
                         <option value="azzaro">{isAr ? 'أزارو (ضمان 5 سنوات)' : 'Azzaro (5 Years Warranty)'}</option>
                       </select>
                       
                       {form.systemType === 'smart_app' && (
-                        <p className={`text-xs text-[#26170c]/80 mt-2 bg-[#d4af37]/20 border border-[#d4af37]/30 p-2.5 rounded-md ${isAr ? 'text-right' : ''}`}>
-                          <span className="font-bold text-[#26170c]">تنبيه:</span> {isAr ? 'تأكد من وجود تأسيس سمارت (Smart Home) في المنزل.' : 'Ensure smart home infrastructure is already set up in your house.'}
+                        <p className={`text-xs text-[#6A311D]/80 mt-2 bg-[#d4af37]/20 border border-[#d4af37]/30 p-2.5 rounded-md ${isAr ? 'text-right' : ''}`}>
+                          <span className="font-bold text-[#6A311D]">تنبيه:</span> {isAr ? 'تأكد من وجود تأسيس سمارت (Smart Home) في المنزل.' : 'Ensure smart home infrastructure is already set up in your house.'}
                         </p>
                       )}
                       {form.systemType === 'remote' && (
-                        <p className={`text-xs text-[#26170c]/80 mt-2 bg-[#d4af37]/20 border border-[#d4af37]/30 p-2.5 rounded-md ${isAr ? 'text-right' : ''}`}>
-                          <span className="font-bold text-[#26170c]">تنبيه:</span> {isAr ? 'تأكد من توفير وصلة كهرباء (أرضي وكهرباء) بالقرب من الشباك.' : 'Ensure a power connection is available near the window.'}
+                        <p className={`text-xs text-[#6A311D]/80 mt-2 bg-[#d4af37]/20 border border-[#d4af37]/30 p-2.5 rounded-md ${isAr ? 'text-right' : ''}`}>
+                          <span className="font-bold text-[#6A311D]">تنبيه:</span> {isAr ? 'تأكد من توفير وصلة كهرباء (أرضي وكهرباء) بالقرب من الشباك.' : 'Ensure a power connection is available near the window.'}
                         </p>
                       )}
                     </div>
@@ -334,14 +334,14 @@ export default function ReservationSection({ isAr }: Props) {
                       <label className={`text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37] ${isAr ? 'text-right' : ''}`}>{f.label}</label>
                       <input type={f.type} dir={f.dir} value={form[f.key as keyof typeof form]} placeholder={f.ph}
                         onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                        className={`bg-transparent border-b border-[#26170c]/10 pb-3 text-[#26170c] placeholder:text-[#26170c]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`} />
+                        className={`bg-transparent border-b border-[#6A311D]/10 pb-3 text-[#6A311D] placeholder:text-[#6A311D]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : ''}`} />
                     </div>
                   ))}
 
                   {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
                   <button onClick={handleSubmit} disabled={submitting}
-                    className="mt-2 py-4 bg-[#C6AB8E] text-[#26170c] rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#3d2b1f] transition-colors disabled:opacity-50 shadow-lg flex items-center justify-center gap-2">
+                    className="mt-2 py-4 bg-[#C6AB8E] text-[#6A311D] rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#3d2b1f] transition-colors disabled:opacity-50 shadow-lg flex items-center justify-center gap-2">
                     <span className="material-symbols-outlined text-base">calendar_add_on</span>
                     {submitting ? (isAr ? 'جاري الحجز...' : 'Booking...') : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}
                   </button>

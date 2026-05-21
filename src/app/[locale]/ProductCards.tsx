@@ -84,21 +84,21 @@ function ProductCardItem({
             {isAr ? "الأقمشة الفاخرة" : "Artisan Fabrics"}
           </span>
           {/* Price */}
-          <span className="text-[#26170c] font-bold text-sm bg-white/50 px-2.5 py-1 rounded shadow-sm border border-white/60">
+          <span className="text-[#6A311D] font-bold text-sm bg-white/50 px-2.5 py-1 rounded shadow-sm border border-white/60">
             {product.price.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
           </span>
         </div>
 
-        <h4 className="font-headline text-xl text-[#26170c] font-bold mb-3">
+        <h4 className="font-headline text-xl text-[#6A311D] font-bold mb-3">
           {isAr ? product.labelAr : product.labelEn}
         </h4>
-        <p className="text-[#26170c]/70 text-sm leading-relaxed mb-4 flex-1">
+        <p className="text-[#6A311D]/70 text-sm leading-relaxed mb-4 flex-1">
           {isAr ? product.descAr : product.descEn}
         </p>
 
         <Link
           href={`/${isAr ? 'ar' : 'en'}/products/${product.id}`}
-          className={`flex items-center gap-2 text-white bg-[#26170c] px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-[#d4af37] transition-colors mt-auto w-fit shadow-md ${isAr ? "mr-auto flex-row-reverse" : "ml-auto"}`}
+          className={`flex items-center gap-2 text-white bg-[#6A311D] px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-[#d4af37] transition-colors mt-auto w-fit shadow-md ${isAr ? "mr-auto flex-row-reverse" : "ml-auto"}`}
         >
           <span>
             {isAr ? "عرض التفاصيل" : "View Details"}
@@ -141,10 +141,10 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
                 ${isActive
                   ? (isSmart 
                       ? "bg-[#d4af37] border-[#d4af37] text-white shadow-[0_0_20px_rgba(212,175,55,0.6)]" 
-                      : "bg-[#26170c] border-[#26170c] text-[#faf8f5]")
+                      : "bg-[#6A311D] border-[#6A311D] text-[#faf8f5]")
                   : (isSmart 
                       ? "bg-[#d4af37]/10 border-[#d4af37]/50 text-[#d4af37] hover:bg-[#d4af37]/20 shadow-[0_0_10px_rgba(212,175,55,0.3)] md:animate-pulse" 
-                      : "bg-white/50 border-[#26170c]/20 text-[#26170c]/70 hover:border-[#d4af37] hover:text-[#d4af37]")
+                      : "bg-white/50 border-[#6A311D]/20 text-[#6A311D]/70 hover:border-[#d4af37] hover:text-[#d4af37]")
                 }
               `}
             >
@@ -159,9 +159,9 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
       {activeCategory === "Smart" && (
         <div className={`w-full max-w-7xl mb-16 relative group ${isAr ? "rtl text-right" : "ltr text-left"}`}>
           {/* Animated Glow Behind */}
-          <div className="hidden md:block absolute -inset-1 bg-gradient-to-r from-[#d4af37]/40 via-[#26170c] to-[#d4af37]/40 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+          <div className="hidden md:block absolute -inset-1 bg-gradient-to-r from-[#d4af37]/40 via-[#6A311D] to-[#d4af37]/40 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
           
-          <div className="relative bg-[#26170c] bg-gradient-to-br from-[#3d2b1f] via-[#26170c] to-[#110a05] text-white rounded-[2rem] p-5 sm:p-8 md:p-14 overflow-hidden border border-[#d4af37]/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <div className="relative bg-[#6A311D] bg-gradient-to-br from-[#3d2b1f] via-[#6A311D] to-[#110a05] text-white rounded-[2rem] p-5 sm:p-8 md:p-14 overflow-hidden border border-[#d4af37]/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
             
             {/* Dynamic Background Effects */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#d4af37]/10 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
@@ -199,7 +199,7 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
                   <div className="relative z-10">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
                       <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'ماركة سومفي (Somfy)' : 'Somfy Motors'}</h4>
-                      <span className="text-[9px] md:text-[10px] font-bold tracking-wider text-[#26170c] bg-[#d4af37] px-3 py-1 rounded-full uppercase shadow-[0_0_10px_rgba(212,175,55,0.3)] w-fit whitespace-nowrap">
+                      <span className="text-[9px] md:text-[10px] font-bold tracking-wider text-[#6A311D] bg-[#d4af37] px-3 py-1 rounded-full uppercase shadow-[0_0_10px_rgba(212,175,55,0.3)] w-fit whitespace-nowrap">
                         {isAr ? '10 سنوات ضمان' : '10-Year Warranty'}
                       </span>
                     </div>
@@ -245,7 +245,7 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
                     <p className="text-white/70 text-xs md:text-sm leading-relaxed">
                       {isAr ? 'تحكم كامل من أي مكان عبر هاتفك الذكي وتكامل مع أنظمة المنزل الذكي.' : 'Complete control from anywhere via your smartphone, integrated with your smart home.'}
                     </p>
-                    <div className="mt-4 flex items-start sm:items-center gap-2 bg-[#26170c]/50 p-3 rounded-lg border border-white/5">
+                    <div className="mt-4 flex items-start sm:items-center gap-2 bg-[#6A311D]/50 p-3 rounded-lg border border-white/5">
                       <span className="material-symbols-outlined text-[#d4af37] text-[16px] shrink-0 mt-0.5 sm:mt-0">info</span>
                       <p className="text-[#d4af37] text-[10px] sm:text-xs font-medium tracking-wide">
                         {isAr ? 'يتطلب أن يكون المكان متأسساً كمنزل ذكي (Smart Home).' : 'Requires a pre-established Smart Home infrastructure.'}
@@ -286,7 +286,7 @@ export default function ProductCards({ isAr }: { isAr: boolean }) {
                    <p className="text-white/50 text-xs">{isAr ? 'تواصل مع فريقنا الهندسي مجاناً' : 'Contact our engineering team for free'}</p>
                  </div>
               </div>
-              <Link href={`/${isAr ? 'ar' : 'en'}/contact`} className="bg-white text-[#26170c] px-8 py-3 rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-[#d4af37] hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0">
+              <Link href={`/${isAr ? 'ar' : 'en'}/contact`} className="bg-white text-[#6A311D] px-8 py-3 rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-[#d4af37] hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0">
                 {isAr ? 'استشارة مجانية' : 'Free Consultation'}
               </Link>
             </div>

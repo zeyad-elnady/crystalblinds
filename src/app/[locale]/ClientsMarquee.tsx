@@ -15,7 +15,7 @@ const CLIENTS = [
 
 export default function ClientsMarquee({ isAr }: { isAr: boolean }) {
   return (
-    <section className="py-16 md:py-24 bg-[#26170c] overflow-hidden relative border-y border-[#d4af37]/20">
+    <section className="py-16 md:py-24 bg-[#6A311D] overflow-hidden relative border-y border-[#d4af37]/20">
       <div className="max-w-7xl mx-auto px-6 md:px-12 mb-10 text-center">
         <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-2 block">
           {isAr ? "شركاء النجاح" : "Our Partners"}
@@ -26,10 +26,10 @@ export default function ClientsMarquee({ isAr }: { isAr: boolean }) {
       </div>
 
       {/* Marquee Container */}
-      <div className="relative w-full flex bg-[#26170c] py-10" style={{ overflow: "hidden", display: "flex" }} dir="ltr">
+      <div className="relative w-full flex bg-[#6A311D] py-10" style={{ overflow: "hidden", display: "flex" }} dir="ltr">
         {/* Left/Right fading edges for a premium look */}
-        <div className="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-[#26170c] to-transparent z-10 pointer-events-none" />
-        <div className="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-[#26170c] to-transparent z-10 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-[#6A311D] to-transparent z-10 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-[#6A311D] to-transparent z-10 pointer-events-none" />
 
         <div className="flex w-max animate-[marquee_40s_linear_infinite] items-center hover:[animation-play-state:paused]">
           {/* We duplicate the list to make the loop seamless */}
