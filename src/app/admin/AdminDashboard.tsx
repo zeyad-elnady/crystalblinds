@@ -112,7 +112,7 @@ export default function AdminDashboard() {
       setProducts(data.map((row: any) => ({
         id: row.id, images: row.images || [], alt: row.alt, labelEn: row.label_en, labelAr: row.label_ar,
         descEn: row.desc_en, descAr: row.desc_ar, detailsEn: row.details_en, detailsAr: row.details_ar,
-        category: row.category, price: row.price
+        category: row.category, price: row.price, is_active: row.is_active ?? true, colors: row.colors || []
       })));
     }
     setLoadingProducts(false);
