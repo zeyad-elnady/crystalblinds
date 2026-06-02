@@ -33,8 +33,8 @@ export const LampContainer = ({
         )}
       >
         <motion.div
-          initial={{ opacity: 0.5, width: isMobile ? "8rem" : "15rem" }}
-          whileInView={{ opacity: 1, width: isMobile ? "18rem" : "30rem" }}
+          initial={{ opacity: 0, width: isMobile ? "12rem" : "15rem" }}
+          animate={{ opacity: 1, width: isMobile ? "18rem" : "30rem" }}
           transition={{
             delay: 2.2,
             duration: 0.8,
@@ -53,8 +53,8 @@ export const LampContainer = ({
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0.5, width: isMobile ? "8rem" : "15rem" }}
-          whileInView={{ opacity: 1, width: isMobile ? "18rem" : "30rem" }}
+          initial={{ opacity: 0, width: isMobile ? "12rem" : "15rem" }}
+          animate={{ opacity: 1, width: isMobile ? "18rem" : "30rem" }}
           transition={{
             delay: 2.2,
             duration: 0.8,
@@ -83,8 +83,8 @@ export const LampContainer = ({
         ></div>
 
         <motion.div
-          initial={{ width: isMobile ? "5rem" : "8rem" }}
-          whileInView={{ width: isMobile ? "10rem" : "16rem" }}
+          initial={{ opacity: 0, width: isMobile ? "8rem" : "8rem" }}
+          animate={{ opacity: 1, width: isMobile ? "10rem" : "16rem" }}
           transition={{
             delay: 2.2,
             duration: 0.8,
@@ -97,8 +97,8 @@ export const LampContainer = ({
         ></motion.div>
 
         <motion.div
-          initial={{ width: isMobile ? "8rem" : "15rem" }}
-          whileInView={{ width: isMobile ? "18rem" : "30rem" }}
+          initial={{ opacity: 0, width: isMobile ? "12rem" : "15rem" }}
+          animate={{ opacity: 1, width: isMobile ? "18rem" : "30rem" }}
           transition={{
             delay: 2.2,
             duration: 0.8,
