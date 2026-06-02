@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import Link from "next/link";
-import { PRODUCTS, type Product } from "@/lib/products";
+import { type Product } from "@/lib/products";
 
 const CATEGORIES = [
   { id: "All", labelEn: "All", labelAr: "الكل" },
@@ -112,15 +112,15 @@ function ProductCardItem({
   );
 }
 
-export default function ProductCards({ isAr }: { isAr: boolean }) {
+export default function ProductCards({ isAr, products }: { isAr: boolean, products: Product[] }) {
   const [activeCategory, setActiveCategory] = useState("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredProducts = activeCategory === "All"
-    ? PRODUCTS
+    ? products
     : activeCategory === "Smart"
-    ? PRODUCTS.filter(p => !["8"].includes(p.id)) // All except medical
-    : PRODUCTS.filter(p => p.category === activeCategory);
+    ? products.filter(p => !["Medical"].includes(p.category)) // Example logic for Smart
+    : products.filter(p => p.category === activeCategory);
 
   return (
     <div className="w-full flex flex-col items-center px-6 md:px-12 pb-16 pt-8">

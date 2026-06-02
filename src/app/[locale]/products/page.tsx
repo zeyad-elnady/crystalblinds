@@ -1,4 +1,5 @@
 import ProductCards from "../ProductCards";
+import { getProducts } from "@/lib/products";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -11,6 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function ProductsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const isAr = locale === 'ar';
+  const products = await getProducts();
 
   return (
     <>
@@ -47,7 +49,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
           </p>
         </div>
         <div className="relative z-10 w-full">
-          <ProductCards isAr={isAr} />
+          <ProductCards isAr={isAr} products={products} />
         </div>
       </section>
 

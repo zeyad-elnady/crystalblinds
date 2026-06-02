@@ -14,31 +14,23 @@ export default function ProductDetailsClient({
   locale: string;
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [colorPreviewImage, setColorPreviewImage] = useState<string | null>(null);
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
-  const [selectedColor, setSelectedColor] = useState(0);
-  const [selectedType, setSelectedType] = useState(0);
-  const [selectedPieces, setSelectedPieces] = useState(1);
-
-  const colors = [
-    { id: 0, bg: "bg-[#e5d9c5]", nameEn: "Ivory", nameAr: "عاجي" },
-    { id: 1, bg: "bg-[#d1cbbd]", nameEn: "Sand", nameAr: "رملي" },
-    { id: 2, bg: "bg-[#8c8c8c]", nameEn: "Pearl", nameAr: "لؤلؤي" },
-    { id: 3, bg: "bg-[#a6968d]", nameEn: "Taupe", nameAr: "طوبي" },
-  ];
-
-  const types = [
-    { id: 0, nameEn: "Pinch Pleat", nameAr: "كسرات" },
-    { id: 1, nameEn: "Pencil Pleat", nameAr: "قلم" },
-    { id: 2, nameEn: "Tempo Wave", nameAr: "ويف" },
-    { id: 3, nameEn: "Eyelets", nameAr: "حلقات" },
-  ];
+  
+  const colors = product.colors || [];
+  const [selectedColor, setSelectedColor] = useState<string | null>(colors.length > 0 ? colors[0].id : null);
 
   const breadcrumbs = [
     { name: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
     { name: isAr ? "المنتجات" : "Products", href: `/${locale}/products` },
     { name: isAr ? product.labelAr : product.labelEn, href: "#" },
   ];
+
+  const widthVal = parseFloat(width) || 0;
+  const heightVal = parseFloat(height) || 0;
+  const area = widthVal > 0 && heightVal > 0 ? (widthVal / 100) * (heightVal / 100) : 1;
+  const totalPrice = Math.round(product.price * area);
 
   return (
     <div className={`min-h-screen bg-[#faf8f5] text-[#6A311D] pt-32 pb-24 ${isAr ? "rtl" : "ltr"}`}>
@@ -59,26 +51,27 @@ export default function ProductDetailsClient({
           ))}
         </nav>
 
+        {/* Title & Price Header */}
+        <div className={`flex flex-col gap-2 ${isAr ? "text-right" : "text-left"} mb-8`}>
+          <h1 className="font-headline text-3xl md:text-4xl font-bold text-[#6A311D]">
+            {isAr ? product.labelAr : product.labelEn}
+          </h1>
+          <div className="text-[#d4af37] font-bold text-xl mt-2">
+            {isAr ? "يبدأ من" : "from"} {product.price.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
+          </div>
+          <div className="flex items-center gap-1 mt-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <span key={star} className="material-symbols-outlined text-[#d4af37] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                star
+              </span>
+            ))}
+            <span className="text-[#6A311D]/50 text-xs ml-2">(24)</span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Left Column: Images and Details */}
           <div className="lg:col-span-7 flex flex-col gap-8">
-            {/* Title & Price Header */}
-            <div className={`flex flex-col gap-2 ${isAr ? "text-right" : "text-left"}`}>
-              <h1 className="font-headline text-3xl md:text-4xl font-bold text-[#6A311D]">
-                {isAr ? product.labelAr : product.labelEn}
-              </h1>
-              <div className="text-[#d4af37] font-bold text-xl mt-2">
-                {isAr ? "يبدأ من" : "from"} {product.price.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} className="material-symbols-outlined text-[#d4af37] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    star
-                  </span>
-                ))}
-                <span className="text-[#6A311D]/50 text-xs ml-2">(24)</span>
-              </div>
-            </div>
 
             {/* Gallery */}
             <div className="flex gap-4">
@@ -105,7 +98,7 @@ export default function ProductDetailsClient({
                   </span>
                 </div>
                 <img
-                  src={product.images[currentImageIndex]}
+                  src={colorPreviewImage || product.images[currentImageIndex]}
                   alt={product.alt}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
@@ -228,18 +221,31 @@ export default function ProductDetailsClient({
                   </button>
                   
                   <div className="flex gap-3 overflow-x-auto hide-scrollbar px-2">
+                    {colors.length === 0 && (
+                      <span className="text-sm text-[#6A311D]/50">{isAr ? "لا توجد ألوان متاحة حالياً" : "No colors available currently"}</span>
+                    )}
                     {colors.map((c) => (
                       <div key={c.id} className="flex flex-col items-center gap-2">
                         <button 
-                          onClick={() => setSelectedColor(c.id)}
-                          className={`w-[60px] h-[60px] rounded border shadow-sm transition-all p-1 ${selectedColor === c.id ? "border-[#d4af37] bg-white" : "border-[#6A311D]/15 hover:border-[#6A311D]/30"}`}
+                          onClick={() => {
+                            if (c.isSoldOut) return;
+                            setSelectedColor(c.id);
+                            setColorPreviewImage(c.image || null);
+                          }}
+                          disabled={c.isSoldOut}
+                          className={`relative w-[60px] h-[60px] rounded border shadow-sm transition-all p-1 ${selectedColor === c.id ? "border-[#d4af37] bg-white" : "border-[#6A311D]/15 hover:border-[#6A311D]/30"} ${c.isSoldOut ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
-                          <div className={`w-full h-full rounded-sm ${c.bg} border border-[#6A311D]/5`} />
+                          <div className="w-full h-full rounded-sm border border-[#6A311D]/5" style={{ backgroundColor: c.hex }} />
+                          {c.isSoldOut && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-full h-0.5 bg-red-500 rotate-45 absolute" />
+                              <div className="w-full h-0.5 bg-red-500 -rotate-45 absolute" />
+                            </div>
+                          )}
                         </button>
-                        <span className="text-[10px] text-[#6A311D]/60">{isAr ? c.nameAr : c.nameEn}</span>
-                        <button className="text-[9px] border border-[#d4af37] text-[#d4af37] rounded-full px-2 py-0.5 font-bold uppercase hover:bg-[#d4af37] hover:text-white transition-colors">
-                          {isAr ? "عينة مجانية" : "Samples free"}
-                        </button>
+                        <span className={`text-[10px] mt-1 ${c.isSoldOut ? "text-red-500 font-bold" : "text-[#6A311D]/60"}`}>
+                          {c.isSoldOut ? (isAr ? "نفذت" : "Sold Out") : (isAr ? c.nameAr : c.nameEn)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -248,84 +254,48 @@ export default function ProductDetailsClient({
                     <span className="material-symbols-outlined">chevron_right</span>
                   </button>
                 </div>
-
-                <div className="mt-5 flex gap-3 text-xs text-[#6A311D]/70 items-start">
-                  <span className="material-symbols-outlined text-[18px] text-[#6A311D]/40 shrink-0">tips_and_updates</span>
-                  <p>
-                    <span className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#6A311D]">{isAr ? "نصيحة:" : "Advice:"}</span>
-                    {isAr ? " لضمان اللون المناسب، اختر العينات المجانية الخاصة بك." : " for a good color check, choose your FREE samples."}
-                  </p>
-                </div>
               </div>
 
-              {/* Type of Curtains */}
-              <div className={`p-6 md:p-8 ${isAr ? "text-right" : "text-left"}`}>
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="font-bold text-[#6A311D]">{isAr ? "نوع الستارة" : "Type of curtains"}</h3>
-                  <span className="material-symbols-outlined text-[16px] text-[#6A311D]/40">info</span>
-                </div>
-                
-                <div className="grid grid-cols-4 gap-2">
-                  {types.map((t) => (
-                    <button 
-                      key={t.id}
-                      onClick={() => setSelectedType(t.id)}
-                      className={`flex flex-col items-center gap-2 p-2 rounded border bg-white transition-all ${
-                        selectedType === t.id ? "border-[#d4af37] shadow-[0_0_10px_rgba(212,175,55,0.15)] ring-1 ring-[#d4af37]/20" : "border-[#6A311D]/10 hover:border-[#6A311D]/30"
-                      }`}
-                    >
-                      <div className="w-full aspect-[3/4] bg-[#faf8f5] border border-[#6A311D]/5 rounded flex items-center justify-center text-[#6A311D]/20">
-                        <span className="material-symbols-outlined opacity-50">curtains</span>
-                      </div>
-                      <span className="text-[9px] font-bold text-[#6A311D] whitespace-nowrap text-center">{isAr ? t.nameAr : t.nameEn}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              {/* Pieces */}
-              <div className={`p-6 md:p-8 ${isAr ? "text-right" : "text-left"}`}>
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="font-bold text-[#6A311D]">{isAr ? "عدد القطع للشباك؟" : "How many pieces per window?"}</h3>
-                  <span className="material-symbols-outlined text-[16px] text-[#6A311D]/40">info</span>
-                </div>
-                
-                <div className="flex gap-4">
-                  {[1, 2].map((num) => (
-                    <button 
-                      key={num}
-                      onClick={() => setSelectedPieces(num)}
-                      className={`flex flex-col items-center gap-2 w-16 transition-all ${selectedPieces === num ? "opacity-100" : "opacity-50 hover:opacity-100"}`}
-                    >
-                      <div className={`w-full aspect-square border-2 bg-white rounded flex items-center justify-center ${selectedPieces === num ? "border-[#6A311D]" : "border-[#6A311D]/20"}`}>
-                        <div className={`w-8 h-8 border border-[#6A311D]/20 flex ${num === 2 ? "divide-x divide-[#6A311D]/20" : ""}`}>
-                          {num === 2 ? <><div className="flex-1 bg-[#faf8f5]"></div><div className="flex-1 bg-[#faf8f5]"></div></> : <div className="flex-1 bg-[#faf8f5]"></div>}
-                        </div>
-                      </div>
-                      <span className={`text-[10px] font-bold ${selectedPieces === num ? "text-[#6A311D]" : "text-[#6A311D]/60"}`}>
-                        {num} {isAr ? (num === 1 ? "قطعة" : "قطعتين") : (num === 1 ? "piece" : "pieces")}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+
             </div>
 
             {/* Price Box */}
             <div className={`flex flex-col sm:flex-row gap-6 items-center justify-between p-6 md:p-8 bg-white border border-[#6A311D]/10 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.03)] ${isAr ? "flex-row-reverse" : ""}`}>
               <div className={`flex flex-col gap-1 ${isAr ? "text-right" : "text-left"}`}>
-                <span className="text-[#6A311D] font-bold">{isAr ? "خصم ٢٥٪" : "-25% off"}</span>
-                <span className="text-xs text-[#6A311D]/60 font-medium">
-                  {isAr ? "تخصيص كامل للمنتج حسب طلبك" : "Fully customized to your needs"}
+                <span className="text-[#6A311D] font-bold text-2xl">
+                  {totalPrice.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
+                </span>
+                <span className="text-xs text-[#6A311D]/60 font-medium mt-1" dir="rtl">
+                  {isAr ? 
+                    `المساحة ${area.toFixed(2)} م² × سعر المتر ${product.price} ج.م` : 
+                    `Area ${area.toFixed(2)} m² × Meter price ${product.price} EGP`}
                 </span>
               </div>
               
-              <Link 
-                href={`/${locale}/#reserve`}
-                className="w-full sm:w-auto bg-gradient-to-r from-[#d4af37] to-[#b8922a] text-white px-8 py-3.5 rounded-lg font-bold shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.4)] hover:-translate-y-0.5 transition-all text-center"
-              >
-                {isAr ? "احجز السعر الآن" : "Calculate price"}
-              </Link>
+              <div className="flex gap-4 w-full sm:w-auto">
+                <Link 
+                  href={`/${locale}/#reserve`}
+                  className="flex-1 sm:flex-none bg-white text-[#d4af37] border-2 border-[#d4af37] px-8 py-3.5 rounded-lg font-bold shadow-sm hover:bg-[#faf8f5] hover:-translate-y-0.5 transition-all text-center whitespace-nowrap"
+                >
+                  {isAr ? "احجز معاينة" : "Book Visit"}
+                </Link>
+                {product.is_active === false ? (
+                  <button 
+                    disabled
+                    className="flex-1 sm:flex-none bg-gray-400 text-white px-8 py-3.5 rounded-lg font-bold shadow-sm text-center whitespace-nowrap cursor-not-allowed"
+                  >
+                    {isAr ? "نفذت الكمية" : "Sold Out"}
+                  </button>
+                ) : (
+                  <Link 
+                    href={`/${locale}/checkout/${product.id}?width=${width}&height=${height}&color=${selectedColor}&pieces=1`}
+                    className="flex-1 sm:flex-none bg-gradient-to-r from-[#d4af37] to-[#b8922a] text-white px-8 py-3.5 rounded-lg font-bold shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.4)] hover:-translate-y-0.5 transition-all text-center whitespace-nowrap"
+                  >
+                    {isAr ? "اشتري الآن" : "Buy Now"}
+                  </Link>
+                )}
+              </div>
             </div>
 
             {/* Shipping Info */}

@@ -282,3 +282,107 @@
   .statValue { font-size: 1.25rem; }
 }
 
+/* ========================================= */
+/* Website Edit UI                           */
+/* ========================================= */
+
+.websiteEditContainer {
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
+.assetsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.assetCard {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(106, 49, 29, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.assetImageWrapper {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background-color: #f3f4f6;
+  border-bottom: 1px solid rgba(106, 49, 29, 0.1);
+  overflow: hidden;
+}
+
+.assetImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.assetInfo {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.assetTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #6A311D;
+  margin: 0 0 0.25rem 0;
+}
+
+.assetKey {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-family: monospace;
+  margin: 0 0 1rem 0;
+}
+
+.assetActions {
+  margin-top: auto;
+  display: flex;
+}
+
+.uploadBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background-color: #6A311D;
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.uploadBtn:hover {
+  background-color: #d4af37;
+}
+
+.uploadingBtn {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: #d1d5db;
+  color: #374151;
+}
+
+.uploadingBtn:hover {
+  background-color: #d1d5db;
+}
+
+.hiddenInput {
+  display: none;
+}
