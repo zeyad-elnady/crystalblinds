@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 export default function SiteHeader({
   locale,
@@ -12,6 +13,18 @@ export default function SiteHeader({
   navLinks: { label: string; href: string }[];
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  const getTogglePath = () => {
+    if (!pathname) return isAr ? "/en" : "/ar";
+    const segments = pathname.split("/");
+    if (segments[1] === locale) {
+      segments[1] = isAr ? "en" : "ar";
+    } else {
+      return isAr ? "/en" : "/ar";
+    }
+    return segments.join("/") || "/";
+  };
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -29,7 +42,7 @@ export default function SiteHeader({
     <>
       <header
         id="site-header"
-        className="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[95%] max-w-[1400px] z-50 bg-[#352517]/95 backdrop-blur-md rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 border border-[#d4af37]/20"
+        className="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[95%] max-w-[1400px] z-50 bg-[#3E2723]/95 backdrop-blur-md rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 border border-[#d4af37]/20"
       >
         <div className="px-6 md:px-8 h-16 md:h-20 flex items-center justify-between gap-8">
           {/* ── Left: Nav Links (desktop) / Hamburger (mobile) ── */}
@@ -40,7 +53,7 @@ export default function SiteHeader({
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`relative text-[13px] font-medium uppercase text-[#faf8f5]/80 hover:text-white transition-colors duration-200 group ${isAr ? "tracking-normal" : "tracking-[0.12em]"}`}
+                  className={`relative text-[13px] font-medium uppercase text-[#FFFDFA]/80 hover:text-white transition-colors duration-200 group ${isAr ? "tracking-normal" : "tracking-[0.12em]"}`}
                 >
                   {link.label}
                   <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#d4af37] group-hover:w-full transition-[width] duration-300 ease-out" />
@@ -77,9 +90,9 @@ export default function SiteHeader({
           <div className={`flex items-center gap-4 ${isAr ? "order-1" : "order-3"}`}>
             {/* Language toggle */}
             <a
-              href={isAr ? "/en" : "/ar"}
+              href={getTogglePath()}
               id="lang-toggle"
-              className="flex items-center gap-1.5 text-[10px] md:text-[12px] font-medium uppercase tracking-widest text-[#faf8f5]/80 hover:text-white transition-colors duration-200 border border-[#faf8f5]/20 rounded-full px-2 py-1 md:px-4 md:py-1.5 hover:border-[#d4af37] hover:bg-[#d4af37]/10"
+              className="flex items-center gap-1.5 text-[10px] md:text-[12px] font-medium uppercase tracking-widest text-[#FFFDFA]/80 hover:text-white transition-colors duration-200 border border-[#FFFDFA]/20 rounded-full px-2 py-1 md:px-4 md:py-1.5 hover:border-[#d4af37] hover:bg-[#d4af37]/10"
             >
               <span className="material-symbols-outlined text-[14px] md:text-[16px]">language</span>
               {isAr ? "EN" : "عر"}
@@ -90,7 +103,7 @@ export default function SiteHeader({
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-[#6A311D] flex flex-col pt-32 px-8 md:hidden transition-transform duration-500 ease-in-out ${
+        className={`fixed inset-0 z-40 bg-[#3E2723] flex flex-col pt-32 px-8 md:hidden transition-transform duration-500 ease-in-out ${
           menuOpen ? "translate-x-0" : isAr ? "translate-x-full" : "-translate-x-full"
         }`}
       >
@@ -110,7 +123,7 @@ export default function SiteHeader({
 
           {/* Language toggle inside mobile menu */}
           <a
-            href={isAr ? "/en" : "/ar"}
+            href={getTogglePath()}
             className="flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-widest text-white/70 hover:text-white transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">language</span>

@@ -61,7 +61,7 @@ export const Component = () => {
     );
 
   return (
-    <div className="bg-white text-black">
+    <div className="bg-[#FFFDFA] text-black">
       <div className='min-h-screen w-screen flex flex-col items-center justify-center'>
         <h1 className='text-6xl max-w-2xl text-center'>PARALLAX SCROLL FEATURE SECTION</h1>
         <p className='mt-20 flex items-center gap-1.5 text-sm'>SCROLL <ArrowDown size={15} /></p>

@@ -64,11 +64,11 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
 
   if (success) {
     return (
-      <div className={`min-h-[60vh] flex flex-col items-center justify-center bg-[#faf8f5] text-[#6A311D] ${isAr ? "rtl" : "ltr"}`}>
-        <div className="bg-white p-12 rounded-2xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] text-center max-w-md border border-[#6A311D]/10">
+      <div className={`min-h-[60vh] flex flex-col items-center justify-center bg-[#FFFDFA] text-[#3E2723] ${isAr ? "rtl" : "ltr"}`}>
+        <div className="bg-[#FFFDFA] p-12 rounded-2xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] text-center max-w-md border border-[#3E2723]/10">
           <span className="material-symbols-outlined text-6xl text-[#065f46] mb-4">check_circle</span>
           <h2 className="text-3xl font-bold mb-4 font-headline">{isAr ? "تم استلام طلبك بنجاح!" : "Order placed successfully!"}</h2>
-          <p className="text-[#6A311D]/70 mb-8">{isAr ? "سنتواصل معك قريباً لتأكيد الطلب." : "We will contact you shortly to confirm your order."}</p>
+          <p className="text-[#3E2723]/70 mb-8">{isAr ? "سنتواصل معك قريباً لتأكيد الطلب." : "We will contact you shortly to confirm your order."}</p>
           <div className="w-8 h-8 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin mx-auto"></div>
         </div>
       </div>
@@ -76,29 +76,29 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
   }
 
   return (
-    <div className={`min-h-screen bg-[#faf8f5] text-[#6A311D] pt-32 pb-24 ${isAr ? "rtl" : "ltr"}`}>
+    <div className={`min-h-screen bg-[#FFFDFA] text-[#3E2723] pt-32 pb-24 ${isAr ? "rtl" : "ltr"}`}>
       <div className="max-w-[1200px] mx-auto px-6 md:px-12">
-        <h1 className="font-headline text-3xl md:text-4xl font-bold text-[#6A311D] mb-8 text-center border-b-2 border-[#6A311D] pb-4 inline-block">
+        <h1 className="font-headline text-3xl md:text-4xl font-bold text-[#3E2723] mb-8 text-center border-b-2 border-[#3E2723] pb-4 inline-block">
           {isAr ? "إتمام الطلب" : "Checkout"}
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mt-8">
           
           {/* Order Summary */}
-          <div className="lg:col-span-5 bg-white p-8 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] border border-[#6A311D]/10 sticky top-32">
-            <h2 className="text-xl font-bold mb-6 border-b border-[#6A311D]/10 pb-4">{isAr ? "ملخص الطلب" : "Order Summary"}</h2>
+          <div className="lg:col-span-5 bg-[#FFFDFA] p-8 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] border border-[#3E2723]/10 sticky top-32">
+            <h2 className="text-xl font-bold mb-6 border-b border-[#3E2723]/10 pb-4">{isAr ? "ملخص الطلب" : "Order Summary"}</h2>
             
             <div className="flex gap-4 mb-6">
-              <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 border border-[#6A311D]/10">
+              <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 border border-[#3E2723]/10">
                 <img src={product.images[0]} alt={product.alt} className="w-full h-full object-cover" />
               </div>
               <div>
-                <h3 className="font-bold text-[#6A311D] text-lg">{isAr ? product.labelAr : product.labelEn}</h3>
-                <p className="text-sm text-[#6A311D]/60 mt-1">{isAr ? product.category : product.category}</p>
+                <h3 className="font-bold text-[#3E2723] text-lg">{isAr ? product.labelAr : product.labelEn}</h3>
+                <p className="text-sm text-[#3E2723]/60 mt-1">{isAr ? product.category : product.category}</p>
               </div>
             </div>
 
-            <div className="space-y-3 text-sm text-[#6A311D]/80 mb-6 bg-[#faf8f5] p-4 rounded-lg">
+            <div className="space-y-3 text-sm text-[#3E2723]/80 mb-6 bg-[#FFFDFA] p-4 rounded-lg">
               <div className="flex justify-between">
                 <span>{isAr ? "الأبعاد:" : "Dimensions:"}</span>
                 <span dir="ltr">{width} x {height} cm</span>
@@ -109,8 +109,8 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
               </div>
             </div>
 
-            <div className="border-t border-[#6A311D]/10 pt-6">
-              <div className="flex justify-between items-center text-xl font-bold text-[#6A311D]">
+            <div className="border-t border-[#3E2723]/10 pt-6">
+              <div className="flex justify-between items-center text-xl font-bold text-[#3E2723]">
                 <span>{isAr ? "الإجمالي" : "Total"}</span>
                 <span>{totalPrice.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}</span>
               </div>
@@ -123,29 +123,29 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
           </div>
 
           {/* Checkout Form */}
-          <div className="lg:col-span-7 bg-white p-8 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] border border-[#6A311D]/10">
-            <h2 className="text-xl font-bold mb-6 border-b border-[#6A311D]/10 pb-4">{isAr ? "بيانات التوصيل" : "Delivery Details"}</h2>
+          <div className="lg:col-span-7 bg-[#FFFDFA] p-8 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] border border-[#3E2723]/10">
+            <h2 className="text-xl font-bold mb-6 border-b border-[#3E2723]/10 pb-4">{isAr ? "بيانات التوصيل" : "Delivery Details"}</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-[#6A311D] mb-2">{isAr ? "الاسم الكامل *" : "Full Name *"}</label>
+                <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "الاسم الكامل *" : "Full Name *"}</label>
                 <input 
                   type="text" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#faf8f5] border border-[#6A311D]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
+                  className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
                   placeholder={isAr ? "أدخل اسمك الكامل" : "Enter your full name"}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#6A311D] mb-2">{isAr ? "رقم الهاتف *" : "Phone Number *"}</label>
+                <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "رقم الهاتف *" : "Phone Number *"}</label>
                 <input 
                   type="tel" 
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-[#faf8f5] border border-[#6A311D]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
+                  className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
                   placeholder="01xxxxxxxxx"
                   dir="ltr"
                   required
@@ -153,11 +153,11 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#6A311D] mb-2">{isAr ? "العنوان التفصيلي *" : "Detailed Address *"}</label>
+                <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "العنوان التفصيلي *" : "Detailed Address *"}</label>
                 <textarea 
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full bg-[#faf8f5] border border-[#6A311D]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors min-h-[120px] resize-none"
+                  className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors min-h-[120px] resize-none"
                   placeholder={isAr ? "المحافظة، المدينة، الشارع، رقم المبنى والشقة" : "City, Street, Building & Apartment"}
                   required
                 />

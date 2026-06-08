@@ -25,7 +25,7 @@ export default function LoginForm() {
   return (
     <div className={styles.loginPage}>
       <div className={styles.loginCard}>
-        <img src="/logo.png" alt="Crystal Blinds" className={styles.loginLogo} />
+        <img src="/logo2.png" alt="Crystal Blinds" className={styles.loginLogo} />
         <h1 className={styles.loginTitle}>لوحة التحكم</h1>
         <p className={styles.loginSubtitle}>تسجيل الدخول للمتابعة</p>
         <div className={styles.divider} />

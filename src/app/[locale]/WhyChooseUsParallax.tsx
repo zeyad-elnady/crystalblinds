@@ -73,12 +73,12 @@ const ParallaxSection = ({ section, isAr }: { section: any; isAr: boolean }) => 
       )}
     >
       <motion.div style={{ y: translateContent }} className="flex-1 w-full max-w-lg">
-        <div className="text-5xl md:text-6xl font-headline text-[#6A311D] leading-[1.15] drop-shadow-sm">
+        <div className="text-5xl md:text-6xl font-headline text-[#3E2723] leading-[1.15] drop-shadow-sm">
           {section.title}
         </div>
         <motion.p
           style={{ y: translateContent }}
-          className="text-[#6A311D]/80 text-lg md:text-xl mt-6 md:mt-8 leading-[1.8]"
+          className="text-[#3E2723]/80 text-lg md:text-xl mt-6 md:mt-8 leading-[1.8]"
         >
           {section.description}
         </motion.p>
@@ -104,20 +104,17 @@ export default function WhyChooseUsParallax({ isAr }: { isAr: boolean }) {
   const sections = getSections(isAr);
 
   return (
-    <section id="collections" className="bg-white text-[#6A311D] w-full relative z-20 overflow-hidden">
+    <section id="collections" className="bg-[#FFFDFA] text-[#3E2723] w-full relative z-20 overflow-hidden">
       <div className="min-h-[70vh] w-full flex flex-col items-center justify-center px-6 relative pt-20">
-        {/* Glow effect */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#d4af37]/10 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="text-center relative z-10 mt-20">
+<div className="text-center relative z-10 mt-20">
           <span className="text-[#d4af37] uppercase tracking-[0.3em] text-sm md:text-base font-semibold mb-6 block drop-shadow-sm">
             {isAr ? "لماذا نحن" : "WHY CHOOSE US"}
           </span>
-          <h3 className="font-headline text-5xl md:text-7xl lg:text-[6rem] text-[#6A311D] leading-[1.1] mb-8">
+          <h3 className="font-headline text-5xl md:text-7xl lg:text-[6rem] text-[#3E2723] leading-[1.1] mb-8">
             {isAr ? "اختلاف كريستال للستائر" : "The Crystal Blinds"} <br className="hidden md:block" />
             <span className="text-[#d4af37] italic font-light">{isAr ? "" : "Difference"}</span>
           </h3>
-          <p className="text-[#6A311D]/70 text-lg md:text-xl max-w-2xl mx-auto leading-[1.8] pb-12">
+          <p className="text-[#3E2723]/70 text-lg md:text-xl max-w-2xl mx-auto leading-[1.8] pb-12">
             {isAr
               ? "نحن لا نبيع ستائر فقط، بل نصنع تجربة متكاملة من الأناقة والاحترافية لتلبي ذوقك الرفيع."
               : "We don't just sell blinds; we craft a complete experience of elegance and professionalism tailored to your refined taste."}

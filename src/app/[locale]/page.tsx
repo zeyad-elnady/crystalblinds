@@ -1,11 +1,11 @@
 import ProductCards from "./ProductCards";
 import ReservationSection from "./ReservationSection";
 import ModernHero from "./ModernHero";
-import WhyChooseUsParallax from "./WhyChooseUsParallax";
 import AboutUs from "./AboutUs";
 import ClientsMarquee from "./ClientsMarquee";
 import { getWebsiteImages } from "@/lib/images";
 import { getProducts } from "@/lib/products";
+import { getPartners } from "@/lib/partners";
 
 export default async function HomePage({
   params,
@@ -16,6 +16,7 @@ export default async function HomePage({
   const isAr = locale === "ar";
   const images = await getWebsiteImages();
   const products = await getProducts();
+  const partners = await getPartners();
 
   return (
     <>
@@ -24,24 +25,18 @@ export default async function HomePage({
         <ModernHero isAr={isAr} />
       </section>
 
-      {/* ── Why Choose Us ── */}
-      <WhyChooseUsParallax isAr={isAr} />
-
       {/* ── Best Sellers ── */}
-      <section id="products" className="relative bg-[#faf8f5] text-[#6A311D] overflow-hidden flex flex-col py-0">
+      <section id="products" className="relative bg-[#FFFDFA] text-[#3E2723] overflow-hidden flex flex-col py-0">
         {/* Decorative background elements */}
-        <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-[#d4af37]/10 rounded-full blur-[150px] pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-[#e9c176]/10 rounded-full blur-[150px] pointer-events-none" />
-
-        {/* Section heading */}
+{/* Section heading */}
         <div className="relative z-10 max-w-7xl mx-auto w-full text-center pt-16 md:pt-24 pb-8 px-6 shrink-0">
           <span className="text-[#d4af37] text-xs uppercase tracking-[0.3em] font-semibold">
             {isAr ? "الأكثر مبيعاً" : "Best Sellers"}
           </span>
-          <h3 className="font-headline text-3xl md:text-4xl text-[#6A311D] mt-2">
+          <h3 className="font-headline text-3xl md:text-4xl text-[#3E2723] mt-2">
             {isAr ? "اكتشف منتجاتنا المميزة" : "Discover Our Top Picks"}
           </h3>
-          <p className="text-[#6A311D]/70 font-light mt-2 md:mt-3 tracking-wide text-sm md:text-base max-w-2xl mx-auto">
+          <p className="text-[#3E2723]/70 font-light mt-2 md:mt-3 tracking-wide text-sm md:text-base max-w-2xl mx-auto">
             {isAr
               ? "مجموعة من الستائر الأكثر طلباً التي تجمع بين الأناقة والعملية لتناسب كافة احتياجاتك."
               : "A selection of our most requested blinds that combine elegance and functionality for all your needs."}
@@ -50,7 +45,7 @@ export default async function HomePage({
 
         {/* Product Cards */}
         <div className="relative z-10 w-full">
-          <ProductCards isAr={isAr} products={products} />
+          <ProductCards isAr={isAr} products={products} isBrief={true} />
         </div>
 
         {/* View All Button */}
@@ -71,7 +66,7 @@ export default async function HomePage({
       <AboutUs isAr={isAr} />
 
       {/* ── Clients Marquee ── */}
-      <ClientsMarquee isAr={isAr} />
+      <ClientsMarquee isAr={isAr} partners={partners} />
 
 
 

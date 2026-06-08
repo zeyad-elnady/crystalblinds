@@ -4,6 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { type Product } from "@/lib/products";
 
+const STANDARD_SIZES = [
+  { width: "100", height: "100", labelAr: "١٠٠ × ١٠٠ سم", labelEn: "100 x 100 cm" },
+  { width: "120", height: "120", labelAr: "١٢٠ × ١٢٠ سم", labelEn: "120 x 120 cm" },
+  { width: "140", height: "140", labelAr: "١٤٠ × ١٤٠ سم", labelEn: "140 x 140 cm" },
+  { width: "150", height: "160", labelAr: "١٥٠ × ١٦٠ سم", labelEn: "150 x 160 cm" },
+  { width: "160", height: "200", labelAr: "١٦٠ × ٢٠٠ سم", labelEn: "160 x 200 cm" },
+  { width: "180", height: "220", labelAr: "١٨٠ × ٢٢٠ سم", labelEn: "180 x 220 cm" },
+  { width: "200", height: "220", labelAr: "٢٠٠ × ٢٢٠ سم", labelEn: "200 x 220 cm" },
+];
+
 export default function ProductDetailsClient({
   product,
   isAr,
@@ -33,10 +43,10 @@ export default function ProductDetailsClient({
   const totalPrice = Math.round(product.price * area);
 
   return (
-    <div className={`min-h-screen bg-[#faf8f5] text-[#6A311D] pt-32 pb-24 ${isAr ? "rtl" : "ltr"}`}>
+    <div className={`min-h-screen bg-[#FFFDFA] text-[#3E2723] pt-32 pb-24 ${isAr ? "rtl" : "ltr"}`}>
       <div className="max-w-[1400px] mx-auto px-6 md:px-12">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-[#6A311D]/60 mb-8">
+        <nav className="flex items-center gap-2 text-sm text-[#3E2723]/60 mb-8">
           {breadcrumbs.map((crumb, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <Link href={crumb.href} className="hover:text-[#d4af37] transition-colors">
@@ -53,7 +63,7 @@ export default function ProductDetailsClient({
 
         {/* Title & Price Header */}
         <div className={`flex flex-col gap-2 ${isAr ? "text-right" : "text-left"} mb-8`}>
-          <h1 className="font-headline text-3xl md:text-4xl font-bold text-[#6A311D]">
+          <h1 className="font-headline text-3xl md:text-4xl font-bold text-[#3E2723]">
             {isAr ? product.labelAr : product.labelEn}
           </h1>
           <div className="text-[#d4af37] font-bold text-xl mt-2">
@@ -65,7 +75,7 @@ export default function ProductDetailsClient({
                 star
               </span>
             ))}
-            <span className="text-[#6A311D]/50 text-xs ml-2">(24)</span>
+            <span className="text-[#3E2723]/50 text-xs ml-2">(24)</span>
           </div>
         </div>
 
@@ -91,9 +101,9 @@ export default function ProductDetailsClient({
               </div>
               
               {/* Main Image */}
-              <div className="flex-1 relative aspect-[4/5] rounded-xl overflow-hidden bg-white/50 border border-[#6A311D]/10 shadow-sm group">
+              <div className="flex-1 relative aspect-[4/5] rounded-xl overflow-hidden bg-[#FFFDFA]/50 border border-[#3E2723]/10 shadow-sm group">
                 <div className="absolute top-4 w-full text-center z-10 pointer-events-none">
-                  <span className="bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase text-[#6A311D] shadow-sm">
+                  <span className="bg-[#FFFDFA]/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase text-[#3E2723] shadow-sm">
                     {isAr ? product.category : product.category.toUpperCase()}
                   </span>
                 </div>
@@ -107,17 +117,17 @@ export default function ProductDetailsClient({
 
             {/* Description & Features */}
             <div className={`mt-4 ${isAr ? "text-right" : "text-left"}`}>
-              <p className="text-[#6A311D]/80 leading-relaxed mb-6">
+              <p className="text-[#3E2723]/80 leading-relaxed mb-6">
                 {isAr ? product.detailsAr : product.detailsEn}
               </p>
               
-              <div className="w-full h-px bg-[#6A311D]/10 my-8 relative flex justify-center">
-                <div className="absolute -top-3 w-6 h-6 rounded-full bg-[#faf8f5] border border-[#6A311D]/20 flex items-center justify-center">
+              <div className="w-full h-px bg-[#3E2723]/10 my-8 relative flex justify-center">
+                <div className="absolute -top-3 w-6 h-6 rounded-full bg-[#FFFDFA] border border-[#3E2723]/20 flex items-center justify-center">
                   <span className="material-symbols-outlined text-[14px] text-[#d4af37]">add</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm text-[#6A311D]/70">
+              <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm text-[#3E2723]/70">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#d4af37] text-[18px]">check</span>
                   <span>{isAr ? "مواد عالية الجودة" : "High Quality Material"}</span>
@@ -144,60 +154,103 @@ export default function ProductDetailsClient({
 
           {/* Right Column: Customization */}
           <div className="lg:col-span-5 flex flex-col gap-8">
-            <div className={`border-b-2 border-[#6A311D] pb-3 ${isAr ? "text-right" : "text-left"}`}>
-              <h2 className="font-headline text-2xl font-bold text-[#6A311D]">
+            <div className={`border-b-2 border-[#3E2723] pb-3 ${isAr ? "text-right" : "text-left"}`}>
+              <h2 className="font-headline text-2xl font-bold text-[#3E2723]">
                 {isAr ? "قم بتخصيص منتجك" : "Customize your product"}
               </h2>
             </div>
 
-            <div className="bg-[#f2ece4]/50 border border-[#6A311D]/5 rounded-xl flex flex-col divide-y divide-[#6A311D]/10 overflow-hidden shadow-sm">
+            <div className="bg-[#f2ece4]/50 border border-[#3E2723]/5 rounded-xl flex flex-col divide-y divide-[#3E2723]/10 overflow-hidden shadow-sm">
               
               {/* Measurements */}
               <div className={`p-6 md:p-8 ${isAr ? "text-right" : "text-left"}`}>
                 <div className="flex items-center gap-2 mb-4">
-                  <h3 className="font-bold text-[#6A311D]">{isAr ? "مقاسات منتجك" : "Measurements of your product"}</h3>
-                  <span className="material-symbols-outlined text-[16px] text-[#6A311D]/40">info</span>
+                  <h3 className="font-bold text-[#3E2723]">{isAr ? "مقاسات منتجك" : "Measurements of your product"}</h3>
+                  <span className="material-symbols-outlined text-[16px] text-[#3E2723]/40">info</span>
                 </div>
                 
+                {/* Standard Sizes Selection */}
+                <div className="mb-4">
+                  <label className="text-xs font-semibold text-[#3E2723]/60 block mb-2">
+                    {isAr ? "المقاسات القياسية (أو أدخل مقاسك بالأسفل):" : "Standard sizes (or enter custom sizes below):"}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {STANDARD_SIZES.map((size, index) => {
+                      const isActive = width === size.width && height === size.height;
+                      return (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setWidth(size.width);
+                            setHeight(size.height);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                            isActive
+                              ? "bg-[#3E2723] border-[#3E2723] text-white shadow-sm"
+                              : "bg-[#FFFDFA] border-[#3E2723]/10 text-[#3E2723]/80 hover:border-[#d4af37] hover:text-[#d4af37]"
+                          }`}
+                        >
+                          {isAr ? size.labelAr : size.labelEn}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWidth("");
+                        setHeight("");
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                        width === "" && height === ""
+                          ? "bg-[#3E2723] border-[#3E2723] text-white shadow-sm"
+                          : "bg-[#FFFDFA] border-[#3E2723]/10 text-[#3E2723]/80 hover:border-[#d4af37] hover:text-[#d4af37]"
+                      }`}
+                    >
+                      {isAr ? "مقاس مخصص" : "Custom"}
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold text-[#6A311D]/60">{isAr ? "العرض (سم)" : "Width cm"}</label>
+                    <label className="text-xs font-semibold text-[#3E2723]/60">{isAr ? "العرض (سم)" : "Width cm"}</label>
                     <input 
                       type="number" 
                       placeholder={isAr ? "من 40 إلى 600 سم" : "40 up to 600cm"}
                       value={width}
                       onChange={(e) => setWidth(e.target.value)}
-                      className="bg-white border border-[#6A311D]/10 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors"
+                      className="bg-[#FFFDFA] border border-[#3E2723]/10 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors"
                       dir="ltr"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold text-[#6A311D]/60">{isAr ? "الارتفاع (سم)" : "Height cm"}</label>
+                    <label className="text-xs font-semibold text-[#3E2723]/60">{isAr ? "الارتفاع (سم)" : "Height cm"}</label>
                     <input 
                       type="number" 
                       placeholder={isAr ? "من 40 إلى 275 سم" : "40 up to 275cm"}
                       value={height}
                       onChange={(e) => setHeight(e.target.value)}
-                      className="bg-white border border-[#6A311D]/10 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors"
+                      className="bg-[#FFFDFA] border border-[#3E2723]/10 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors"
                       dir="ltr"
                     />
                   </div>
                 </div>
 
-                <div className="mt-6 flex flex-col gap-3 text-xs text-[#6A311D]/70">
+                <div className="mt-6 flex flex-col gap-3 text-xs text-[#3E2723]/70">
                   <div className="flex gap-3">
-                    <span className="material-symbols-outlined text-[18px] text-[#6A311D]/40 shrink-0">straighten</span>
+                    <span className="material-symbols-outlined text-[18px] text-[#3E2723]/40 shrink-0">straighten</span>
                     <p>
                       {isAr ? "اتبع " : "Follow our "}
-                      <a href="#" className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#6A311D]">{isAr ? "دليل القياسات" : "measuring guide"}</a>
+                      <a href="#" className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#3E2723]">{isAr ? "دليل القياسات" : "measuring guide"}</a>
                       {isAr ? " للحصول على نتيجة مثالية. قم بذلك بنفسك لتوفير الوقت والمال." : " for a perfect result. Do it yourself! faster and cheaper."}
                     </p>
                   </div>
                   <div className="flex gap-3 items-center">
-                    <span className="material-symbols-outlined text-[18px] text-[#6A311D]/40 shrink-0">construction</span>
+                    <span className="material-symbols-outlined text-[18px] text-[#3E2723]/40 shrink-0">construction</span>
                     <p>
                       {isAr ? "تحتاج لتركيب؟ " : "Need installation? "}
-                      <Link href={`/${locale}/contact`} className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#6A311D]">{isAr ? "تواصل معنا" : "Contact our experts"}</Link>
+                      <Link href={`/${locale}/contact`} className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#3E2723]">{isAr ? "تواصل معنا" : "Contact our experts"}</Link>
                     </p>
                   </div>
                 </div>
@@ -207,22 +260,22 @@ export default function ProductDetailsClient({
               <div className={`p-6 md:p-8 ${isAr ? "text-right" : "text-left"}`}>
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <h3 className="font-bold text-[#6A311D]">{isAr ? "تغيير اللون" : "Change color"}</h3>
-                    <span className="text-[10px] text-[#6A311D]/50 bg-white px-2 py-0.5 rounded border border-[#6A311D]/10">
+                    <h3 className="font-bold text-[#3E2723]">{isAr ? "تغيير اللون" : "Change color"}</h3>
+                    <span className="text-[10px] text-[#3E2723]/50 bg-[#FFFDFA] px-2 py-0.5 rounded border border-[#3E2723]/10">
                       {isAr ? "+٢٦ لون" : "+ 26 colors"}
                     </span>
                   </div>
-                  <button className="material-symbols-outlined text-[18px] text-[#6A311D]/40 hover:text-[#6A311D]">close</button>
+                  <button className="material-symbols-outlined text-[18px] text-[#3E2723]/40 hover:text-[#3E2723]">close</button>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <button className="w-8 h-8 flex items-center justify-center text-[#6A311D]/40 hover:text-[#d4af37] shrink-0">
+                  <button className="w-8 h-8 flex items-center justify-center text-[#3E2723]/40 hover:text-[#d4af37] shrink-0">
                     <span className="material-symbols-outlined">chevron_left</span>
                   </button>
                   
                   <div className="flex gap-3 overflow-x-auto hide-scrollbar px-2">
                     {colors.length === 0 && (
-                      <span className="text-sm text-[#6A311D]/50">{isAr ? "لا توجد ألوان متاحة حالياً" : "No colors available currently"}</span>
+                      <span className="text-sm text-[#3E2723]/50">{isAr ? "لا توجد ألوان متاحة حالياً" : "No colors available currently"}</span>
                     )}
                     {colors.map((c) => (
                       <div key={c.id} className="flex flex-col items-center gap-2">
@@ -233,9 +286,9 @@ export default function ProductDetailsClient({
                             setColorPreviewImage(c.image || null);
                           }}
                           disabled={c.isSoldOut}
-                          className={`relative w-[60px] h-[60px] rounded border shadow-sm transition-all p-1 ${selectedColor === c.id ? "border-[#d4af37] bg-white" : "border-[#6A311D]/15 hover:border-[#6A311D]/30"} ${c.isSoldOut ? "opacity-50 cursor-not-allowed" : ""}`}
+                          className={`relative w-[60px] h-[60px] rounded border shadow-sm transition-all p-1 ${selectedColor === c.id ? "border-[#d4af37] bg-[#FFFDFA]" : "border-[#3E2723]/15 hover:border-[#3E2723]/30"} ${c.isSoldOut ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
-                          <div className="w-full h-full rounded-sm border border-[#6A311D]/5" style={{ backgroundColor: c.hex }} />
+                          <div className="w-full h-full rounded-sm border border-[#3E2723]/5" style={{ backgroundColor: c.hex }} />
                           {c.isSoldOut && (
                             <div className="absolute inset-0 flex items-center justify-center">
                               <div className="w-full h-0.5 bg-red-500 rotate-45 absolute" />
@@ -243,14 +296,14 @@ export default function ProductDetailsClient({
                             </div>
                           )}
                         </button>
-                        <span className={`text-[10px] mt-1 ${c.isSoldOut ? "text-red-500 font-bold" : "text-[#6A311D]/60"}`}>
+                        <span className={`text-[10px] mt-1 ${c.isSoldOut ? "text-red-500 font-bold" : "text-[#3E2723]/60"}`}>
                           {c.isSoldOut ? (isAr ? "نفذت" : "Sold Out") : (isAr ? c.nameAr : c.nameEn)}
                         </span>
                       </div>
                     ))}
                   </div>
 
-                  <button className="w-8 h-8 flex items-center justify-center text-[#6A311D]/40 hover:text-[#d4af37] shrink-0">
+                  <button className="w-8 h-8 flex items-center justify-center text-[#3E2723]/40 hover:text-[#d4af37] shrink-0">
                     <span className="material-symbols-outlined">chevron_right</span>
                   </button>
                 </div>
@@ -261,12 +314,12 @@ export default function ProductDetailsClient({
             </div>
 
             {/* Price Box */}
-            <div className={`flex flex-col sm:flex-row gap-6 items-center justify-between p-6 md:p-8 bg-white border border-[#6A311D]/10 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.03)] ${isAr ? "flex-row-reverse" : ""}`}>
+            <div className={`flex flex-col sm:flex-row gap-6 items-center justify-between p-6 md:p-8 bg-[#FFFDFA] border border-[#3E2723]/10 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.03)] ${isAr ? "flex-row-reverse" : ""}`}>
               <div className={`flex flex-col gap-1 ${isAr ? "text-right" : "text-left"}`}>
-                <span className="text-[#6A311D] font-bold text-2xl">
+                <span className="text-[#3E2723] font-bold text-2xl">
                   {totalPrice.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
                 </span>
-                <span className="text-xs text-[#6A311D]/60 font-medium mt-1" dir="rtl">
+                <span className="text-xs text-[#3E2723]/60 font-medium mt-1" dir="rtl">
                   {isAr ? 
                     `المساحة ${area.toFixed(2)} م² × سعر المتر ${product.price} ج.م` : 
                     `Area ${area.toFixed(2)} m² × Meter price ${product.price} EGP`}
@@ -276,7 +329,7 @@ export default function ProductDetailsClient({
               <div className="flex gap-4 w-full sm:w-auto">
                 <Link 
                   href={`/${locale}/#reserve`}
-                  className="flex-1 sm:flex-none bg-white text-[#d4af37] border-2 border-[#d4af37] px-8 py-3.5 rounded-lg font-bold shadow-sm hover:bg-[#faf8f5] hover:-translate-y-0.5 transition-all text-center whitespace-nowrap"
+                  className="flex-1 sm:flex-none bg-[#FFFDFA] text-[#d4af37] border-2 border-[#d4af37] px-8 py-3.5 rounded-lg font-bold shadow-sm hover:bg-[#FFFDFA] hover:-translate-y-0.5 transition-all text-center whitespace-nowrap"
                 >
                   {isAr ? "احجز معاينة" : "Book Visit"}
                 </Link>
@@ -299,37 +352,37 @@ export default function ProductDetailsClient({
             </div>
 
             {/* Shipping Info */}
-            <div className={`flex items-center justify-between p-4 bg-[#f2ece4]/30 border border-[#6A311D]/5 rounded-lg text-[10px] sm:text-xs text-[#6A311D]/70 ${isAr ? "flex-row-reverse" : ""}`}>
-              <span className="font-bold text-[#6A311D]">{isAr ? "شحن عادي" : "Standard shipping"}</span>
+            <div className={`flex items-center justify-between p-4 bg-[#f2ece4]/30 border border-[#3E2723]/5 rounded-lg text-[10px] sm:text-xs text-[#3E2723]/70 ${isAr ? "flex-row-reverse" : ""}`}>
+              <span className="font-bold text-[#3E2723]">{isAr ? "شحن عادي" : "Standard shipping"}</span>
               <span>{isAr ? "متوقع التسليم خلال أسبوعين" : "Estimated shipping in 2 weeks"}</span>
             </div>
 
             {/* Trust Info */}
-            <div className={`mt-2 border-t-2 border-[#6A311D] pt-4 ${isAr ? "text-right" : "text-left"}`}>
-              <h3 className="font-headline text-lg font-bold text-[#6A311D] mb-6">
+            <div className={`mt-2 border-t-2 border-[#3E2723] pt-4 ${isAr ? "text-right" : "text-left"}`}>
+              <h3 className="font-headline text-lg font-bold text-[#3E2723] mb-6">
                 {isAr ? "يمكنك الوثوق في كريستال بليندز" : "You can trust in Crystal Blinds"}
               </h3>
               
               <div className="flex flex-col gap-5">
                 <div className={`flex items-center gap-3 ${isAr ? "flex-row-reverse" : ""}`}>
-                  <span className="material-symbols-outlined text-[24px] text-[#6A311D]/50">workspace_premium</span>
+                  <span className="material-symbols-outlined text-[24px] text-[#3E2723]/50">workspace_premium</span>
                   <div className="text-sm">
-                    <span className="font-bold text-[#6A311D]">{isAr ? "الضمان " : "Warranty "}</span>
-                    <span className="text-[#6A311D]/70">{isAr ? "٣ سنوات" : "3 years"}</span>
+                    <span className="font-bold text-[#3E2723]">{isAr ? "الضمان " : "Warranty "}</span>
+                    <span className="text-[#3E2723]/70">{isAr ? "٣ سنوات" : "3 years"}</span>
                   </div>
                 </div>
                 
-                <p className="text-xs text-[#6A311D]/60">
+                <p className="text-xs text-[#3E2723]/60">
                   {isAr ? "أكثر من " : "More than "}
-                  <span className="font-bold text-[#6A311D]">{isAr ? "١ مليون" : "1 million"}</span>
+                  <span className="font-bold text-[#3E2723]">{isAr ? "١ مليون" : "1 million"}</span>
                   {isAr ? " نافذة تم تزيينها بمنتجاتنا" : " decorated windows"}
                 </p>
 
                 <div className={`flex items-center gap-3 ${isAr ? "flex-row-reverse" : ""}`}>
-                  <span className="material-symbols-outlined text-[24px] text-[#6A311D]/50">support_agent</span>
+                  <span className="material-symbols-outlined text-[24px] text-[#3E2723]/50">support_agent</span>
                   <div className="text-sm">
-                    <Link href={`/${locale}/contact`} className="font-bold text-[#6A311D] underline decoration-[#d4af37] underline-offset-4">{isAr ? "خدمة العملاء " : "Customer service "}</Link>
-                    <span className="text-[#6A311D]/70">{isAr ? "مجانية ومتاحة دائماً" : "gratuitous & available"}</span>
+                    <Link href={`/${locale}/contact`} className="font-bold text-[#3E2723] underline decoration-[#d4af37] underline-offset-4">{isAr ? "خدمة العملاء " : "Customer service "}</Link>
+                    <span className="text-[#3E2723]/70">{isAr ? "مجانية ومتاحة دائماً" : "gratuitous & available"}</span>
                   </div>
                 </div>
 
@@ -341,7 +394,7 @@ export default function ProductDetailsClient({
                       </span>
                     ))}
                   </div>
-                  <span className="text-xs text-[#6A311D]/60">
+                  <span className="text-xs text-[#3E2723]/60">
                     {isAr ? "٣١,٨٢٠ مراجعة" : "31,820 reviews"}
                   </span>
                 </div>

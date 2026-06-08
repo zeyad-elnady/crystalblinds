@@ -166,7 +166,7 @@ export default async function RootLayout({
           aria-label="Contact on WhatsApp"
         >
           <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-8 h-8" alt="WhatsApp" />
-          <span className="absolute left-full ml-4 px-3 py-1 bg-[#6A311D] text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap rounded">
+          <span className="absolute left-full ml-4 px-3 py-1 bg-[#3E2723] text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap rounded">
             {locale === 'ar' ? 'تواصل معنا' : 'Chat with us'}
           </span>
         </a>
@@ -179,14 +179,14 @@ export default async function RootLayout({
         </main>
 
         {/* Footer */}
-        <footer className={`w-full pt-16 md:pt-24 pb-12 px-8 bg-[#6A311D] text-[#faf8f5] flex flex-col items-center text-center gap-6 ${locale === 'ar' ? 'rtl' : ''} rounded-t-[3rem] md:rounded-t-[0] border-t-[3px] border-[#d4af37] relative mt-10`}>
+        <footer className={`w-full pt-16 md:pt-24 pb-12 px-8 bg-[#3E2723] text-[#FFFDFA] flex flex-col items-center text-center gap-6 ${locale === 'ar' ? 'rtl' : ''} rounded-t-[3rem] md:rounded-t-[0] border-t-[3px] border-[#d4af37] relative mt-10`}>
           {/* Logo */}
           <img src="/logo.png" alt="Crystal Blinds" className="h-16 md:h-24 object-contain" />
           
           <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-[10px] md:text-xs tracking-widest uppercase mt-4">
-            <a className="text-[#faf8f5]/70 hover:text-[#d4af37] transition-colors" href="#">{locale === 'ar' ? 'الخصوصية' : 'Privacy Policy'}</a>
-            <a className="text-[#faf8f5]/70 hover:text-[#d4af37] transition-colors" href="#">{locale === 'ar' ? 'الشروط' : 'Terms of Service'}</a>
-            <a className="text-[#faf8f5]/70 hover:text-[#d4af37] transition-colors" href="#">{locale === 'ar' ? 'الضمان والصيانة' : 'Warranty & Care'}</a>
+            <a className="text-[#FFFDFA]/70 hover:text-[#d4af37] transition-colors" href="#">{locale === 'ar' ? 'الخصوصية' : 'Privacy Policy'}</a>
+            <a className="text-[#FFFDFA]/70 hover:text-[#d4af37] transition-colors" href="#">{locale === 'ar' ? 'الشروط' : 'Terms of Service'}</a>
+            <a className="text-[#FFFDFA]/70 hover:text-[#d4af37] transition-colors" href="#">{locale === 'ar' ? 'الضمان والصيانة' : 'Warranty & Care'}</a>
           </div>
 
           {/* Social Links */}
@@ -202,7 +202,7 @@ export default async function RootLayout({
                 href={social.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full border border-[#faf8f5]/10 flex items-center justify-center hover:bg-[#d4af37] hover:border-[#d4af37] transition-all duration-300 group"
+                className="w-10 h-10 rounded-full border border-[#FFFDFA]/10 flex items-center justify-center hover:bg-[#d4af37] hover:border-[#d4af37] transition-all duration-300 group"
               >
                 <img 
                   src={`https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${social.icon}.svg`} 
@@ -215,7 +215,7 @@ export default async function RootLayout({
 
           <div className="w-full max-w-5xl h-[1px] bg-[#d4af37]/20 my-4" />
 
-          <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-5xl gap-4 text-[#faf8f5]/40 text-[10px] md:text-xs tracking-widest uppercase mt-2">
+          <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-5xl gap-4 text-[#FFFDFA]/40 text-[10px] md:text-xs tracking-widest uppercase mt-2">
             <p>
               {locale === 'ar' ? '© ٢٠٢٤ كريستال للستائر. جميع الحقوق محفوظة.' : '© 2024 Crystal Blinds. All rights reserved.'}
             </p>
@@ -225,7 +225,7 @@ export default async function RootLayout({
                 href="https://www.sirad-agancy.com/en" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="font-bold underline decoration-[#d4af37]/60 hover:decoration-[#d4af37] underline-offset-4 text-[#faf8f5]/60 hover:text-[#d4af37] transition-all normal-case tracking-normal"
+                className="font-bold underline decoration-[#d4af37]/60 hover:decoration-[#d4af37] underline-offset-4 text-[#FFFDFA]/60 hover:text-[#d4af37] transition-all normal-case tracking-normal"
               >
                 sirad-agancy.com
               </a>

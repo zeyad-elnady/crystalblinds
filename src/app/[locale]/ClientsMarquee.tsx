@@ -2,47 +2,47 @@
 
 import React from "react";
 
-const CLIENTS = [
-  { nameAr: "جوتكس", nameEn: "Gotex", src: "/out clients/Gotex_logo.png" },
-  { nameAr: "المطار", nameEn: "Almatar", src: "/out clients/almatar_logo_page.png" },
-  { nameAr: "ارابكوميد", nameEn: "Arabcomed", src: "/out clients/arabcomed logo.png" },
-  { nameAr: "بوخارست", nameEn: "Bucharest", src: "/out clients/bo5arest logo.png" },
-  { nameAr: "جانا فوم", nameEn: "Jana Foam", src: "/out clients/jana_foam_logo.png" },
-  { nameAr: "ماركون", nameEn: "Markoon", src: "/out clients/markoon logo.png" },
-  { nameAr: "مزايا", nameEn: "Mazaya", src: "/out clients/mazaya logo.png" },
-  { nameAr: "مؤسسة فاتبع سبباً - طيبة", nameEn: "Tayba Foundation", src: "/out clients/موسسه فاتبع سببا - طيبه logo.png" },
+import { Partner } from "@/lib/partners";
+
+const DEFAULT_CLIENTS: Partner[] = [
+  { id: "1", nameAr: "جوتكس", nameEn: "Gotex", src: "/out clients/Gotex_logo.png", sort_order: 10 },
+  { id: "2", nameAr: "المطار", nameEn: "Almatar", src: "/out clients/almatar_logo_page.png", sort_order: 20 },
+  { id: "3", nameAr: "ارابكوميد", nameEn: "Arabcomed", src: "/out clients/arabcomed logo.png", sort_order: 30 },
+  { id: "4", nameAr: "بوخارست", nameEn: "Bucharest", src: "/out clients/bo5arest logo.png", sort_order: 40 },
+  { id: "5", nameAr: "جانا فوم", nameEn: "Jana Foam", src: "/out clients/jana_foam_logo.png", sort_order: 50 },
+  { id: "6", nameAr: "ماركون", nameEn: "Markoon", src: "/out clients/markoon logo.png", sort_order: 60 },
+  { id: "7", nameAr: "مزايا", nameEn: "Mazaya", src: "/out clients/mazaya logo.png", sort_order: 70 },
+  { id: "8", nameAr: "مؤسسة فاتبع سبباً - طيبة", nameEn: "Tayba Foundation", src: "/out clients/موسسه فاتبع سببا - طيبه logo.png", sort_order: 80 },
 ];
 
-export default function ClientsMarquee({ isAr }: { isAr: boolean }) {
+interface ClientsMarqueeProps {
+  isAr: boolean;
+  partners?: Partner[];
+}
+
+export default function ClientsMarquee({ isAr, partners }: ClientsMarqueeProps) {
+  const displayClients = partners && partners.length > 0 ? partners : DEFAULT_CLIENTS;
   return (
-    <section className="py-16 md:py-24 bg-[#6A311D] overflow-hidden relative border-y border-[#d4af37]/20">
+    <section className="py-16 md:py-24 bg-[#3E2723] overflow-hidden relative border-y border-[#d4af37]/20">
       <div className="max-w-7xl mx-auto px-6 md:px-12 mb-10 text-center">
         <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-2 block">
           {isAr ? "شركاء النجاح" : "Our Partners"}
         </span>
-        <h3 className="font-headline text-3xl md:text-4xl text-[#faf8f5]">
+        <h3 className="font-headline text-3xl md:text-4xl text-[#FFFDFA]">
           {isAr ? "عملاؤنا المتميزون" : "Our Distinguished Clients"}
         </h3>
       </div>
 
       {/* Marquee Container */}
-      <div className="relative w-full flex bg-[#6A311D] py-10" style={{ overflow: "hidden", display: "flex" }} dir="ltr">
+      <div className="relative w-full flex bg-[#3E2723] py-10" style={{ overflow: "hidden", display: "flex" }} dir="ltr">
         {/* Left/Right fading edges for a premium look */}
-        <div className="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-[#6A311D] to-transparent z-10 pointer-events-none" />
-        <div className="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-[#6A311D] to-transparent z-10 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-[#3E2723] to-transparent z-10 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-[#3E2723] to-transparent z-10 pointer-events-none" />
 
         <div className="flex w-max animate-[marquee_40s_linear_infinite] items-center hover:[animation-play-state:paused]">
           {/* We duplicate the list to make the loop seamless */}
-          {[...CLIENTS, ...CLIENTS].map((client, i) => {
-            const isMarkoon = client.nameEn === "Markoon";
-            const isTayba = client.nameEn === "Tayba Foundation";
-            
-            let sizeClasses = "w-[120px] md:w-[160px] h-[80px]";
-            if (isTayba) {
-              sizeClasses = "w-[200px] md:w-[300px] h-[140px]";
-            } else if (isMarkoon) {
-              sizeClasses = "w-[160px] md:w-[220px] h-[100px]";
-            }
+          {[...displayClients, ...displayClients].map((client, i) => {
+            const sizeClasses = "w-[140px] md:w-[180px] h-[90px]";
 
             return (
               <div
@@ -61,10 +61,10 @@ export default function ClientsMarquee({ isAr }: { isAr: boolean }) {
                   />
                 </div>
                 <div className="mt-4 flex flex-col items-center text-center">
-                  <span className="text-[#faf8f5] text-[10px] md:text-xs font-semibold tracking-wide">
+                  <span className="text-[#FFFDFA] text-[10px] md:text-xs font-semibold tracking-wide">
                     {client.nameAr}
                   </span>
-                  <span className="text-[#faf8f5]/60 text-[9px] md:text-[10px] font-medium tracking-widest uppercase mt-0.5">
+                  <span className="text-[#FFFDFA]/60 text-[9px] md:text-[10px] font-medium tracking-widest uppercase mt-0.5">
                     {client.nameEn}
                   </span>
                 </div>

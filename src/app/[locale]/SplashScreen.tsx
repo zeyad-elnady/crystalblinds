@@ -26,7 +26,7 @@ export default function SplashScreen() {
 
   return (
     <div 
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#6A311D] transition-all duration-700 ease-[cubic-bezier(0.7,0,0.3,1)] ${
+      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#3E2723] transition-all duration-700 ease-[cubic-bezier(0.7,0,0.3,1)] ${
         fadeOut ? "-translate-y-full opacity-0 shadow-none" : "translate-y-0 opacity-100 shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
       }`}
     >

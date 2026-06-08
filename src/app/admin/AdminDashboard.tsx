@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, Appointment, AppointmentStatus, AppointmentType } from '@/lib/supabase';
+import { supabase, Appointment, AppointmentStatus, AppointmentType, Bill, BillItem, CalcType } from '@/lib/supabase';
 import { WebsiteAsset } from '@/lib/images';
 import { Product } from '@/lib/products';
+import { Partner } from '@/lib/partners';
+import { ContactMessage } from '@/lib/messages';
 import styles from './admin.module.css';
+
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
   pending: 'قيد الانتظار',
@@ -54,10 +57,38 @@ export default function AdminDashboard() {
   const [saving, setSaving]             = useState(false);
 
   // New states for active tab
-  const [activeTab, setActiveTab]       = useState<'appointments' | 'website_edit' | 'products' | 'orders'>('appointments');
+  const [activeTab, setActiveTab]       = useState<'appointments' | 'website_edit' | 'products' | 'orders' | 'bills' | 'messages'>('appointments');
   const [websiteAssets, setWebsiteAssets] = useState<WebsiteAsset[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState<string | null>(null);
+
+  // Website Edit sub tab
+  const [websiteEditSubTab, setWebsiteEditSubTab] = useState<'images' | 'partners'>('images');
+
+  // Partners state
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
+  const [showPartnerModal, setShowPartnerModal] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState<Partial<Partner> | null>(null);
+  const [uploadingPartnerLogo, setUploadingPartnerLogo] = useState(false);
+
+  // Messages state
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+
+
+
+  // Bills state
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [loadingBills, setLoadingBills] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [selectedBill, setSelectedBill] = useState<Partial<Bill> | null>(null);
+  const [selectedBillForPrint, setSelectedBillForPrint] = useState<Bill | null>(null);
+  const [billsSearch, setBillsSearch] = useState('');
+  const [billCreationMode, setBillCreationMode] = useState<'manual' | 'order'>('manual');
 
   // Products state
   const [products, setProducts] = useState<Product[]>([]);
@@ -105,6 +136,26 @@ export default function AdminDashboard() {
     setLoadingAssets(false);
   }, []);
 
+  const fetchPartners = useCallback(async () => {
+    setLoadingPartners(true);
+    const { data, error } = await supabase
+      .from('partners')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true });
+    if (!error && data) {
+      setPartners(data.map((row: any) => ({
+        id: row.id,
+        nameAr: row.name_ar,
+        nameEn: row.name_en,
+        src: row.src,
+        sort_order: row.sort_order || 0
+      })));
+    }
+    setLoadingPartners(false);
+  }, []);
+
+
   const fetchProducts = useCallback(async () => {
     setLoadingProducts(true);
     const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
@@ -127,12 +178,375 @@ export default function AdminDashboard() {
     setLoadingOrders(false);
   }, []);
 
+  const fetchBills = useCallback(async () => {
+    setLoadingBills(true);
+    const { data, error } = await supabase.from('bills').select('*').order('created_at', { ascending: false });
+    if (!error && data) setBills(data as Bill[]);
+    setLoadingBills(false);
+  }, []);
+
+  const fetchMessages = useCallback(async () => {
+    setLoadingMessages(true);
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) {
+      setMessages(data as ContactMessage[]);
+    }
+    setLoadingMessages(false);
+  }, []);
+
+  const fetchUnreadCount = useCallback(async () => {
+    const { count, error } = await supabase
+      .from('contact_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_read', false);
+    if (!error && count !== null) {
+      setUnreadCount(count);
+    }
+  }, []);
+
+
+  const openNewBillModal = () => {
+    setBillCreationMode('manual');
+    const nextNum = bills.length + 1;
+    const invNum = `INV-${new Date().getFullYear()}-${String(nextNum).padStart(4, '0')}`;
+    setSelectedBill({
+      invoice_number: invNum,
+      client_name: '',
+      client_phone: '',
+      client_address: '',
+      order_number: '',
+      payment_method: 'نقدي',
+      delivery_date: '',
+      items: [],
+      discount: 0,
+      installation_cost: 0,
+      transport_cost: 0,
+      deposit: 0,
+      remaining_amount: 0,
+      final_total: 0,
+      notes: ''
+    });
+    setShowBillModal(true);
+  };
+
+  const handleSaveBill = async () => {
+    if (!selectedBill || !selectedBill.client_name) {
+      alert('يرجى إدخال اسم العميل'); return;
+    }
+    if (!selectedBill.items || selectedBill.items.length === 0) {
+      alert('يرجى إضافة بند واحد على الأقل في الفاتورة'); return;
+    }
+    setSaving(true);
+    
+    const items = selectedBill.items || [];
+    const totalItemsPrice = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+    const discount = Number(selectedBill.discount) || 0;
+    const installation = Number(selectedBill.installation_cost) || 0;
+    const transport = Number(selectedBill.transport_cost) || 0;
+    const deposit = Number(selectedBill.deposit) || 0;
+
+    const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
+    const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
+
+    const payload = {
+      invoice_number: selectedBill.invoice_number,
+      client_name: selectedBill.client_name,
+      client_phone: selectedBill.client_phone || null,
+      client_address: selectedBill.client_address || null,
+      order_number: selectedBill.order_number || null,
+      payment_method: selectedBill.payment_method || 'نقدي',
+      delivery_date: selectedBill.delivery_date || null,
+      items: items,
+      total_items_price: totalItemsPrice,
+      discount: discount,
+      installation_cost: installation,
+      transport_cost: transport,
+      deposit: deposit,
+      remaining_amount: remainingAmount,
+      final_total: finalTotal,
+      notes: selectedBill.notes || null,
+      updated_at: new Date().toISOString()
+    };
+
+    let error;
+    if (selectedBill.id) {
+      const res = await supabase.from('bills').update(payload).eq('id', selectedBill.id);
+      error = res.error;
+    } else {
+      const res = await supabase.from('bills').insert([payload]);
+      error = res.error;
+    }
+
+    setSaving(false);
+    if (error) {
+      alert('خطأ أثناء حفظ الفاتورة: ' + error.message);
+    } else {
+      alert('تم حفظ الفاتورة بنجاح');
+      setShowBillModal(false);
+      fetchBills();
+    }
+  };
+
+  const handleDeleteBill = async (id: string) => {
+    if (!confirm('هل تريد حذف هذه الفاتورة؟')) return;
+    const { error } = await supabase.from('bills').delete().eq('id', id);
+    if (error) {
+      alert('حدث خطأ أثناء الحذف: ' + error.message);
+    } else {
+      fetchBills();
+    }
+  };
+
+  const handlePrint = (bill: Bill) => {
+    setSelectedBillForPrint(bill);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
+  const updateBillField = (field: string, value: any) => {
+    if (!selectedBill) return;
+    const updatedBill = { ...selectedBill, [field]: value };
+    
+    const items = updatedBill.items || [];
+    const totalItemsPrice = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+    const discount = Number(updatedBill.discount) || 0;
+    const installation = Number(updatedBill.installation_cost) || 0;
+    const transport = Number(updatedBill.transport_cost) || 0;
+    const deposit = Number(updatedBill.deposit) || 0;
+
+    const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
+    const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
+
+    setSelectedBill({
+      ...updatedBill,
+      total_items_price: totalItemsPrice,
+      deposit: deposit,
+      remaining_amount: remainingAmount,
+      final_total: finalTotal
+    });
+  };
+
+  const handleImportOrder = (orderId: string) => {
+    if (!orderId) {
+      setSelectedBill(prev => prev ? {
+        ...prev,
+        client_name: '',
+        client_phone: '',
+        client_address: '',
+        order_number: '',
+        items: [],
+        total_items_price: 0,
+        deposit: 0,
+        remaining_amount: 0,
+        final_total: 0
+      } : null);
+      return;
+    }
+    const order = orders.find(o => String(o.id) === orderId);
+    if (!order) return;
+
+    const importedItem: BillItem = {
+      name: `${order.products?.label_ar || 'ستارة'} (${order.width} × ${order.height} سم)`,
+      calcType: 'unit',
+      width: Number(order.width) / 100,
+      height: Number(order.height) / 100,
+      quantity: Number(order.pieces) || 1,
+      price: Number(order.total_price) / (Number(order.pieces) || 1),
+      total: Number(order.total_price)
+    };
+
+    setSelectedBill(prev => {
+      if (!prev) return null;
+      const updated = {
+        ...prev,
+        client_name: order.client_name || '',
+        client_phone: order.client_phone || '',
+        client_address: order.client_address || '',
+        order_number: String(order.id).slice(0, 8).toUpperCase(),
+        items: [importedItem]
+      };
+      
+      const totalItemsPrice = Number(order.total_price);
+      const discount = Number(updated.discount) || 0;
+      const installation = Number(updated.installation_cost) || 0;
+      const transport = Number(updated.transport_cost) || 0;
+      const deposit = Number(updated.deposit) || 0;
+
+      const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
+      const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
+
+      return {
+        ...updated,
+        total_items_price: totalItemsPrice,
+        deposit: deposit,
+        remaining_amount: remainingAmount,
+        final_total: finalTotal
+      };
+    });
+  };
+
+  const handleProductSelect = (index: number, labelAr: string) => {
+    if (!selectedBill || !selectedBill.items) return;
+    const prod = products.find(p => p.labelAr === labelAr);
+    
+    const newItems = [...selectedBill.items];
+    const item = { ...newItems[index] };
+    
+    if (prod) {
+      item.name = prod.labelAr;
+      item.price = prod.price;
+    } else {
+      item.name = '';
+      item.price = 0;
+    }
+
+    const qty = Number(item.quantity) || 0;
+    const w = Number(item.width) || 0;
+    const h = Number(item.height) || 0;
+    const p = Number(item.price) || 0;
+    const mode = item.calcType;
+
+    if (mode === 'square_meter') {
+      item.total = Math.round((qty * w * h * p) * 100) / 100;
+    } else if (mode === 'linear_width') {
+      item.total = Math.round((qty * w * p) * 100) / 100;
+    } else if (mode === 'linear_height') {
+      item.total = Math.round((qty * h * p) * 100) / 100;
+    } else {
+      item.total = Math.round((qty * p) * 100) / 100;
+    }
+
+    newItems[index] = item;
+
+    const totalItemsPrice = newItems.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
+    const discount = Number(selectedBill.discount) || 0;
+    const installation = Number(selectedBill.installation_cost) || 0;
+    const transport = Number(selectedBill.transport_cost) || 0;
+    const deposit = Number(selectedBill.deposit) || 0;
+
+    const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
+    const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
+
+    setSelectedBill({
+      ...selectedBill,
+      items: newItems,
+      total_items_price: totalItemsPrice,
+      deposit: deposit,
+      remaining_amount: remainingAmount,
+      final_total: finalTotal
+    });
+  };
+
+  const updateBillItemField = (index: number, field: string, value: any) => {
+    if (!selectedBill || !selectedBill.items) return;
+    const newItems = [...selectedBill.items];
+    const item = { ...newItems[index], [field]: value };
+
+    if (['width', 'height', 'quantity', 'price', 'calcType'].includes(field)) {
+      const qty = Number(item.quantity) || 0;
+      const w = Number(item.width) || 0;
+      const h = Number(item.height) || 0;
+      const p = Number(item.price) || 0;
+      const mode = item.calcType;
+
+      if (mode === 'square_meter') {
+        item.total = Math.round((qty * w * h * p) * 100) / 100;
+      } else if (mode === 'linear_width') {
+        item.total = Math.round((qty * w * p) * 100) / 100;
+      } else if (mode === 'linear_height') {
+        item.total = Math.round((qty * h * p) * 100) / 100;
+      } else {
+        item.total = Math.round((qty * p) * 100) / 100;
+      }
+    } else if (field === 'total') {
+      item.total = Number(value) || 0;
+    }
+
+    newItems[index] = item;
+
+    const totalItemsPrice = newItems.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
+    const discount = Number(selectedBill.discount) || 0;
+    const installation = Number(selectedBill.installation_cost) || 0;
+    const transport = Number(selectedBill.transport_cost) || 0;
+    const deposit = Number(selectedBill.deposit) || 0;
+
+    const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
+    const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
+
+    setSelectedBill({
+      ...selectedBill,
+      items: newItems,
+      total_items_price: totalItemsPrice,
+      deposit: deposit,
+      remaining_amount: remainingAmount,
+      final_total: finalTotal
+    });
+  };
+
+  const removeBillItem = (index: number) => {
+    if (!selectedBill || !selectedBill.items) return;
+    const newItems = selectedBill.items.filter((_, i) => i !== index);
+
+    const totalItemsPrice = newItems.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
+    const discount = Number(selectedBill.discount) || 0;
+    const installation = Number(selectedBill.installation_cost) || 0;
+    const transport = Number(selectedBill.transport_cost) || 0;
+    const deposit = Number(selectedBill.deposit) || 0;
+
+    const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
+    const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
+
+    setSelectedBill({
+      ...selectedBill,
+      items: newItems,
+      total_items_price: totalItemsPrice,
+      deposit: deposit,
+      remaining_amount: remainingAmount,
+      final_total: finalTotal
+    });
+  };
+
+  const addItemToBill = () => {
+    if (!selectedBill) return;
+    const newItem: BillItem = {
+      name: '',
+      height: 1.00,
+      width: 1.00,
+      quantity: 1,
+      price: 0,
+      calcType: 'square_meter',
+      total: 0
+    };
+    setSelectedBill({
+      ...selectedBill,
+      items: [...(selectedBill.items || []), newItem]
+    });
+  };
+
   useEffect(() => { 
+    fetchUnreadCount();
     if (activeTab === 'appointments') fetchAppointments(); 
-    if (activeTab === 'website_edit') fetchWebsiteAssets();
+    if (activeTab === 'website_edit') {
+      fetchWebsiteAssets();
+      fetchPartners();
+    }
     if (activeTab === 'products') fetchProducts();
     if (activeTab === 'orders') fetchOrders();
-  }, [fetchAppointments, fetchWebsiteAssets, fetchProducts, fetchOrders, activeTab]);
+    if (activeTab === 'bills') {
+      fetchBills();
+      fetchProducts();
+      fetchOrders();
+    }
+    if (activeTab === 'messages') {
+      fetchMessages();
+    }
+  }, [fetchAppointments, fetchWebsiteAssets, fetchPartners, fetchProducts, fetchOrders, fetchBills, fetchMessages, fetchUnreadCount, activeTab]);
+
+
 
   const filtered = appointments.filter(a => {
     if (filterStatus !== 'all' && a.status !== filterStatus) return false;
@@ -235,6 +649,99 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUploadPartnerLogo = async (file: File) => {
+    setUploadingPartnerLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `partner-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('partner_images').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data: publicUrlData } = supabase.storage.from('partner_images').getPublicUrl(fileName);
+      setSelectedPartner(prev => prev ? { ...prev, src: publicUrlData.publicUrl } : null);
+    } catch (err) {
+      alert('فشل رفع الصورة: ' + (err as any).message);
+    } finally {
+      setUploadingPartnerLogo(false);
+    }
+  };
+
+  const handleSavePartner = async () => {
+    if (!selectedPartner?.nameAr || !selectedPartner?.nameEn) {
+      alert('يرجى إدخال اسم الشريك باللغتين العربية والإنجليزية'); return;
+    }
+    if (!selectedPartner?.src) {
+      alert('يرجى رفع شعار الشريك'); return;
+    }
+    setSaving(true);
+    const payload = {
+      name_ar: selectedPartner.nameAr,
+      name_en: selectedPartner.nameEn,
+      src: selectedPartner.src,
+      sort_order: selectedPartner.sort_order ?? 0,
+      updated_at: new Date().toISOString()
+    };
+    
+    let error;
+    if (selectedPartner.id) {
+      const res = await supabase.from('partners').update(payload).eq('id', selectedPartner.id);
+      error = res.error;
+    } else {
+      const res = await supabase.from('partners').insert([payload]);
+      error = res.error;
+    }
+    if (error) {
+      alert('خطأ أثناء حفظ بيانات الشريك: ' + error.message);
+    } else {
+      setShowPartnerModal(false);
+      fetchPartners();
+    }
+    setSaving(false);
+  };
+
+  const handleDeletePartner = async (id: string) => {
+    if (!confirm('هل تريد حذف هذا الشريك؟')) return;
+    const { error } = await supabase.from('partners').delete().eq('id', id);
+    if (error) {
+      alert('حدث خطأ أثناء الحذف: ' + error.message);
+    } else {
+      fetchPartners();
+    }
+  };
+
+  const markMessageAsRead = async (id: string, isRead: boolean) => {
+    const { error } = await supabase
+      .from('contact_messages')
+      .update({ is_read: isRead })
+      .eq('id', id);
+    if (!error) {
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, is_read: isRead } : m));
+      if (selectedMessage?.id === id) {
+        setSelectedMessage(prev => prev ? { ...prev, is_read: isRead } : null);
+      }
+      fetchUnreadCount();
+    } else {
+      alert('خطأ أثناء تحديث حالة الرسالة: ' + error.message);
+    }
+  };
+
+  const handleDeleteMessage = async (id: string) => {
+    if (!confirm('هل تريد حذف هذه الرسالة نهائياً؟')) return;
+    const { error } = await supabase
+      .from('contact_messages')
+      .delete()
+      .eq('id', id);
+    if (!error) {
+      setMessages(prev => prev.filter(m => m.id !== id));
+      setShowMessageModal(false);
+      setSelectedMessage(null);
+      fetchUnreadCount();
+    } else {
+      alert('حدث خطأ أثناء حذف الرسالة: ' + error.message);
+    }
+  };
+
+
+
   const handleSaveProduct = async () => {
     if (!selectedProduct?.labelEn || !selectedProduct?.labelAr) {
       alert('يرجى إدخال اسم المنتج'); return;
@@ -307,12 +814,13 @@ export default function AdminDashboard() {
   const todayCount = appointments.filter(a => a.appointment_date === today).length;
 
   return (
-    <div className={`${styles.shell} ${mobileMenuOpen ? styles.mobileMenuOpen : ''}`}>
+    <>
+      <div className={`${styles.shell} ${mobileMenuOpen ? styles.mobileMenuOpen : ''}`}>
       {/* Sidebar */}
       <aside className={styles.sidebar}>
         <button className={styles.mobileClose} onClick={() => setMobileMenuOpen(false)}>✕</button>
         <div className={styles.sidebarBrand}>
-          <img src="/logo.png" alt="Crystal Blinds" className={styles.sidebarLogo} />
+          <img src="/logo2.png" alt="Crystal Blinds" className={styles.sidebarLogo} />
           <span className={styles.sidebarTitle}>لوحة التحكم</span>
         </div>
         <nav className={styles.sidebarNav}>
@@ -322,12 +830,22 @@ export default function AdminDashboard() {
           <div className={`${styles.navItem} ${activeTab === 'orders' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('orders'); setMobileMenuOpen(false); }}>
             <span>الطلبات</span>
           </div>
+          <div className={`${styles.navItem} ${activeTab === 'bills' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('bills'); setMobileMenuOpen(false); }}>
+            <span>الفواتير</span>
+          </div>
           <div className={`${styles.navItem} ${activeTab === 'products' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
             <span>المنتجات</span>
           </div>
           <div className={`${styles.navItem} ${activeTab === 'website_edit' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('website_edit'); setMobileMenuOpen(false); }}>
             <span>تعديل الموقع</span>
           </div>
+          <div className={`${styles.navItem} ${activeTab === 'messages' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('messages'); setMobileMenuOpen(false); }}>
+            <span>رسائل التواصل</span>
+            {unreadCount > 0 && (
+              <span className={styles.sidebarBadge}>{unreadCount}</span>
+            )}
+          </div>
+
           <div className={styles.navItem} onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}>
             <span>الإعدادات</span>
           </div>
@@ -461,49 +979,132 @@ export default function AdminDashboard() {
             <header className={styles.header}>
               <div>
                 <h1 className={styles.headerTitle}>تعديل الموقع</h1>
-                <p className={styles.headerSub}>إدارة صور وخلفيات الموقع</p>
+                <p className={styles.headerSub}>إدارة صور وخلفيات الموقع وشركاء النجاح</p>
               </div>
             </header>
+
+            <div className={styles.subTabsRow}>
+              <button 
+                type="button"
+                className={`${styles.subTab} ${websiteEditSubTab === 'images' ? styles.subTabActive : ''}`}
+                onClick={() => setWebsiteEditSubTab('images')}
+              >
+                صور وخلفيات الموقع
+              </button>
+              <button 
+                type="button"
+                className={`${styles.subTab} ${websiteEditSubTab === 'partners' ? styles.subTabActive : ''}`}
+                onClick={() => setWebsiteEditSubTab('partners')}
+              >
+                شركاء النجاح والعملاء
+              </button>
+            </div>
             
-            {loadingAssets ? (
-              <div className={styles.loadingBox}><span className={styles.spinner} />جاري تحميل الصور...</div>
-            ) : (
-              <div className={styles.assetsGrid}>
-                {websiteAssets.map(asset => (
-                  <div key={asset.key} className={styles.assetCard}>
-                    <div className={styles.assetImageWrapper}>
-                      <img src={asset.url} alt={asset.description || asset.key} className={styles.assetImage} />
-                    </div>
-                    <div className={styles.assetInfo}>
-                      <h3 className={styles.assetTitle}>{asset.description || asset.key}</h3>
-                      <p className={styles.assetKey}>{asset.key}</p>
-                      
-                      <div className={styles.assetActions}>
-                        <label className={`${styles.uploadBtn} ${uploadingAsset === asset.key ? styles.uploadingBtn : ''}`}>
-                          {uploadingAsset === asset.key ? 'جاري الرفع...' : 'تغيير الصورة'}
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            className={styles.hiddenInput}
-                            disabled={uploadingAsset === asset.key}
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                handleUploadImage(asset.key, e.target.files[0]);
-                              }
-                            }}
-                          />
-                        </label>
+            {websiteEditSubTab === 'images' ? (
+              loadingAssets ? (
+                <div className={styles.loadingBox}><span className={styles.spinner} />جاري تحميل الصور...</div>
+              ) : (
+                <div className={styles.assetsGrid}>
+                  {websiteAssets.map(asset => (
+                    <div key={asset.key} className={styles.assetCard}>
+                      <div className={styles.assetImageWrapper}>
+                        <img src={asset.url} alt={asset.description || asset.key} className={styles.assetImage} />
+                      </div>
+                      <div className={styles.assetInfo}>
+                        <h3 className={styles.assetTitle}>{asset.description || asset.key}</h3>
+                        <p className={styles.assetKey}>{asset.key}</p>
+                        
+                        <div className={styles.assetActions}>
+                          <label className={`${styles.uploadBtn} ${uploadingAsset === asset.key ? styles.uploadingBtn : ''}`}>
+                            {uploadingAsset === asset.key ? 'جاري الرفع...' : 'تغيير الصورة'}
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className={styles.hiddenInput}
+                              disabled={uploadingAsset === asset.key}
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  handleUploadImage(asset.key, e.target.files[0]);
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
                       </div>
                     </div>
+                  ))}
+                  
+                  {websiteAssets.length === 0 && (
+                    <div className={styles.emptyBox}>لم يتم إضافة صور قابلة للتعديل بعد. استخدم ملف الإعدادات لإضافة المفاتيح.</div>
+                  )}
+                </div>
+              )
+            ) : (
+              loadingPartners ? (
+                <div className={styles.loadingBox}><span className={styles.spinner} />جاري تحميل الشركاء...</div>
+              ) : (
+                <>
+                  <div className={styles.filtersRow} style={{ justifyContent: 'space-between', width: '100%', marginBottom: '1rem' }}>
+                    <strong style={{ color: '#3E2723' }}>شركاء النجاح والعملاء المتميزين ({partners.length})</strong>
+                    <button 
+                      type="button"
+                      className={styles.addBtn} 
+                      onClick={() => { setSelectedPartner({ sort_order: (partners.length + 1) * 10 }); setShowPartnerModal(true); }}
+                    >
+                      + إضافة شريك جديد
+                    </button>
                   </div>
-                ))}
-                
-                {websiteAssets.length === 0 && (
-                  <div className={styles.emptyBox}>لم يتم إضافة صور قابلة للتعديل بعد. استخدم ملف الإعدادات لإضافة المفاتيح.</div>
-                )}
-              </div>
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>الشعار</th>
+                          <th>الاسم (عربي)</th>
+                          <th>الاسم (إنجليزي)</th>
+                          <th>الترتيب</th>
+                          <th>إجراءات</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {partners.map(partner => (
+                          <tr key={partner.id} className={styles.tableRow} onClick={() => { setSelectedPartner(partner); setShowPartnerModal(true); }}>
+                            <td>
+                              <img src={partner.src} alt={partner.nameEn} style={{ width: 60, height: 40, objectFit: 'contain', background: '#fdfbf7', padding: '4px', borderRadius: '4px', border: '1px solid rgba(62,39,35,0.08)' }} />
+                            </td>
+                            <td>{partner.nameAr}</td>
+                            <td dir="ltr" style={{ textAlign: 'right' }}>{partner.nameEn}</td>
+                            <td>{partner.sort_order}</td>
+                            <td onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '8px' }}>
+                              <button 
+                                type="button"
+                                onClick={() => { setSelectedPartner(partner); setShowPartnerModal(true); }} 
+                                className={styles.refreshBtn} 
+                                style={{ padding: '4px 8px', margin: 0 }}
+                              >
+                                تعديل
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => handleDeletePartner(partner.id)} 
+                                className={styles.deleteBtn} 
+                                style={{ padding: '4px 8px', margin: 0 }}
+                              >
+                                حذف
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {partners.length === 0 && (
+                          <tr><td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>لم يتم إضافة شركاء بعد.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )
             )}
           </div>
+
         ) : activeTab === 'products' ? (
           <div className={styles.websiteEditContainer}>
             <header className={styles.header}>
@@ -518,7 +1119,7 @@ export default function AdminDashboard() {
 
             {/* Bulk Update Section */}
             <div className={styles.filtersRow} style={{ marginTop: '20px', backgroundColor: '#fdfbf7', padding: '15px', borderRadius: '8px', border: '1px solid #e5e5e5' }}>
-              <strong style={{ marginLeft: '15px', color: '#6A311D' }}>تحديث أسعار قسم بالكامل:</strong>
+              <strong style={{ marginLeft: '15px', color: '#3E2723' }}>تحديث أسعار قسم بالكامل:</strong>
               <select className={styles.filterSelect} value={bulkCategory} onChange={e => setBulkCategory(e.target.value)}>
                 <option value="">اختر القسم...</option>
                 {Array.from(new Set(products.map(p => p.category))).filter(Boolean).map(cat => (
@@ -624,8 +1225,156 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        ) : activeTab === 'bills' ? (
+          <div className={styles.websiteEditContainer}>
+            <header className={styles.header}>
+              <div>
+                <h1 className={styles.headerTitle}>إدارة الفواتير</h1>
+                <p className={styles.headerSub}>إنشاء وطباعة وحفظ فواتير المبيعات</p>
+              </div>
+              <div className={styles.headerActions}>
+                <button className={styles.addBtn} onClick={openNewBillModal}>+ إضافة فاتورة جديدة</button>
+              </div>
+            </header>
+
+            <div className={styles.filtersRow}>
+              <input 
+                className={styles.searchInput} 
+                placeholder="بحث باسم العميل أو رقم الفاتورة..." 
+                value={billsSearch} 
+                onChange={e => setBillsSearch(e.target.value)} 
+              />
+              <button className={styles.refreshBtn} onClick={fetchBills}>تحديث</button>
+            </div>
+
+            {loadingBills ? (
+              <div className={styles.loadingBox}><span className={styles.spinner} />جاري التحميل...</div>
+            ) : (
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>رقم الفاتورة</th>
+                      <th>اسم العميل</th>
+                      <th>رقم الهاتف</th>
+                      <th>تاريخ الفاتورة</th>
+                      <th>الإجمالي</th>
+                      <th>إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bills.filter(b => {
+                      if (!billsSearch) return true;
+                      const q = billsSearch.toLowerCase();
+                      return b.client_name.toLowerCase().includes(q) || 
+                             b.invoice_number.toLowerCase().includes(q) || 
+                             (b.client_phone && b.client_phone.includes(q));
+                    }).map(b => (
+                      <tr key={b.id} className={styles.tableRow} onClick={() => { setSelectedBill(b); setShowBillModal(true); }}>
+                        <td dir="ltr" style={{ fontWeight: 'bold' }}>{b.invoice_number}</td>
+                        <td>{b.client_name}</td>
+                        <td dir="ltr">{b.client_phone || '—'}</td>
+                        <td>{new Date(b.created_at || b.updated_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                        <td style={{ color: '#b45309', fontWeight: 'bold' }}>{b.final_total} ج.م</td>
+                        <td onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handlePrint(b)} className={styles.refreshBtn} style={{ padding: '4px 8px', margin: 0 }}>طباعة</button>
+                          <button onClick={() => handleDeleteBill(b.id)} className={styles.deleteBtn} style={{ padding: '4px 8px', margin: 0 }}>حذف</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {bills.length === 0 && (
+                      <tr><td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>لا توجد فواتير بعد.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'messages' ? (
+          <div className={styles.websiteEditContainer}>
+            <header className={styles.header}>
+              <div>
+                <h1 className={styles.headerTitle}>رسائل التواصل</h1>
+                <p className={styles.headerSub}>عرض وإدارة الرسائل المستلمة من صفحة اتصل بنا</p>
+              </div>
+              <div className={styles.headerActions}>
+                <button type="button" className={styles.refreshBtn} onClick={fetchMessages}>تحديث</button>
+              </div>
+            </header>
+
+            {loadingMessages ? (
+              <div className={styles.loadingBox}><span className={styles.spinner} />جاري تحميل الرسائل...</div>
+            ) : (
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>الاسم</th>
+                      <th>رقم الهاتف</th>
+                      <th>البريد الإلكتروني</th>
+                      <th>الرسالة</th>
+                      <th>التاريخ</th>
+                      <th>الحالة</th>
+                      <th>إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {messages.map(msg => (
+                      <tr 
+                        key={msg.id} 
+                        className={styles.tableRow} 
+                        style={{ fontWeight: msg.is_read ? 'normal' : 'bold', backgroundColor: msg.is_read ? 'transparent' : '#fffbeb' }}
+                        onClick={() => { setSelectedMessage(msg); setShowMessageModal(true); if(!msg.is_read) markMessageAsRead(msg.id, true); }}
+                      >
+                        <td>{msg.name}</td>
+                        <td dir="ltr" style={{ textAlign: 'right' }}>{msg.phone}</td>
+                        <td dir="ltr" style={{ textAlign: 'right' }}>{msg.email || '—'}</td>
+                        <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.message}</td>
+                        <td>{new Date(msg.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td>
+                          <span className={`${styles.badge} ${msg.is_read ? styles.statusCompleted : styles.statusPending}`}>
+                            {msg.is_read ? 'مقروءة' : 'جديدة'}
+                          </span>
+                        </td>
+                        <td onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            type="button"
+                            onClick={() => { setSelectedMessage(msg); setShowMessageModal(true); if(!msg.is_read) markMessageAsRead(msg.id, true); }} 
+                            className={styles.refreshBtn} 
+                            style={{ padding: '4px 8px', margin: 0 }}
+                          >
+                            عرض
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => markMessageAsRead(msg.id, !msg.is_read)} 
+                            className={styles.settingsBtn} 
+                            style={{ padding: '4px 8px', margin: 0 }}
+                          >
+                            {msg.is_read ? 'غير مقروءة' : 'مقروءة'}
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => handleDeleteMessage(msg.id)} 
+                            className={styles.deleteBtn} 
+                            style={{ padding: '4px 8px', margin: 0 }}
+                          >
+                            حذف
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {messages.length === 0 && (
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>لا توجد رسائل مستلمة بعد.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         ) : null}
       </main>
+
 
       {/* ── Product Modal ── */}
       {showProductModal && selectedProduct && (
@@ -677,9 +1426,29 @@ export default function AdminDashboard() {
                   <label className={styles.formLabel}>الصور المرفوعة ({selectedProduct.images?.length || 0})</label>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
                     {selectedProduct.images?.map((img, i) => (
-                      <div key={i} style={{ position: 'relative' }}>
+                      <div key={i} style={{ position: 'relative', width: '80px', height: '80px' }}>
                         <img src={img} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} alt="prod" />
-                        <button onClick={() => setSelectedProduct({ ...selectedProduct, images: selectedProduct.images!.filter((_, index) => index !== i)})} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', border: 'none', cursor: 'pointer' }}>✕</button>
+                        <span style={{
+                          position: 'absolute',
+                          bottom: '0',
+                          left: '0',
+                          right: '0',
+                          background: i === 0 ? 'rgba(62, 39, 35, 0.85)' : i === 1 ? 'rgba(212, 175, 55, 0.85)' : 'rgba(107, 114, 128, 0.85)',
+                          color: 'white',
+                          fontSize: '8.5px',
+                          textAlign: 'center',
+                          padding: '2px 0',
+                          borderBottomLeftRadius: '4px',
+                          borderBottomRightRadius: '4px',
+                          fontWeight: 'bold',
+                          pointerEvents: 'none',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {i === 0 ? 'الأساسية' : i === 1 ? 'صورة الهوفر' : 'صورة إضافية'}
+                        </span>
+                        <button onClick={() => setSelectedProduct({ ...selectedProduct, images: selectedProduct.images!.filter((_, index) => index !== i)})} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', border: 'none', cursor: 'pointer', zIndex: 10 }}>✕</button>
                       </div>
                     ))}
                   </div>
@@ -949,6 +1718,580 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* ── Bill Modal ── */}
+      {showBillModal && selectedBill && (
+        <div className={styles.overlay} onClick={() => setShowBillModal(false)}>
+          <div className={styles.modal} style={{ width: '95vw', maxWidth: '1300px' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>{selectedBill.id ? 'تعديل الفاتورة' : 'إضافة فاتورة جديدة'}</h2>
+              <button className={styles.closeBtn} onClick={() => setShowBillModal(false)}>✕</button>
+            </div>
+            <div className={styles.modalBody} style={{ maxHeight: '75vh', overflowY: 'auto' }}>
+              
+              {/* Manual vs Import Selector (only for new bills) */}
+              {!selectedBill.id && (
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#3E2723' }}>نوع الفاتورة:</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer', color: '#3E2723', fontWeight: 'bold' }}>
+                    <input 
+                      type="radio" 
+                      name="billCreationMode" 
+                      checked={billCreationMode === 'manual'} 
+                      onChange={() => setBillCreationMode('manual')} 
+                    />
+                    إنشاء يدوي
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer', color: '#3E2723', fontWeight: 'bold' }}>
+                    <input 
+                      type="radio" 
+                      name="billCreationMode" 
+                      checked={billCreationMode === 'order'} 
+                      onChange={() => {
+                        setBillCreationMode('order');
+                        setSelectedBill(prev => prev ? { ...prev, client_name: '', client_phone: '', client_address: '', order_number: '', items: [] } : null);
+                      }} 
+                    />
+                    استيراد من الطلبات
+                  </label>
+                </div>
+              )}
+
+              {/* Order Import Dropdown */}
+              {!selectedBill.id && billCreationMode === 'order' && (
+                <div className={styles.formGroup} style={{ gridColumn: 'span 2', marginBottom: '20px' }}>
+                  <label className={styles.formLabel} style={{ fontWeight: 'bold', color: '#b45309' }}>اختر الطلب لاستيراد البيانات *</label>
+                  <select 
+                    className={styles.formInput} 
+                    onChange={e => handleImportOrder(e.target.value)}
+                    defaultValue=""
+                    style={{ border: '1.5px solid #d4af37', background: '#fffbeb' }}
+                  >
+                    <option value="">-- اختر طلب العميل --</option>
+                    {orders.map(o => (
+                      <option key={o.id} value={o.id}>
+                        {o.client_name} - {o.products?.label_ar || 'منتج'} (عرض {o.width} × طول {o.height} سم) - الإجمالي: {o.total_price} ج.م
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>رقم الفاتورة *</label>
+                  <input className={styles.formInput} value={selectedBill.invoice_number || ''} onChange={e => updateBillField('invoice_number', e.target.value)} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>اسم العميل *</label>
+                  <input className={styles.formInput} value={selectedBill.client_name || ''} onChange={e => updateBillField('client_name', e.target.value)} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>رقم الهاتف</label>
+                  <input className={styles.formInput} dir="ltr" value={selectedBill.client_phone || ''} onChange={e => updateBillField('client_phone', e.target.value)} placeholder="01xxxxxxxxx" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>العنوان</label>
+                  <input className={styles.formInput} value={selectedBill.client_address || ''} onChange={e => updateBillField('client_address', e.target.value)} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>رقم الطلب</label>
+                  <input className={styles.formInput} value={selectedBill.order_number || ''} onChange={e => updateBillField('order_number', e.target.value)} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>طريقة الدفع</label>
+                  <select className={styles.formInput} value={selectedBill.payment_method || 'نقدي'} onChange={e => updateBillField('payment_method', e.target.value)}>
+                    <option value="نقدي">نقدي</option>
+                    <option value="فيزا">فيزا</option>
+                    <option value="شيك">شيك</option>
+                    <option value="أخرى">أخرى</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>موعد التسليم</label>
+                  <input className={styles.formInput} type="date" value={selectedBill.delivery_date || ''} onChange={e => updateBillField('delivery_date', e.target.value)} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>ملاحظات</label>
+                  <input className={styles.formInput} value={selectedBill.notes || ''} onChange={e => updateBillField('notes', e.target.value)} placeholder="ملاحظات إضافية للفاتورة" />
+                </div>
+              </div>
+
+              {/* Items Section */}
+              <div style={{ marginTop: '20px' }}>
+                <h3 className={styles.modalTitle} style={{ marginBottom: '10px' }}>بنود الفاتورة</h3>
+                
+                <div style={{ overflowX: 'auto' }}>
+                  <table className={styles.billItemsTable}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '25%' }}>الصنف / النوع</th>
+                        <th style={{ width: '18%' }}>طريقة الحساب</th>
+                        <th style={{ width: '10%' }}>العرض (م)</th>
+                        <th style={{ width: '10%' }}>الطول (م)</th>
+                        <th style={{ width: '8%' }}>العدد</th>
+                        <th style={{ width: '12%' }}>السعر (ج.م)</th>
+                        <th style={{ width: '12%' }}>الإجمالي (ج.م)</th>
+                        <th style={{ width: '5%' }}>حذف</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(selectedBill.items || []).map((item, index) => (
+                        <tr key={index}>
+                          <td>
+                            <select 
+                              value={item.name} 
+                              onChange={e => handleProductSelect(index, e.target.value)}
+                              className={styles.formInput}
+                              style={{ width: '100%', padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', outline: 'none', background: 'white', textAlign: 'right' }}
+                            >
+                              <option value="">-- اختر المنتج --</option>
+                              {products.map(p => (
+                                <option key={p.id} value={p.labelAr}>
+                                  {p.labelAr}
+                                </option>
+                              ))}
+                              {item.name && !products.some(p => p.labelAr === item.name) && (
+                                <option value={item.name}>{item.name}</option>
+                              )}
+                            </select>
+                          </td>
+                          <td>
+                            <select 
+                              value={item.calcType} 
+                              onChange={e => updateBillItemField(index, 'calcType', e.target.value)}
+                            >
+                              <option value="square_meter">متر مربع</option>
+                              <option value="linear_width">طولي (عرض)</option>
+                              <option value="linear_height">طولي (ارتفاع)</option>
+                              <option value="unit">بالقطعة</option>
+                            </select>
+                          </td>
+                          <td>
+                            <input 
+                              type="number" 
+                              step="0.01" 
+                              value={item.width} 
+                              onChange={e => updateBillItemField(index, 'width', e.target.value)} 
+                              disabled={item.calcType === 'unit' || item.calcType === 'linear_height'}
+                            />
+                          </td>
+                          <td>
+                            <input 
+                              type="number" 
+                              step="0.01" 
+                              value={item.height} 
+                              onChange={e => updateBillItemField(index, 'height', e.target.value)} 
+                              disabled={item.calcType === 'unit' || item.calcType === 'linear_width'}
+                            />
+                          </td>
+                          <td>
+                            <input 
+                              type="number" 
+                              value={item.quantity} 
+                              onChange={e => updateBillItemField(index, 'quantity', e.target.value)} 
+                            />
+                          </td>
+                          <td>
+                            <input 
+                              type="number" 
+                              value={item.price} 
+                              onChange={e => updateBillItemField(index, 'price', e.target.value)} 
+                            />
+                          </td>
+                          <td>
+                            <input 
+                              type="number" 
+                              value={item.total} 
+                              onChange={e => updateBillItemField(index, 'total', e.target.value)} 
+                            />
+                          </td>
+                          <td>
+                            <button 
+                              onClick={() => removeBillItem(index)} 
+                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem' }}
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {(selectedBill.items || []).length === 0 && (
+                        <tr>
+                          <td colSpan={8} style={{ color: '#9ca3af', padding: '15px' }}>
+                            لا توجد بنود بعد. اضغط على "إضافة بند" في الأسفل.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <button 
+                  onClick={addItemToBill} 
+                  style={{ background: '#3E2723', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                >
+                  + إضافة بند جديد
+                </button>
+              </div>
+
+              {/* Totals Section */}
+              <div className={styles.totalsGrid}>
+                <div className={styles.totalsCol}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>الخصم (ج.م)</label>
+                    <input type="number" className={styles.formInput} value={selectedBill.discount || 0} onChange={e => updateBillField('discount', e.target.value)} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>تكلفة التركيب (ج.م)</label>
+                    <input type="number" className={styles.formInput} value={selectedBill.installation_cost || 0} onChange={e => updateBillField('installation_cost', e.target.value)} />
+                  </div>
+                </div>
+
+                <div className={styles.totalsCol}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>تكلفة النقل (ج.م)</label>
+                    <input type="number" className={styles.formInput} value={selectedBill.transport_cost || 0} onChange={e => updateBillField('transport_cost', e.target.value)} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>المدفوع / العربون (ج.م)</label>
+                    <input type="number" className={styles.formInput} value={selectedBill.deposit || 0} onChange={e => updateBillField('deposit', e.target.value)} />
+                  </div>
+                </div>
+
+                <div className={styles.totalsCol} style={{ justifyContent: 'center', borderRight: '1px solid #e5e7eb', paddingRight: '20px' }}>
+                  <div className={styles.totalsRow}>
+                    <span>إجمالي الأصناف:</span>
+                    <span>{Number(selectedBill.total_items_price || 0).toFixed(2)} ج.م</span>
+                  </div>
+                  <div className={styles.totalsRow}>
+                    <span>المدفوع / العربون:</span>
+                    <span>{Number(selectedBill.deposit || 0).toFixed(2)} ج.م</span>
+                  </div>
+                  <div className={`${styles.totalsRow} ${styles.totalsRowStrong}`}>
+                    <span>الإجمالي النهائي:</span>
+                    <span>{Number(selectedBill.final_total || 0).toFixed(2)} ج.م</span>
+                  </div>
+                  <div className={`${styles.totalsRow} ${styles.totalsRowStrong}`} style={{ color: '#d4af37' }}>
+                    <span>المتبقي:</span>
+                    <span>{Number(selectedBill.remaining_amount || 0).toFixed(2)} ج.م</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.saveBtn} onClick={handleSaveBill} disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ الفاتورة'}</button>
+              <button className={styles.cancelBtn} onClick={() => setShowBillModal(false)}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Partner Modal ── */}
+      {showPartnerModal && selectedPartner && (
+        <div className={styles.overlay} onClick={() => setShowPartnerModal(false)}>
+          <div className={styles.modal} style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>{selectedPartner.id ? 'تعديل الشريك' : 'إضافة شريك جديد'}</h2>
+              <button className={styles.closeBtn} onClick={() => setShowPartnerModal(false)}>✕</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>الاسم (عربي) *</label>
+                  <input className={styles.formInput} value={selectedPartner.nameAr || ''} onChange={e => setSelectedPartner({ ...selectedPartner, nameAr: e.target.value })} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>الاسم (إنجليزي) *</label>
+                  <input className={styles.formInput} dir="ltr" value={selectedPartner.nameEn || ''} onChange={e => setSelectedPartner({ ...selectedPartner, nameEn: e.target.value })} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>الترتيب *</label>
+                  <input className={styles.formInput} type="number" value={selectedPartner.sort_order ?? 0} onChange={e => setSelectedPartner({ ...selectedPartner, sort_order: Number(e.target.value) })} />
+                </div>
+                <div className={`${styles.formGroup} ${styles.formFull}`}>
+                  <label className={styles.formLabel}>شعار الشريك (الصورة) *</label>
+                  <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
+                    {selectedPartner.src ? (
+                      <div style={{ position: 'relative', width: '120px', height: '80px', border: '1px solid #e5e9f0', borderRadius: '6px', overflow: 'hidden', background: '#fdfbf7', padding: '5px' }}>
+                        <img src={selectedPartner.src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="partner logo" />
+                      </div>
+                    ) : (
+                      <div style={{ width: '120px', height: '80px', border: '2px dashed #e5e9f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '0.8rem', background: '#f9fafb' }}>
+                        لا توجد صورة
+                      </div>
+                    )}
+                    <label className={styles.uploadBtn} style={{ width: 'auto', margin: 0, padding: '0.5rem 1rem' }}>
+                      {uploadingPartnerLogo ? 'جاري الرفع...' : selectedPartner.src ? 'تغيير الصورة' : 'رفع الصورة'}
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className={styles.hiddenInput} 
+                        disabled={uploadingPartnerLogo} 
+                        onChange={e => { if (e.target.files?.[0]) handleUploadPartnerLogo(e.target.files[0]); }} 
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.saveBtn} onClick={handleSavePartner} disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ البيانات'}</button>
+              <button className={styles.cancelBtn} onClick={() => setShowPartnerModal(false)}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Message Details Modal ── */}
+      {showMessageModal && selectedMessage && (
+        <div className={styles.overlay} onClick={() => setShowMessageModal(false)}>
+          <div className={styles.modal} style={{ maxWidth: '650px' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>تفاصيل رسالة التواصل</h2>
+              <button className={styles.closeBtn} onClick={() => setShowMessageModal(false)}>✕</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.detailGrid} style={{ gridTemplateColumns: '1fr' }}>
+                <div className={styles.detailItem}>
+                  <span className={styles.detailLabel}>اسم المرسل</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#3E2723' }}>{selectedMessage.name}</span>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>رقم الهاتف</span>
+                    <span dir="ltr" style={{ textAlign: 'right', fontWeight: '600' }}>{selectedMessage.phone}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>البريد الإلكتروني</span>
+                    <span dir="ltr" style={{ textAlign: 'right', color: selectedMessage.email ? 'inherit' : '#9ca3af' }}>{selectedMessage.email || 'لا يوجد'}</span>
+                  </div>
+                </div>
+
+                <div className={styles.detailItem} style={{ marginTop: '0.5rem' }}>
+                  <span className={styles.detailLabel}>تاريخ الإرسال</span>
+                  <span>{new Date(selectedMessage.created_at).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+
+                <div className={styles.detailItem} style={{ marginTop: '1rem', background: '#fdfbf7', padding: '15px', borderRadius: '8px', border: '1px solid rgba(62,39,35,0.08)' }}>
+                  <span className={styles.detailLabel} style={{ marginBottom: '8px' }}>نص الرسالة</span>
+                  <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '0.92rem', color: '#1e2532', margin: 0 }}>{selectedMessage.message}</p>
+                </div>
+              </div>
+            </div>
+            <div className={styles.modalFooter} style={{ justifyContent: 'space-between' }}>
+              <button 
+                type="button"
+                className={styles.deleteBtn} 
+                onClick={() => handleDeleteMessage(selectedMessage.id)}
+              >
+                حذف الرسالة
+              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  type="button"
+                  className={styles.settingsBtn} 
+                  onClick={() => markMessageAsRead(selectedMessage.id, !selectedMessage.is_read)}
+                >
+                  {selectedMessage.is_read ? 'تعليم كغير مقروءة' : 'تعليم كمقروءة'}
+                </button>
+                <button 
+                  type="button"
+                  className={styles.cancelBtn} 
+                  onClick={() => setShowMessageModal(false)}
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  );
+
+
+
+    {/* ── Print Area (Outside .shell for print formatting) ── */}
+    {selectedBillForPrint && (
+      <div className={styles.printInvoiceArea}>
+        <div className={styles.invoiceHeader}>
+          <div className={styles.brandLeft}>
+            <img src="/logo2.png" className={styles.brandLogo} alt="Crystal Blinds Logo" />
+            <p className={styles.brandSlogan}>جودة – دقة – ضمان</p>
+          </div>
+          
+          <div className={styles.invoiceTitleBlock}>
+            <h1 className={styles.invoiceTitleAr}>فاتورة مبيعات</h1>
+            <p className={styles.invoiceTitleEn}>SALES INVOICE</p>
+          </div>
+
+          <div className={styles.invoiceNumBlock}>
+            <span className={styles.invoiceNumLabel}>رقم الفاتورة</span>
+            <span className={styles.invoiceNumVal}>{selectedBillForPrint.invoice_number}</span>
+          </div>
+        </div>
+
+        <div className={styles.invoiceInfoGrid}>
+          <div className={styles.infoCard}>
+            <div className={styles.infoCardHeader}>بيانات العميل</div>
+            <div className={styles.infoCardBody}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>اسم العميل:</span>
+                <span className={styles.infoVal}>{selectedBillForPrint.client_name}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>رقم الهاتف:</span>
+                <span className={styles.infoVal} dir="ltr">{selectedBillForPrint.client_phone || '—'}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>العنوان:</span>
+                <span className={styles.infoVal}>{selectedBillForPrint.client_address || '—'}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>ملاحظات:</span>
+                <span className={styles.infoVal}>{selectedBillForPrint.notes || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.infoCard}>
+            <div className={styles.infoCardHeader}>تفاصيل الفاتورة</div>
+            <div className={styles.infoCardBody}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>التاريخ:</span>
+                <span className={styles.infoVal}>
+                  {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                </span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>الوقت:</span>
+                <span className={styles.infoVal} dir="ltr">
+                  {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                </span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>رقم الطلب:</span>
+                <span className={styles.infoVal}>{selectedBillForPrint.order_number || '—'}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>طريقة الدفع:</span>
+                <span className={styles.infoVal}>{selectedBillForPrint.payment_method}</span>
+              </div>
+              {selectedBillForPrint.delivery_date && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>موعد التسليم:</span>
+                  <span className={styles.infoVal}>
+                    {new Date(selectedBillForPrint.delivery_date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <table className={styles.printTable}>
+          <thead>
+            <tr>
+              <th style={{ width: '5%' }}>م</th>
+              <th style={{ width: '40%', textAlign: 'right' }}>الصنف / النوع</th>
+              <th style={{ width: '10%' }}>الطول (م)</th>
+              <th style={{ width: '10%' }}>العرض (م)</th>
+              <th style={{ width: '10%' }}>عدد الستائر</th>
+              <th style={{ width: '12%' }}>سعر المتر (ج.م)</th>
+              <th style={{ width: '13%' }}>الإجمالي (ج.م)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {selectedBillForPrint.items.map((item, idx) => (
+              <tr key={idx}>
+                <td>{idx + 1}</td>
+                <td style={{ textAlign: 'right' }}>{item.name}</td>
+                <td>{item.calcType === 'unit' || item.calcType === 'linear_width' ? '—' : Number(item.height || 0).toFixed(2)}</td>
+                <td>{item.calcType === 'unit' || item.calcType === 'linear_height' ? '—' : Number(item.width || 0).toFixed(2)}</td>
+                <td>{item.quantity}</td>
+                <td>{Number(item.price || 0).toFixed(2)}</td>
+                <td>{Number(item.total || 0).toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className={styles.invoiceFooterGrid}>
+          <div>
+            <table className={styles.printTotalsTable}>
+              <tbody>
+                <tr>
+                  <td>إجمالي الأصناف</td>
+                  <td>{Number(selectedBillForPrint.total_items_price || 0).toFixed(2)} ج.م</td>
+                </tr>
+                <tr>
+                  <td>خصم</td>
+                  <td>{Number(selectedBillForPrint.discount || 0).toFixed(2)} ج.م</td>
+                </tr>
+                <tr>
+                  <td>إجمالي بعد الخصم</td>
+                  <td>{(Number(selectedBillForPrint.total_items_price || 0) - Number(selectedBillForPrint.discount || 0)).toFixed(2)} ج.م</td>
+                </tr>
+                <tr>
+                  <td>تكلفة التركيب</td>
+                  <td>{Number(selectedBillForPrint.installation_cost || 0).toFixed(2)} ج.م</td>
+                </tr>
+                <tr>
+                  <td>تكلفة النقل</td>
+                  <td>{Number(selectedBillForPrint.transport_cost || 0).toFixed(2)} ج.م</td>
+                </tr>
+                <tr className={styles.finalTotalRow}>
+                  <td>الإجمالي النهائي</td>
+                  <td>{Number(selectedBillForPrint.final_total || 0).toFixed(2)} ج.م</td>
+                </tr>
+                <tr>
+                  <td>المدفوع / العربون</td>
+                  <td>{Number(selectedBillForPrint.deposit || 0).toFixed(2)} ج.م</td>
+                </tr>
+                <tr className={styles.finalTotalRow}>
+                  <td>المتبقي</td>
+                  <td>{Number(selectedBillForPrint.remaining_amount || 0).toFixed(2)} ج.م</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className={styles.termsCard}>
+            <div>
+              <h3 className={styles.termsTitle}>ملاحظات وشروط</h3>
+              <ul className={styles.termsList}>
+                <li>الأسعار تشمل التركيب داخل القاهرة والجيزة.</li>
+                <li>الضمان 3 سنوات على الخامات وسنة على التركيب.</li>
+                <li>مدة تنفيذ الطلب من 5 إلى 10 أيام عمل.</li>
+                <li>هذه الفاتورة صالحة لمدة 15 يوم من تاريخ الإصدار.</li>
+              </ul>
+            </div>
+            
+            <div className={styles.signatureBlock}>
+              <div className={styles.signatureTitle}>توقيع العميل</div>
+              <div className={styles.signatureLine}>............................................................</div>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.printContactFooter}>
+          <div className={styles.contactItem}>
+            <span>هاتف: 01100080609 / 01020909498</span>
+          </div>
+          <div className={styles.contactItem}>
+            <span>العنوان: 74 شارع 15 مايو أمام مجمع الصوالحة الإسلامي، محطة الفيلا، شبرا الخيمة</span>
+          </div>
+          <div className={styles.contactItem}>
+            <span>موقعنا: crystalblinds.com</span>
+          </div>
+        </div>
+        
+        <div className={styles.thankYouText}>
+          شكرا لاختياركم كريستال للستائر
+        </div>
+      </div>
+    )}
+  </>
+);
 }
