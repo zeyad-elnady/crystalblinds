@@ -1,210 +1,253 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-
-const HERO_IMAGES = [
-  "/photos for crystal/1.jpeg",
-  "/photos for crystal/3.jpeg",
-  "/photos for crystal/4.jpeg",
-];
+import { useState, useEffect, useRef } from "react";
 
 export default function ModernHero({ isAr }: { isAr: boolean }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mounted, setMounted] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
+  const [counts, setCounts] = useState({ clients: 0, meters: 0, years: 0, satisfaction: 0 });
+  const statsRef = useRef<HTMLDivElement>(null);
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
     setMounted(true);
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
-    }, 6000);
-    return () => clearInterval(interval);
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMousePos({
-      x: (e.clientX - rect.left) / rect.width,
-      y: (e.clientY - rect.top) / rect.height,
-    });
+  // Animate counters when stats bar comes into view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const duration = 2000;
+          const steps = 60;
+          const interval = duration / steps;
+          let step = 0;
+          const timer = setInterval(() => {
+            step++;
+            const progress = step / steps;
+            const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+            setCounts({
+              clients: Math.round(5000 * ease),
+              meters: Math.round(12000 * ease),
+              years: Math.round(10 * ease),
+              satisfaction: Math.round(98 * ease),
+            });
+            if (step >= steps) clearInterval(timer);
+          }, interval);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (statsRef.current) observer.observe(statsRef.current);
+    return () => observer.disconnect();
   }, []);
+
+  const locale = isAr ? "ar" : "en";
 
   return (
-    <div
-      className="relative w-full h-screen overflow-hidden bg-[#0d0705] flex flex-col justify-center items-center"
-      onMouseMove={handleMouseMove}
-    >
+    <div className="relative w-full min-h-screen bg-[#1a0f0a] flex flex-col">
+      {/* ═══ BACKGROUND IMAGE ═══ */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/hero_bg.png"
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ objectPosition: "center 30%" }}
+        />
+      </div>
 
-      {/* Background Images with Crossfade & Slow Zoom */}
-      {HERO_IMAGES.map((src, index) => (
-        <div
-          key={src}
-          className={`absolute inset-0 w-full h-full transition-opacity duration-[2000ms] ease-in-out ${index === currentImageIndex ? "opacity-100 z-10" : "opacity-0 z-0"
-            }`}
-        >
-          <img
-            src={src}
-            alt="Hero Background"
-            className={`w-full h-full object-cover transition-transform duration-[12000ms] ease-out ${index === currentImageIndex ? "scale-[1.15]" : "scale-100"
-              }`}
-          />
-        </div>
-      ))}
-
-      {/* Multi-layer overlay system for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#3E2723]/80 via-[#3E2723]/30 to-[#0d0705]/95 z-20 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.7)_100%)] z-20 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30 z-20 pointer-events-none" />
-
-      {/* Animated golden light glow that follows a subtle path */}
+      {/* ═══ OVERLAY GRADIENTS — dark on LEFT for Arabic, dark on RIGHT for English ═══ */}
       <div
-        className="absolute w-[800px] h-[800px] rounded-full z-20 pointer-events-none transition-all duration-[3000ms] ease-out opacity-[0.07]"
+        className="absolute inset-0 z-10 pointer-events-none"
         style={{
-          background: "radial-gradient(circle, #d4af37 0%, transparent 70%)",
-          left: `${mousePos.x * 100}%`,
-          top: `${mousePos.y * 100}%`,
-          transform: "translate(-50%, -50%)",
+          background: isAr
+            ? "linear-gradient(to right, rgba(26,15,10,0.93) 0%, rgba(26,15,10,0.82) 30%, rgba(26,15,10,0.5) 55%, rgba(26,15,10,0.15) 75%, transparent 100%)"
+            : "linear-gradient(to left, rgba(26,15,10,0.93) 0%, rgba(26,15,10,0.82) 30%, rgba(26,15,10,0.5) 55%, rgba(26,15,10,0.15) 75%, transparent 100%)",
+        }}
+      />
+      {/* Bottom fade to section below */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background: "linear-gradient(to top, rgba(26,15,10,0.9) 0%, rgba(26,15,10,0.2) 18%, transparent 35%)",
         }}
       />
 
-      {/* Floating golden particles */}
-      <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
-        {[...Array(6)].map((_, i) => (
+      {/* ═══ HERO CONTENT ═══ */}
+      <div className="relative z-20 flex-1 flex items-center justify-center">
+        <div className="w-full max-w-[1400px] mx-auto px-8 md:px-16 pt-28 pb-40 flex justify-center lg:justify-end">
           <div
-            key={i}
-            className="absolute w-[2px] h-[2px] bg-[#d4af37] rounded-full animate-[floatParticle_8s_ease-in-out_infinite]"
-            style={{
-              left: `${15 + i * 14}%`,
-              top: `${20 + (i % 3) * 25}%`,
-              animationDelay: `${i * 1.3}s`,
-              opacity: 0.4 + (i % 3) * 0.2,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Decorative corner accents */}
-      <div className={`absolute top-8 left-8 z-30 pointer-events-none transition-all duration-[1500ms] delay-700 ${mounted ? "opacity-100" : "opacity-0"}`}>
-        <div className="w-16 md:w-24 h-[1px] bg-gradient-to-r from-[#d4af37]/60 to-transparent" />
-        <div className="w-[1px] h-16 md:h-24 bg-gradient-to-b from-[#d4af37]/60 to-transparent" />
-      </div>
-      <div className={`absolute top-8 right-8 z-30 pointer-events-none transition-all duration-[1500ms] delay-700 ${mounted ? "opacity-100" : "opacity-0"}`}>
-        <div className="w-16 md:w-24 h-[1px] bg-gradient-to-l from-[#d4af37]/60 to-transparent ml-auto" />
-        <div className="w-[1px] h-16 md:h-24 bg-gradient-to-b from-[#d4af37]/60 to-transparent ml-auto" />
-      </div>
-      <div className={`absolute bottom-8 left-8 z-30 pointer-events-none transition-all duration-[1500ms] delay-700 ${mounted ? "opacity-100" : "opacity-0"}`}>
-        <div className="w-[1px] h-16 md:h-24 bg-gradient-to-t from-[#d4af37]/60 to-transparent" />
-        <div className="w-16 md:w-24 h-[1px] bg-gradient-to-r from-[#d4af37]/60 to-transparent" />
-      </div>
-      <div className={`absolute bottom-8 right-8 z-30 pointer-events-none transition-all duration-[1500ms] delay-700 ${mounted ? "opacity-100" : "opacity-0"}`}>
-        <div className="w-[1px] h-16 md:h-24 bg-gradient-to-t from-[#d4af37]/60 to-transparent ml-auto" />
-        <div className="w-16 md:w-24 h-[1px] bg-gradient-to-l from-[#d4af37]/60 to-transparent ml-auto" />
-      </div>
-
-      {/* Subtle horizontal gold line behind content */}
-      <div className={`absolute left-0 right-0 h-[1px] z-20 pointer-events-none transition-all duration-[2000ms] delay-500 ${mounted ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0"}`}
-        style={{ top: "50%", background: "linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.15) 30%, rgba(212,175,55,0.15) 70%, transparent 100%)" }}
-      />
-
-      {/* Image progress dots */}
-      <div className={`absolute z-30 flex gap-3 transition-all duration-1000 delay-1000 ${mounted ? "opacity-100" : "opacity-0"} ${isAr ? "left-8 md:left-12" : "right-8 md:right-12"} top-1/2 -translate-y-1/2 flex-col`}>
-        {HERO_IMAGES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrentImageIndex(i)}
-            className={`transition-all duration-500 rounded-full ${i === currentImageIndex
-              ? "w-[6px] h-8 bg-[#d4af37] shadow-[0_0_12px_rgba(212,175,55,0.5)]"
-              : "w-[6px] h-[6px] bg-white/30 hover:bg-[#FFFDFA]/60"
+            className={`max-w-[680px] text-center transition-all duration-1000 ease-out ${
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+            style={{ direction: isAr ? "rtl" : "ltr" }}
+          >
+            {/* ── Small tagline ── */}
+            <p
+              className={`text-[#d4af37] text-[13px] md:text-[15px] font-semibold mb-5 tracking-wide transition-all duration-1000 delay-200 ${
+                mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
+            >
+              {isAr ? "فخامة تدوم.. وخصوصية تكتمل" : "Lasting Luxury.. Complete Privacy"}
+            </p>
+
+            {/* ── Main headline ── */}
+            <h1
+              className={`text-white font-extrabold leading-[1.15] mb-6 transition-all duration-1000 delay-300 ${
+                mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+              }`}
+              style={{ fontSize: "clamp(2.2rem, 5vw, 3.8rem)" }}
+            >
+              {isAr ? (
+                <>
+                  ستائر تعكس ذوقك
+                  <br />
+                  وتكمل جمال مساحتك
+                </>
+              ) : (
+                <>
+                  Blinds That Reflect
+                  <br />
+                  Your Taste & Space
+                </>
+              )}
+            </h1>
+
+            {/* ── Subtitle ── */}
+            <p
+              className={`text-white/70 text-[14px] md:text-[16px] leading-[1.8] mb-10 max-w-[500px] mx-auto font-light transition-all duration-1000 delay-400 ${
+                mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              {isAr
+                ? "حلول متكاملة للستائر المنزلية والتجارية بخامات عالية الجودة وتركيب احترافي."
+                : "Integrated solutions for residential & commercial blinds with premium materials and professional installation."}
+            </p>
+
+            {/* ── CTA Buttons ── */}
+            <div
+              className={`flex flex-wrap items-center justify-center gap-4 transition-all duration-1000 delay-500 ${
+                mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+              }`}
+            >
+              {/* Primary: Book Free Inspection */}
+              <a
+                href="#reserve"
+                className={`inline-flex items-center gap-2.5 bg-[#d4af37] hover:bg-[#c5a030] text-[#3E2723] font-bold text-[13px] px-7 py-3.5 rounded-lg transition-all duration-300 shadow-[0_4px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_8px_30px_rgba(212,175,55,0.5)] ${
+                  isAr ? "flex-row-reverse" : ""
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                <span>{isAr ? "احجز معاينة مجانية" : "Book Free Inspection"}</span>
+              </a>
+
+              {/* Secondary: WhatsApp */}
+              <a
+                href="https://wa.me/201100080609"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2.5 bg-white/10 border border-white/25 hover:bg-white/15 hover:border-white/40 text-white font-bold text-[13px] px-7 py-3.5 rounded-lg transition-all duration-300 backdrop-blur-sm ${
+                  isAr ? "flex-row-reverse" : ""
+                }`}
+              >
+                <svg className="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+                <span>{isAr ? "تواصل واتساب" : "WhatsApp Us"}</span>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Content */}
+      {/* ═══ STATS FLOATING BAR ═══ */}
       <div
-        className={`relative z-30 text-center px-6 max-w-5xl mx-auto flex flex-col items-center transition-all duration-1000 ease-out transform ${mounted ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
-          }`}
+        ref={statsRef}
+        className="absolute bottom-0 left-0 right-0 z-30 w-full px-6 md:px-12 lg:px-16"
+        style={{ transform: "translateY(50%)" }}
       >
-        {/* Top diamond accent */}
-        <div className={`flex items-center gap-5 mb-8 md:mb-10 transition-all duration-1000 delay-200 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}>
-          <div className="w-12 md:w-28 h-[1px] bg-gradient-to-r from-transparent to-[#d4af37]/70" />
-          <div className="w-2 h-2 rotate-45 border border-[#d4af37]/70" />
-          <span className="text-[#d4af37] text-[10px] md:text-xs font-semibold tracking-[0.4em] uppercase">
-            {isAr ? "الفخامة والأناقة" : "Luxury & Elegance"}
-          </span>
-          <div className="w-2 h-2 rotate-45 border border-[#d4af37]/70" />
-          <div className="w-12 md:w-28 h-[1px] bg-gradient-to-l from-transparent to-[#d4af37]/70" />
-        </div>
-
-        {/* Main Headline */}
-        <h1 className={`font-headline text-[#FFFDFA] font-extrabold leading-[1.15] md:leading-[1.05] mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all duration-1000 delay-300 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-          <span className="block text-5xl md:text-7xl lg:text-[5.5rem] tracking-tight">
-            {isAr ? "كريستال للستائر" : "Crystal Blinds"}
-          </span>
-        </h1>
-
-        {/* Elegant separator */}
-        <div className={`flex items-center gap-3 mb-8 transition-all duration-1000 delay-400 ${mounted ? "opacity-100 scale-x-100" : "opacity-0 scale-x-50"}`}>
-          <div className="w-8 md:w-16 h-[1px] bg-[#d4af37]/40" />
-          <div className="w-1.5 h-1.5 rounded-full bg-[#d4af37]/60" />
-          <div className="w-8 md:w-16 h-[1px] bg-[#d4af37]/40" />
-        </div>
-
-        {/* Subtitle */}
-        <p className={`font-body text-[#FFFDFA]/70 text-sm md:text-base max-w-xl leading-[1.9] tracking-wide mb-14 transition-all duration-1000 delay-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          {isAr
-            ? "تركيب احترافي لجميع أنواع الستائر — ستائر رول، شرائح رأسية، زيبرا، شرائح معدنية، خشبية، بامبو"
-            : "Professional installation for all types of blinds — Roller, Vertical, Zebra, Venetian, Wood, Bamboo"}
-        </p>
-
-        {/* CTA Buttons */}
-        <div className={`flex flex-col sm:flex-row items-center gap-5 transition-all duration-1000 delay-600 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-          <a
-            href="#collections"
-            className="group relative px-10 py-4 bg-[#d4af37] text-[#3E2723] text-xs md:text-sm font-bold uppercase tracking-[0.2em] overflow-hidden transition-all duration-500 shadow-[0_0_30px_rgba(212,175,55,0.25)] hover:shadow-[0_0_40px_rgba(212,175,55,0.45)]"
+        <div className="max-w-[1200px] mx-auto">
+          <div
+            className={`relative bg-[#3E2723]/80 backdrop-blur-md rounded-2xl overflow-hidden shadow-[0_15px_50px_rgba(0,0,0,0.5)] border border-[#5a3a2e]/60 transition-all duration-1000 delay-700 ${
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
           >
-            <span className="relative z-10">{isAr ? "اكتشف مجموعتنا" : "Discover Collections"}</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#e9c176] to-[#d4af37] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          </a>
-          <a
-            href="#reserve"
-            className="group flex items-center gap-3 px-10 py-4 border border-[#FFFDFA]/20 text-[#FFFDFA]/90 text-xs md:text-sm font-bold uppercase tracking-[0.2em] hover:border-[#d4af37]/60 hover:text-[#d4af37] transition-all duration-500 backdrop-blur-sm bg-white/[0.03]"
-          >
-            <span>{isAr ? "احجز زيارة" : "Book a Visit"}</span>
-            <span className={`material-symbols-outlined text-[14px] transition-transform duration-300 group-hover:translate-x-1 ${isAr ? "rotate-180 group-hover:-translate-x-1 group-hover:translate-x-0" : ""}`}>
-              arrow_forward
-            </span>
-          </a>
+            {/* Gold accent bar on the side */}
+            <div
+              className={`absolute top-0 bottom-0 w-[4px] bg-[#d4af37] ${
+                isAr ? "right-0" : "left-0"
+              }`}
+            />
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4">
+              {/* Stat 1: Happy Customers */}
+              <div
+                className={`flex flex-col items-center justify-center py-7 px-4 border-b lg:border-b-0 ${
+                  isAr ? "lg:border-l border-[#5a3a2e]/40" : "lg:border-r border-[#5a3a2e]/40"
+                } border-[#5a3a2e]/40`}
+              >
+                <span className="material-symbols-outlined text-[#d4af37] text-[26px] mb-2">
+                  groups
+                </span>
+                <span className="text-white text-[28px] md:text-[32px] font-extrabold tracking-tight leading-none">
+                  +{counts.clients.toLocaleString()}
+                </span>
+                <span className="text-white/50 text-[12px] md:text-[13px] font-light mt-1.5">
+                  {isAr ? "عميل سعيد" : "Happy Customers"}
+                </span>
+              </div>
+
+              {/* Stat 2: Meters Installed */}
+              <div
+                className={`flex flex-col items-center justify-center py-7 px-4 border-b lg:border-b-0 ${
+                  isAr ? "lg:border-l border-[#5a3a2e]/40" : "lg:border-r border-[#5a3a2e]/40"
+                } border-[#5a3a2e]/40`}
+              >
+                <span className="material-symbols-outlined text-[#d4af37] text-[26px] mb-2">
+                  architecture
+                </span>
+                <span className="text-white text-[28px] md:text-[32px] font-extrabold tracking-tight leading-none">
+                  +{counts.meters.toLocaleString()}
+                </span>
+                <span className="text-white/50 text-[12px] md:text-[13px] font-light mt-1.5">
+                  {isAr ? "متر ستائر منفذة" : "Meters Installed"}
+                </span>
+              </div>
+
+              {/* Stat 3: Years Experience */}
+              <div
+                className={`flex flex-col items-center justify-center py-7 px-4 ${
+                  isAr ? "lg:border-l border-[#5a3a2e]/40" : "lg:border-r border-[#5a3a2e]/40"
+                } border-[#5a3a2e]/40`}
+              >
+                <span className="material-symbols-outlined text-[#d4af37] text-[26px] mb-2">
+                  workspace_premium
+                </span>
+                <span className="text-white text-[28px] md:text-[32px] font-extrabold tracking-tight leading-none">
+                  +{counts.years}
+                </span>
+                <span className="text-white/50 text-[12px] md:text-[13px] font-light mt-1.5">
+                  {isAr ? "سنوات خبرة" : "Years Experience"}
+                </span>
+              </div>
+
+              {/* Stat 4: Satisfaction */}
+              <div className="flex flex-col items-center justify-center py-7 px-4">
+                <span className="material-symbols-outlined text-[#d4af37] text-[26px] mb-2">
+                  thumb_up
+                </span>
+                <span className="text-white text-[28px] md:text-[32px] font-extrabold tracking-tight leading-none">
+                  {counts.satisfaction}%
+                </span>
+                <span className="text-white/50 text-[12px] md:text-[13px] font-light mt-1.5">
+                  {isAr ? "رضا العملاء" : "Customer Satisfaction"}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Scroll Down Indicator */}
-      <div
-        className={`absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 transition-all duration-1000 delay-[800ms] ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
-      >
-        <span className="text-[#FFFDFA]/40 text-[9px] tracking-[0.35em] uppercase font-medium">
-          {isAr ? "اسحب لأسفل" : "Scroll"}
-        </span>
-        <div className="w-[18px] h-[28px] rounded-full border border-[#FFFDFA]/25 flex items-start justify-center pt-1.5">
-          <div className="w-[3px] h-[7px] rounded-full bg-[#d4af37] animate-[scrollPulse_2s_ease-in-out_infinite]" />
-        </div>
-      </div>
-
-
-      <style>{`
-        @keyframes scrollPulse {
-          0%, 100% { opacity: 1; transform: translateY(0); }
-          50% { opacity: 0.3; transform: translateY(6px); }
-        }
-        @keyframes floatParticle {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0; }
-          10% { opacity: 0.6; }
-          50% { transform: translate(30px, -60px) scale(1.5); opacity: 0.3; }
-          90% { opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }

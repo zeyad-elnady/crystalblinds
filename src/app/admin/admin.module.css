@@ -4,7 +4,7 @@
   height: 100vh;
   background: #FFFDFA;
   color: #1e2532;
-  font-family: var(--font-ibm-plex), 'IBM Plex Sans Arabic', sans-serif;
+  font-family: var(--font-tajawal), 'Tajawal', sans-serif;
   direction: rtl;
   overflow: hidden;
 }
@@ -207,27 +207,52 @@
 .successMsg { background: #f0fdf4; border: 1px solid #bbf7d0; color: #065f46; border-radius: 8px; padding: 0.6rem; font-size: 0.8rem; text-align: center; }
 
 /* ── Mobile View Adjustments ── */
+.mobileBackdrop {
+  display: none;
+}
+
 @media (max-width: 900px) {
+  .mobileBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+  }
   .sidebar {
     position: fixed;
-    right: 0;
+    right: -250px; /* Hidden offscreen on the right */
     top: 0;
     bottom: 0;
-    transform: translateX(100%);
+    width: 240px;
+    transform: none; /* Reset transform for robust right positioning */
     box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+    transition: right 0.3s ease-in-out;
   }
-  .mobileMenuOpen .sidebar { transform: translateX(0); }
+  .mobileMenuOpen .sidebar {
+    right: 0; /* Slide in from the right */
+  }
   .mobileClose {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: absolute;
     top: 1rem;
     left: 1rem;
-    background: #FFFDFA;
-    border: none;
-    padding: 0.5rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    color: #6b7280;
+    color: rgba(255,255,255,0.8);
     cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+  }
+  .mobileClose:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
   }
   .main { padding: 1rem; }
   .mobileBar {
@@ -238,7 +263,7 @@
     border-bottom: 1px solid #e5e9f0;
     margin-bottom: 1rem;
   }
-  .mobileBarLogo { height: 32px; filter: brightness(0); }
+  .mobileBarLogo { height: 42px; }
   .menuBtn {
     background: #fff;
     border: 1px solid #e5e9f0;
@@ -477,7 +502,7 @@
   margin: 0 auto;
   padding: 30px;
   direction: rtl;
-  font-family: 'IBM Plex Sans Arabic', 'Tajawal', sans-serif;
+  font-family: var(--font-tajawal), 'Tajawal', sans-serif;
   box-sizing: border-box;
 }
 
@@ -820,6 +845,425 @@
   display: inline-block;
   box-shadow: 0 1px 4px rgba(239, 68, 68, 0.35);
 }
+
+/* WhatsApp contact links */
+.whatsappLink {
+  color: #25D366;
+  font-weight: 700;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.whatsappLink:hover {
+  color: #128c7e;
+}
+
+/* Receipt Thumbnail for transaction proofs */
+.receiptThumbnail {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(62, 39, 35, 0.15);
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+  background: #fdfbf7;
+}
+.receiptThumbnail:hover {
+  transform: scale(1.05);
+  border-color: #d4af37;
+}
+
+/* Action buttons inside modals */
+.confirmPayBtn {
+  background-color: #065f46;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-family: inherit;
+}
+.confirmPayBtn:hover {
+  background-color: #047857;
+}
+
+.rejectPayBtn {
+  background-color: #b91c1c;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-family: inherit;
+}
+.rejectPayBtn:hover {
+  background-color: #dc2626;
+}
+
+.whatsappNotifyBtn {
+  background-color: #25D366;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+  text-decoration: none;
+  font-family: inherit;
+}
+.whatsappNotifyBtn:hover {
+  background-color: #128c7e;
+}
+
+/* Premium Invoice Styles */
+.invoiceHeaderNew {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.logoBlock {
+  flex: 1;
+}
+
+.logoWrapper {
+  background: transparent;
+  padding: 0;
+  display: inline-block;
+}
+
+.brandLogoNew {
+  height: 80px;
+  object-fit: contain;
+  filter: brightness(0) drop-shadow(0.5px 0 0 #000) drop-shadow(-0.5px 0 0 #000) drop-shadow(0 0.5px 0 #000) drop-shadow(0 -0.5px 0 #000);
+}
+
+.companyInfoBlock {
+  text-align: left;
+}
+
+.companyNameEn {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #000;
+  margin: 0 0 3px 0;
+}
+
+.companyAddressEn {
+  font-size: 0.75rem;
+  color: #000;
+  font-weight: 700;
+  margin: 1px 0;
+}
+
+.companyPhoneEn {
+  font-size: 0.75rem;
+  color: #000;
+  font-weight: 900;
+  margin: 3px 0 0 0;
+}
+
+.headerDecorativeWave {
+  height: 2px;
+  background: #000;
+  margin-bottom: 15px;
+}
+
+.titleContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.titleLeftAr {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #000;
+}
+
+.titleRightEn {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #000;
+}
+
+.titleProforma {
+  color: #000;
+  font-weight: 900;
+}
+
+.titleInvoiceNum {
+  color: #000;
+  font-weight: 900;
+}
+
+.metaPillBox {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border: 1.5px solid #000;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  background: #fff;
+}
+
+.metaPillCol {
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-left: 1.5px solid #000;
+}
+
+.metaPillCol:last-child {
+  border-left: none;
+}
+
+.metaLabel {
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #000;
+  margin-bottom: 2px;
+}
+
+.metaVal {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #000;
+}
+
+.clientDetailsCard {
+  border: 1.5px solid #000;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 15px;
+}
+
+.clientDetailsHeader {
+  background: #000;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 900;
+  padding: 5px 12px;
+  text-align: right;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.clientDetailsBody {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #000;
+  font-weight: 700;
+}
+
+.clientDetailsBody div {
+  color: #000 !important;
+}
+
+.clientDetailsBody b {
+  font-weight: 900;
+  color: #000;
+}
+
+.premiumInvoiceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid #000;
+}
+
+.premiumInvoiceTable th {
+  background: #fff;
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 6px 4px;
+  border: 1.5px solid #000;
+  text-align: center;
+}
+
+.premiumInvoiceTable td {
+  padding: 6px 4px;
+  border: 1.5px solid #000;
+  font-size: 0.7rem;
+  text-align: center;
+  color: #000;
+  font-weight: 800;
+}
+
+.premiumInvoiceTable tr:nth-child(even) td {
+  background: #fff;
+}
+
+.premiumFooterLayout {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.premiumTermsBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.paymentComm {
+  font-size: 0.8rem;
+  color: #000;
+  font-weight: 900;
+}
+
+.termsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.termsSectionTitle {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #000;
+  border-bottom: 1.5px solid #000;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+}
+
+.termsSectionList {
+  padding-right: 14px;
+  margin: 0;
+  font-size: 0.7rem;
+  color: #000;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.termsSectionList li {
+  margin-bottom: 2px;
+  color: #000;
+}
+
+.termsSectionText {
+  font-size: 0.7rem;
+  color: #000;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.premiumTotalsBox {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.premiumTotalsTable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1.5px solid #000;
+}
+
+.premiumTotalsTable td {
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  border: 1.5px solid #000;
+  color: #000;
+  font-weight: 800;
+}
+
+.premiumTotalsTable td:first-child {
+  width: 50%;
+  font-weight: 900;
+  background: #fff;
+}
+
+.premiumTotalsTable tr.premiumFinalRow td {
+  background: #fff !important;
+  color: #000 !important;
+  font-size: 0.85rem;
+  font-weight: 900;
+  border-top: 2px double #000;
+  border-bottom: 2px double #000;
+}
+
+.premiumTotalsTable tr.premiumRemainingRow td {
+  background: #fff !important;
+  color: #000 !important;
+  font-size: 0.9rem;
+  font-weight: 900;
+  border: 2px solid #000;
+}
+
+.signatureBlockNew {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.signatureTitleNew {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #000;
+  margin-bottom: 20px;
+}
+
+.signatureLineNew {
+  font-size: 0.8rem;
+  color: #000;
+  font-weight: 900;
+}
+
+.thankYouNew {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #000;
+  border-top: 1.5px solid #000;
+  padding-top: 10px;
+  margin-top: 15px;
+}
+
+.downloadBtn {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.downloadBtn:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
 
 
 

@@ -49,20 +49,15 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
       <div className={`max-w-7xl mx-auto relative z-10 ${isAr ? "text-right rtl" : "text-left ltr"}`}>
         
         {/* Section Heading */}
-        <div className="mb-20 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 relative">
-          <div>
-            <span className="text-[#d4af37] uppercase tracking-[0.3em] text-[10px] md:text-xs font-bold mb-3 block">
-              {isAr ? "لماذا تختارنا" : "WHY CHOOSE US"}
-            </span>
-            <h2 className="font-headline text-4xl md:text-5xl font-bold text-[#3E2723] leading-tight">
-              {isAr ? (
-                <>الفرق مع <br/><span className="italic text-[#d4af37]">كريستال للستائر</span></>
-              ) : (
-                <>The Crystal Blinds <br/><span className="italic text-[#d4af37]">Difference</span></>
-              )}
-            </h2>
-          </div>
-          <p className="text-[#3E2723]/70 font-light text-base md:text-lg leading-relaxed max-w-xl pb-2">
+        <div className="mb-20 flex flex-col items-center text-center max-w-3xl mx-auto relative">
+          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-[10px] md:text-xs font-bold mb-3 block">
+            {isAr ? "لماذا تختارنا" : "WHY CHOOSE US"}
+          </span>
+          <h2 className="font-headline text-3xl md:text-5xl font-bold text-[#3E2723] leading-tight mb-4">
+            {isAr ? "الفرق مع كريستال للستائر" : "The Crystal Blinds Difference"}
+          </h2>
+          <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mb-6" />
+          <p className="text-[#3E2723]/70 font-light text-base md:text-lg leading-relaxed">
             {isAr 
               ? "انطلقت رحلتنا برؤية طموحة. نحن لا نقدم مجرد منتجات، بل نصنع تجربة متكاملة من الأناقة والاحترافية مصممة خصيصًا لتناسب ذوقك الرفيع."
               : "Our journey started with an ambitious vision. We don't just offer products, we create a complete experience of elegance and professionalism tailored to your refined taste."}

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import PageHero from "../PageHero";
 
 export default async function ConsultPage({
   params,
@@ -11,21 +12,18 @@ export default async function ConsultPage({
   return (
     <>
       {/* Hero Section */}
-      <section className="px-6 py-12 hero-gradient mt-16 md:mt-0">
-        <div className="max-w-4xl mx-auto text-center mt-8">
-          <h1 className="text-4xl md:text-6xl font-headline text-primary mb-6 leading-tight">
-            {isAr ? "اتصل بنا - احجز استشارة" : "Contact Us - Book a Consultation"}
-          </h1>
-          <p className="text-lg text-secondary max-w-2xl mx-auto leading-relaxed">
-            {isAr 
-              ? "اكتشف فن تصميم الستائر الخاص بك. مستشارونا الخبراء جاهزون لزيارتك في منزلك." 
-              : "Experience the artistry of bespoke drapery. Our master consultants bring the atelier to your home."}
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title={isAr ? "احجز استشارة" : "Book a Consultation"}
+        bgImage="/hero_bg.png"
+        isAr={isAr}
+        breadcrumbs={[
+          { label: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
+          { label: isAr ? "احجز استشارة" : "Book a Consultation" },
+        ]}
+      />
 
       {/* Multi-Step Consultation Form */}
-      <section className="px-6 -mt-8 relative z-10">
+      <section className="px-6 pt-16 relative z-10">
         <div className="max-w-2xl mx-auto bg-surface-container-lowest rounded-xl p-8 shadow-sm">
           <div className="flex justify-between items-center mb-10 border-b border-outline-variant/30 pb-6">
             <div className="flex flex-col items-center">

@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { type Product } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
+import PageHero from "../../PageHero";
 
 function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: boolean, locale: string }) {
   const searchParams = useSearchParams();
@@ -21,6 +22,28 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'wallet_instapay'>('cod');
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [transactionImageUrl, setTransactionImageUrl] = useState("");
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const handleFileUpload = async (file: File) => {
+    setUploadingFile(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `tx-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const { data, error: uploadError } = await supabase.storage.from('transaction_images').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data: publicUrlData } = supabase.storage.from('transaction_images').getPublicUrl(fileName);
+      setTransactionImageUrl(publicUrlData.publicUrl);
+    } catch (err) {
+      alert(isAr ? 'فشل رفع الصورة. يرجى المحاولة مرة أخرى.' : 'Failed to upload image. Please try again.');
+      console.error(err);
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   // Price calculation
   const widthVal = parseFloat(width);
   const heightVal = parseFloat(height);
@@ -32,6 +55,17 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
     if (!name || !phone || !address) {
       alert(isAr ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields");
       return;
+    }
+
+    if (paymentMethod === 'wallet_instapay') {
+      if (!transactionImageUrl) {
+        alert(isAr ? "يرجى تحميل صورة التحويل قبل إتمام الطلب" : "Please upload the transaction screenshot before placing the order");
+        return;
+      }
+      if (!whatsappNumber) {
+        alert(isAr ? "يرجى إدخال رقم الواتساب للتواصل" : "Please enter the WhatsApp number for contact");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -46,7 +80,11 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
       type_id: parseInt(typeId),
       pieces: parseInt(pieces),
       total_price: totalPrice,
-      status: 'pending'
+      status: 'pending',
+      payment_method: paymentMethod,
+      whatsapp_number: paymentMethod === 'wallet_instapay' ? whatsappNumber : null,
+      transaction_image_url: paymentMethod === 'wallet_instapay' ? transactionImageUrl : null,
+      payment_status: paymentMethod === 'wallet_instapay' ? 'pending' : 'cod'
     }]);
 
     setIsSubmitting(false);
@@ -76,18 +114,26 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
   }
 
   return (
-    <div className={`min-h-screen bg-[#FFFDFA] text-[#3E2723] pt-32 pb-24 ${isAr ? "rtl" : "ltr"}`}>
-      <div className="max-w-[1200px] mx-auto px-6 md:px-12">
-        <h1 className="font-headline text-3xl md:text-4xl font-bold text-[#3E2723] mb-8 text-center border-b-2 border-[#3E2723] pb-4 inline-block">
-          {isAr ? "إتمام الطلب" : "Checkout"}
-        </h1>
+    <div className={`min-h-screen bg-[#FFFDFA] text-[#3E2723] pb-24 ${isAr ? "rtl" : "ltr"}`}>
+      <PageHero
+        title={isAr ? "إتمام الطلب" : "Checkout"}
+        bgImage="/hero_bg.png"
+        isAr={isAr}
+        breadcrumbs={[
+          { label: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
+          { label: isAr ? "المنتجات" : "Products", href: `/${locale}/products` },
+          { label: isAr ? product.labelAr : product.labelEn, href: `/${locale}/products/${product.id}` },
+          { label: isAr ? "إتمام الطلب" : "Checkout" },
+        ]}
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mt-8">
-          
+      <div className="max-w-[1200px] mx-auto px-6 md:px-12 pt-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+
           {/* Order Summary */}
           <div className="lg:col-span-5 bg-[#FFFDFA] p-8 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] border border-[#3E2723]/10 sticky top-32">
             <h2 className="text-xl font-bold mb-6 border-b border-[#3E2723]/10 pb-4">{isAr ? "ملخص الطلب" : "Order Summary"}</h2>
-            
+
             <div className="flex gap-4 mb-6">
               <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 border border-[#3E2723]/10">
                 <img src={product.images[0]} alt={product.alt} className="w-full h-full object-cover" />
@@ -115,22 +161,29 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
                 <span>{totalPrice.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}</span>
               </div>
             </div>
-            
-            <div className="mt-6 flex items-center justify-center gap-2 bg-[#d4af37]/10 text-[#d4af37] p-3 rounded-lg border border-[#d4af37]/20">
-              <span className="material-symbols-outlined">payments</span>
-              <span className="font-bold text-sm uppercase tracking-wider">{isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}</span>
-            </div>
+
+            {paymentMethod === 'cod' ? (
+              <div className="mt-6 flex items-center justify-center gap-2 bg-[#d4af37]/10 text-[#d4af37] p-3 rounded-lg border border-[#d4af37]/20">
+                <span className="material-symbols-outlined">payments</span>
+                <span className="font-bold text-sm uppercase tracking-wider">{isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}</span>
+              </div>
+            ) : (
+              <div className="mt-6 flex items-center justify-center gap-2 bg-[#d4af37]/10 text-[#d4af37] p-3 rounded-lg border border-[#d4af37]/20">
+                <span className="material-symbols-outlined">account_balance_wallet</span>
+                <span className="font-bold text-sm uppercase tracking-wider">{isAr ? "الدفع بالمحفظة / إنستا باي" : "Wallet / InstaPay"}</span>
+              </div>
+            )}
           </div>
 
           {/* Checkout Form */}
           <div className="lg:col-span-7 bg-[#FFFDFA] p-8 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] border border-[#3E2723]/10">
             <h2 className="text-xl font-bold mb-6 border-b border-[#3E2723]/10 pb-4">{isAr ? "بيانات التوصيل" : "Delivery Details"}</h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "الاسم الكامل *" : "Full Name *"}</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
@@ -141,8 +194,8 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
 
               <div>
                 <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "رقم الهاتف *" : "Phone Number *"}</label>
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
@@ -154,7 +207,7 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
 
               <div>
                 <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "العنوان التفصيلي *" : "Detailed Address *"}</label>
-                <textarea 
+                <textarea
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors min-h-[120px] resize-none"
@@ -163,7 +216,122 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
                 />
               </div>
 
-              <button 
+              {/* Payment Method Selector */}
+              <div className="space-y-4">
+                <label className="block text-sm font-semibold text-[#3E2723]">{isAr ? "طريقة الدفع *" : "Payment Method *"}</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('cod')}
+                    className={`flex items-center gap-4 p-4 rounded-xl border text-right transition-all cursor-pointer ${paymentMethod === 'cod'
+                        ? 'border-[#d4af37] bg-[#d4af37]/5 shadow-[0_4px_12px_rgba(212,175,55,0.08)]'
+                        : 'border-[#3E2723]/10 hover:border-[#3E2723]/25 bg-[#FFFDFA]'
+                      }`}
+                  >
+                    <span className={`material-symbols-outlined text-2xl ${paymentMethod === 'cod' ? 'text-[#d4af37]' : 'text-[#3E2723]/60'}`}>payments</span>
+                    <div className="text-right">
+                      <p className={`font-bold text-sm ${paymentMethod === 'cod' ? 'text-[#3E2723]' : 'text-[#3E2723]/80'}`}>
+                        {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
+                      </p>
+                      <p className="text-xs text-[#3E2723]/50 mt-0.5">
+                        {isAr ? "الدفع نقداً عند توصيل الطلب" : "Pay with cash upon delivery"}
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('wallet_instapay')}
+                    className={`flex items-center gap-4 p-4 rounded-xl border text-right transition-all cursor-pointer ${paymentMethod === 'wallet_instapay'
+                        ? 'border-[#d4af37] bg-[#d4af37]/5 shadow-[0_4px_12px_rgba(212,175,55,0.08)]'
+                        : 'border-[#3E2723]/10 hover:border-[#3E2723]/25 bg-[#FFFDFA]'
+                      }`}
+                  >
+                    <span className={`material-symbols-outlined text-2xl ${paymentMethod === 'wallet_instapay' ? 'text-[#d4af37]' : 'text-[#3E2723]/60'}`}>account_balance_wallet</span>
+                    <div className="text-right">
+                      <p className={`font-bold text-sm ${paymentMethod === 'wallet_instapay' ? 'text-[#3E2723]' : 'text-[#3E2723]/80'}`}>
+                        {isAr ? "المحفظة الإلكترونية / إنستا باي" : "E-Wallet / InstaPay"}
+                      </p>
+                      <p className="text-xs text-[#3E2723]/50 mt-0.5">
+                        {isAr ? "تحويل فوري فودافون كاش أو إنستا باي" : "Instant transfer via Vodafone Cash or InstaPay"}
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Conditional Wallet / InstaPay Inputs */}
+              {paymentMethod === 'wallet_instapay' && (
+                <div className="bg-[#3E2723]/5 border border-[#3E2723]/10 rounded-xl p-6 space-y-6">
+                  <div className="space-y-2 text-sm text-[#3E2723]/80">
+                    <p className="font-bold text-base text-[#3E2723] mb-3">{isAr ? "بيانات التحويل:" : "Transfer Information:"}</p>
+                    <div className="flex justify-between items-center bg-[#FFFDFA] p-3 rounded-lg border border-[#3E2723]/5">
+                      <span>{isAr ? "محفظة فودافون كاش (Vodafone Cash):" : "Vodafone Cash Wallet:"}</span>
+                      <strong className="text-[#d4af37]" dir="ltr">01100080609</strong>
+                    </div>
+                    <div className="flex justify-between items-center bg-[#FFFDFA] p-3 rounded-lg border border-[#3E2723]/5">
+                      <span>{isAr ? "عنوان إنستا باي (InstaPay Address):" : "InstaPay Address:"}</span>
+                      <strong className="text-[#d4af37]" dir="ltr">crystalblinds@instapay</strong>
+                    </div>
+                    <p className="text-xs text-[#3E2723]/60 mt-2">
+                      {isAr
+                        ? "* يرجى تحويل إجمالي مبلغ الطلب وإرفاق صورة التحويل أدناه لتأكيد الطلب."
+                        : "* Please transfer the total order amount and attach the transfer receipt below to confirm."}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "رقم الواتساب للتواصل *" : "WhatsApp Contact Number *"}</label>
+                    <input
+                      type="tel"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                      className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
+                      placeholder={isAr ? "رقم الواتساب الخاص بك" : "Your WhatsApp number"}
+                      dir="ltr"
+                      required={paymentMethod === 'wallet_instapay'}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "إرفاق صورة التحويل *" : "Upload Transaction Screenshot *"}</label>
+                    <div className="flex flex-col gap-4">
+                      {transactionImageUrl ? (
+                        <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-[#d4af37]">
+                          <img src={transactionImageUrl} alt="Transaction Screenshot" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setTransactionImageUrl("")}
+                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700 shadow"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#3E2723]/20 rounded-lg cursor-pointer hover:border-[#d4af37] transition-colors bg-[#FFFDFA] ${uploadingFile ? 'opacity-70 pointer-events-none' : ''}`}>
+                          <span className="material-symbols-outlined text-3xl text-[#3E2723]/40 mb-2">cloud_upload</span>
+                          <span className="text-xs text-[#3E2723]/70 font-semibold">
+                            {uploadingFile ? (isAr ? "جاري الرفع..." : "Uploading...") : (isAr ? "اضغط لرفع صورة إيصال التحويل" : "Click to upload transfer receipt")}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                handleFileUpload(e.target.files[0]);
+                              }
+                            }}
+                            required={paymentMethod === 'wallet_instapay'}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full bg-gradient-to-r from-[#d4af37] to-[#b8922a] text-white px-8 py-4 rounded-lg font-bold text-lg shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.4)] hover:-translate-y-0.5 transition-all text-center disabled:opacity-70 disabled:cursor-not-allowed mt-8"

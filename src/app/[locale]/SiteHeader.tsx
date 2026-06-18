@@ -42,7 +42,7 @@ export default function SiteHeader({
     <>
       <header
         id="site-header"
-        className="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[95%] max-w-[1400px] z-50 bg-[#3E2723]/95 backdrop-blur-md rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 border border-[#d4af37]/20"
+        className="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[95%] max-w-[1400px] z-50 bg-[#3E2723]/95 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 border border-[#d4af37]/20"
       >
         <div className="px-6 md:px-8 h-16 md:h-20 flex items-center justify-between gap-8">
           {/* ── Left: Nav Links (desktop) / Hamburger (mobile) ── */}
@@ -92,7 +92,7 @@ export default function SiteHeader({
             <a
               href={getTogglePath()}
               id="lang-toggle"
-              className="flex items-center gap-1.5 text-[10px] md:text-[12px] font-medium uppercase tracking-widest text-[#FFFDFA]/80 hover:text-white transition-colors duration-200 border border-[#FFFDFA]/20 rounded-full px-2 py-1 md:px-4 md:py-1.5 hover:border-[#d4af37] hover:bg-[#d4af37]/10"
+              className="flex items-center gap-1.5 text-[10px] md:text-[12px] font-medium uppercase tracking-widest text-[#FFFDFA]/80 hover:text-white transition-colors duration-200 border border-[#FFFDFA]/20 rounded-lg px-2 py-1 md:px-4 md:py-1.5 hover:border-[#d4af37] hover:bg-[#d4af37]/10"
             >
               <span className="material-symbols-outlined text-[14px] md:text-[16px]">language</span>
               {isAr ? "EN" : "عر"}

@@ -1,4 +1,5 @@
 import ContactForm from "./ContactForm";
+import PageHero from "../PageHero";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -15,24 +16,15 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
   return (
     <>
       {/* Hero */}
-      <section className="relative bg-[#FFFDFA] text-[#3E2723] pt-32 pb-8 px-6 md:px-12 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-</div>
-        <div className={`relative z-10 max-w-7xl mx-auto ${isAr ? 'text-right' : ''}`}>
-          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-4 block">
-            {isAr ? 'تواصل معنا' : 'Get in Touch'}
-          </span>
-          <h1 className="font-headline text-5xl md:text-7xl text-[#3E2723] leading-tight">
-            {isAr ? 'دعنا نبدأ' : "Let's Start"} <br />
-            <span className="text-[#d4af37] italic font-light">{isAr ? 'محادثة' : 'a Conversation'}</span>
-          </h1>
-          <p className="text-[#3E2723]/60 mt-4 max-w-xl text-sm md:text-base leading-relaxed">
-            {isAr
-              ? 'سواء كنت تصمم منزلاً جديداً أو تجدد مساحتك، فريقنا هنا لتقديم استشارة مخصصة.'
-              : "Whether you're designing a new home or refreshing your current space, our team is here to help."}
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title={isAr ? "اتصل بنا" : "Contact Us"}
+        bgImage="/hero_bg.png"
+        isAr={isAr}
+        breadcrumbs={[
+          { label: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
+          { label: isAr ? "اتصل بنا" : "Contact Us" },
+        ]}
+      />
 
       {/* Contact Content */}
       <section className={`pt-8 pb-24 px-6 md:px-12 bg-[#FFFDFA] text-[#3E2723] relative overflow-hidden ${isAr ? 'rtl' : ''}`}>

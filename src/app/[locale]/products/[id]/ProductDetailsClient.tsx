@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { type Product } from "@/lib/products";
+import PageHero from "../../PageHero";
 
 const STANDARD_SIZES = [
   { width: "100", height: "100", labelAr: "١٠٠ × ١٠٠ سم", labelEn: "100 x 100 cm" },
-  { width: "120", height: "120", labelAr: "١٢٠ × ١٢٠ سم", labelEn: "120 x 120 cm" },
+  { width: "120", height: "120", labelAr: "١٠٠ × ١٢٠ سم", labelEn: "120 x 120 cm" },
   { width: "140", height: "140", labelAr: "١٤٠ × ١٤٠ سم", labelEn: "140 x 140 cm" },
   { width: "150", height: "160", labelAr: "١٥٠ × ١٦٠ سم", labelEn: "150 x 160 cm" },
   { width: "160", height: "200", labelAr: "١٦٠ × ٢٠٠ سم", labelEn: "160 x 200 cm" },
@@ -31,54 +32,25 @@ export default function ProductDetailsClient({
   const colors = product.colors || [];
   const [selectedColor, setSelectedColor] = useState<string | null>(colors.length > 0 ? colors[0].id : null);
 
-  const breadcrumbs = [
-    { name: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
-    { name: isAr ? "المنتجات" : "Products", href: `/${locale}/products` },
-    { name: isAr ? product.labelAr : product.labelEn, href: "#" },
-  ];
-
   const widthVal = parseFloat(width) || 0;
   const heightVal = parseFloat(height) || 0;
   const area = widthVal > 0 && heightVal > 0 ? (widthVal / 100) * (heightVal / 100) : 1;
   const totalPrice = Math.round(product.price * area);
 
   return (
-    <div className={`min-h-screen bg-[#FFFDFA] text-[#3E2723] pt-32 pb-24 ${isAr ? "rtl" : "ltr"}`}>
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-[#3E2723]/60 mb-8">
-          {breadcrumbs.map((crumb, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <Link href={crumb.href} className="hover:text-[#d4af37] transition-colors">
-                {crumb.name}
-              </Link>
-              {idx < breadcrumbs.length - 1 && (
-                <span className={`material-symbols-outlined text-sm ${isAr ? "rotate-180" : ""}`}>
-                  chevron_right
-                </span>
-              )}
-            </div>
-          ))}
-        </nav>
+    <div className={`min-h-screen bg-[#FFFDFA] text-[#3E2723] pb-24 ${isAr ? "rtl" : "ltr"}`}>
+      <PageHero
+        title={isAr ? product.labelAr : product.labelEn}
+        bgImage="/hero_bg.png"
+        isAr={isAr}
+        breadcrumbs={[
+          { label: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
+          { label: isAr ? "المنتجات" : "Products", href: `/${locale}/products` },
+          { label: isAr ? product.labelAr : product.labelEn },
+        ]}
+      />
 
-        {/* Title & Price Header */}
-        <div className={`flex flex-col gap-2 ${isAr ? "text-right" : "text-left"} mb-8`}>
-          <h1 className="font-headline text-3xl md:text-4xl font-bold text-[#3E2723]">
-            {isAr ? product.labelAr : product.labelEn}
-          </h1>
-          <div className="text-[#d4af37] font-bold text-xl mt-2">
-            {isAr ? "يبدأ من" : "from"} {product.price.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
-          </div>
-          <div className="flex items-center gap-1 mt-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <span key={star} className="material-symbols-outlined text-[#d4af37] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                star
-              </span>
-            ))}
-            <span className="text-[#3E2723]/50 text-xs ml-2">(24)</span>
-          </div>
-        </div>
-
+      <div className="max-w-[1400px] mx-auto px-6 md:px-12 pt-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Left Column: Images and Details */}
           <div className="lg:col-span-7 flex flex-col gap-8">
@@ -153,9 +125,24 @@ export default function ProductDetailsClient({
           </div>
 
           {/* Right Column: Customization */}
-          <div className="lg:col-span-5 flex flex-col gap-8">
-            <div className={`border-b-2 border-[#3E2723] pb-3 ${isAr ? "text-right" : "text-left"}`}>
-              <h2 className="font-headline text-2xl font-bold text-[#3E2723]">
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            {/* Title, Stars & Starting Price (moved here for clean layout) */}
+            <div className={`${isAr ? "text-right" : "text-left"} border-b border-[#3E2723]/10 pb-4`}>
+              <div className="text-[#d4af37] font-bold text-2xl">
+                {isAr ? "يبدأ من" : "from"} {product.price.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
+              </div>
+              <div className="flex items-center gap-1 mt-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span key={star} className="material-symbols-outlined text-[#d4af37] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    star
+                  </span>
+                ))}
+                <span className="text-[#3E2723]/50 text-xs ml-2">(24 reviews)</span>
+              </div>
+            </div>
+
+            <div className={`border-b border-[#3E2723] pb-2 ${isAr ? "text-right" : "text-left"}`}>
+              <h2 className="font-headline text-lg font-bold text-[#3E2723]">
                 {isAr ? "قم بتخصيص منتجك" : "Customize your product"}
               </h2>
             </div>

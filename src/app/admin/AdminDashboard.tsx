@@ -7,6 +7,14 @@ import { Product } from '@/lib/products';
 import { Partner } from '@/lib/partners';
 import { ContactMessage } from '@/lib/messages';
 import styles from './admin.module.css';
+import AdvancedDashboardView from './AdvancedDashboardView';
+import ClientsView from './views/ClientsView';
+import InspectionsView from './views/InspectionsView';
+import InstallationsView from './views/InstallationsView';
+import MaintenanceView from './views/MaintenanceView';
+import ExpensesView from './views/ExpensesView';
+import EmployeesView from './views/EmployeesView';
+import ReportsView from './views/ReportsView';
 
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -41,6 +49,15 @@ const CURTAIN_LABELS: Record<string, string> = {
 type FilterStatus = 'all' | AppointmentStatus;
 type FilterType   = 'all' | AppointmentType;
 
+const ROLE_TABS: Record<string, string[]> = {
+  admin: ['dashboard', 'clients', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'expenses', 'employees', 'reports', 'messages', 'website_edit', 'users'],
+  customer_service: ['dashboard', 'clients', 'appointments', 'inspections', 'messages'],
+  sales: ['dashboard', 'clients', 'products', 'bills', 'installations', 'maintenance'],
+  accountant: ['dashboard', 'bills', 'expenses', 'reports'],
+  technician: ['inspections', 'installations', 'maintenance'],
+  employee: ['dashboard', 'appointments', 'messages'],
+};
+
 export default function AdminDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading]           = useState(true);
@@ -57,8 +74,19 @@ export default function AdminDashboard() {
   const [saving, setSaving]             = useState(false);
 
   // New states for active tab
-  const [activeTab, setActiveTab]       = useState<'appointments' | 'website_edit' | 'products' | 'orders' | 'bills' | 'messages'>('appointments');
+  const [activeTab, setActiveTab]       = useState<'appointments' | 'website_edit' | 'products' | 'orders' | 'bills' | 'messages' | 'users' | 'dashboard' | 'clients' | 'inspections' | 'installations' | 'maintenance' | 'expenses' | 'employees' | 'reports'>('dashboard');
   const [websiteAssets, setWebsiteAssets] = useState<WebsiteAsset[]>([]);
+
+  // Role & checking states
+  const [userRole, setUserRole] = useState<'admin' | 'customer_service' | 'sales' | 'accountant' | 'technician' | 'employee' | null>(null);
+  const [userProfile, setUserProfile] = useState<{ name: string; email: string } | null>(null);
+  const [roleChecking, setRoleChecking] = useState(true);
+
+  // Users Management state
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'employee' });
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState<string | null>(null);
 
@@ -110,6 +138,10 @@ export default function AdminDashboard() {
   // Settings state
   const [newEmail, setNewEmail]         = useState('');
   const [newPassword, setNewPassword]   = useState('');
+
+  const hasAccess = (tab: string) => {
+    return ROLE_TABS[userRole || 'employee']?.includes(tab) || false;
+  };
   const [settingsMsg, setSettingsMsg]   = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
@@ -119,6 +151,82 @@ export default function AdminDashboard() {
     appointment_type: 'inspection' as AppointmentType,
     appointment_date: '', appointment_time: '', curtain_type: '', notes: '',
   });
+
+  // Verify user role on mount
+  useEffect(() => {
+    const checkUserRole = async () => {
+      setRoleChecking(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.replace('/admin/login');
+        return;
+      }
+      
+      const user = session.user;
+      let { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role, name, email')
+        .eq('id', user.id)
+        .single();
+        
+      if (error || !profile) {
+        // Resilient default profile creation for initial admin
+        const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+        if (count === 0) {
+          const newProfile = {
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.name || 'Admin',
+            role: 'admin'
+          };
+          const { error: insertErr } = await supabase.from('profiles').insert([newProfile]);
+          if (!insertErr) {
+            setUserRole('admin');
+            setUserProfile({ name: newProfile.name, email: newProfile.email });
+            setRoleChecking(false);
+            return;
+          }
+        }
+        
+        const metaRole = user.user_metadata?.role;
+        const metaName = user.user_metadata?.name || 'User';
+        const allowedRoles = ['admin', 'employee', 'customer_service', 'sales', 'accountant', 'technician'];
+        if (metaRole && allowedRoles.includes(metaRole)) {
+          const newProfile = {
+            id: user.id,
+            email: user.email || '',
+            name: metaName,
+            role: metaRole
+          };
+          await supabase.from('profiles').insert([newProfile]);
+          setUserRole(metaRole as any);
+          setUserProfile({ name: newProfile.name, email: newProfile.email });
+          setDefaultTab(metaRole);
+        } else {
+          setUserRole('employee');
+          setUserProfile({ name: metaName, email: user.email || '' });
+          setDefaultTab('employee');
+        }
+      } else {
+        setUserRole(profile.role as any);
+        setUserProfile({ name: profile.name || '', email: profile.email || '' });
+        setDefaultTab(profile.role);
+      }
+      setRoleChecking(false);
+    };
+
+    const setDefaultTab = (role: string) => {
+      if (role === 'technician') {
+        setActiveTab('inspections');
+      } else if (role === 'accountant') {
+        setActiveTab('bills');
+      } else {
+        setActiveTab('dashboard');
+      }
+    };
+
+    checkUserRole();
+  }, []);
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true); setError(null);
@@ -205,6 +313,18 @@ export default function AdminDashboard() {
     if (!error && count !== null) {
       setUnreadCount(count);
     }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    setLoadingUsers(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) {
+      setUsers(data);
+    }
+    setLoadingUsers(false);
   }, []);
 
 
@@ -527,6 +647,13 @@ export default function AdminDashboard() {
     });
   };
 
+  // Redirect employees if they somehow land on admin-only tabs
+  useEffect(() => {
+    if (userRole === 'employee' && ['bills', 'products', 'website_edit', 'users'].includes(activeTab)) {
+      setActiveTab('appointments');
+    }
+  }, [activeTab, userRole]);
+
   useEffect(() => { 
     fetchUnreadCount();
     if (activeTab === 'appointments') fetchAppointments(); 
@@ -544,7 +671,10 @@ export default function AdminDashboard() {
     if (activeTab === 'messages') {
       fetchMessages();
     }
-  }, [fetchAppointments, fetchWebsiteAssets, fetchPartners, fetchProducts, fetchOrders, fetchBills, fetchMessages, fetchUnreadCount, activeTab]);
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [fetchAppointments, fetchWebsiteAssets, fetchPartners, fetchProducts, fetchOrders, fetchBills, fetchMessages, fetchUnreadCount, fetchUsers, activeTab]);
 
 
 
@@ -589,6 +719,36 @@ export default function AdminDashboard() {
     setSaving(false);
   };
 
+  const updateOrderPaymentStatus = async (id: string, paymentStatus: string) => {
+    setSaving(true);
+    const { error } = await supabase.from('orders').update({ payment_status: paymentStatus }).eq('id', id);
+    if (!error) {
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, payment_status: paymentStatus } : o));
+      if (selectedOrder?.id === id) {
+        setSelectedOrder((prev: any) => prev ? { ...prev, payment_status: paymentStatus } : null);
+      }
+    } else {
+      alert('حدث خطأ أثناء تحديث حالة الدفع: ' + error.message);
+    }
+    setSaving(false);
+  };
+
+  const getWhatsAppMessageLink = (order: any, isSuccess: boolean) => {
+    if (!order || !order.whatsapp_number) return '#';
+    let cleanPhone = order.whatsapp_number.replace(/\D/g, '');
+    if (cleanPhone.startsWith('01') && cleanPhone.length === 11) {
+      cleanPhone = '20' + cleanPhone;
+    } else if (cleanPhone.startsWith('1') && cleanPhone.length === 10) {
+      cleanPhone = '20' + cleanPhone;
+    }
+    const orderNum = order.id.split('-')[0].toUpperCase();
+    const clientName = order.client_name;
+    const message = isSuccess
+      ? `مرحباً ${clientName}، تم تأكيد استلام دفعتك للطلب رقم (${orderNum}) بنجاح. سنقوم بتجهيز طلبك وشحنه قريباً. شكراً لتعاملك مع كريستال بليندز!`
+      : `مرحباً ${clientName}، نأسف لإبلاغك بأنه لم نتمكن من تأكيد دفعتك للطلب رقم (${orderNum}). يرجى التحقق من عملية التحويل وإرسال صورة المعاملة الصحيحة. شكراً لك.`;
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  };
+
   const deleteAppointment = async (id: string) => {
     if (!confirm('هل تريد حذف هذا الموعد؟')) return;
     const { error } = await supabase.from('appointments').delete().eq('id', id);
@@ -607,6 +767,68 @@ export default function AdminDashboard() {
       setNewAppt({ client_name: '', client_phone: '', client_address: '', appointment_type: 'inspection', appointment_date: '', appointment_time: '', curtain_type: '', notes: '' });
     }
     setSaving(false);
+  };
+
+  const handleSaveUser = async () => {
+    if (!newUser.name || !newUser.email || !newUser.password || !newUser.role) {
+      alert('يرجى ملء جميع الحقول المطلوبة'); return;
+    }
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newUser)
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'فشل إنشاء المستخدم');
+      }
+      
+      alert('تم إنشاء المستخدم بنجاح');
+      setShowUserModal(false);
+      setNewUser({ name: '', email: '', password: '', role: 'employee' });
+      fetchUsers();
+    } catch (err: any) {
+      alert('خطأ: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟ سيتم إلغاء وصوله للوحة التحكم فوراً.')) return;
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const res = await fetch(`/api/users?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'فشل حذف المستخدم');
+      }
+      
+      alert('تم حذف المستخدم بنجاح');
+      fetchUsers();
+    } catch (err: any) {
+      alert('خطأ: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -813,47 +1035,248 @@ export default function AdminDashboard() {
   const today      = new Date().toISOString().split('T')[0];
   const todayCount = appointments.filter(a => a.appointment_date === today).length;
 
+  if (roleChecking) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fdfbf7', fontFamily: 'Tajawal, sans-serif', color: '#3E2723', flexDirection: 'column', gap: '15px' }}>
+        <div style={{ width: '40px', height: '40px', border: '4px solid rgba(62,39,35,0.1)', borderTopColor: '#d4af37', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <span>جاري التحقق من الصلاحيات...</span>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className={`${styles.shell} ${mobileMenuOpen ? styles.mobileMenuOpen : ''}`}>
+      <div className={`${styles.shell} !bg-[#FBF9F6] ${mobileMenuOpen ? styles.mobileMenuOpen : ''}`}>
+        {/* Mobile Backdrop Overlay */}
+        {mobileMenuOpen && (
+          <div className={styles.mobileBackdrop} onClick={() => setMobileMenuOpen(false)} />
+        )}
       {/* Sidebar */}
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} !bg-[#2B1B17] !border-l border-white/5 !text-white/70 shadow-xl`}>
         <button className={styles.mobileClose} onClick={() => setMobileMenuOpen(false)}>✕</button>
-        <div className={styles.sidebarBrand}>
-          <img src="/logo2.png" alt="Crystal Blinds" className={styles.sidebarLogo} />
-          <span className={styles.sidebarTitle}>لوحة التحكم</span>
+        <div className="flex flex-col items-center gap-2 pb-5 border-b border-white/5 w-full">
+          <img src="/logo2.png" alt="Crystal Blinds" className="h-[105px] object-contain filter brightness-0 invert" />
+          <span className="text-[10px] text-[#d4af37] font-extrabold tracking-widest uppercase">CRYSTAL BLINDS</span>
         </div>
-        <nav className={styles.sidebarNav}>
-          <div className={`${styles.navItem} ${activeTab === 'appointments' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('appointments'); setMobileMenuOpen(false); }}>
-            <span>المواعيد</span>
-          </div>
-          <div className={`${styles.navItem} ${activeTab === 'orders' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('orders'); setMobileMenuOpen(false); }}>
-            <span>الطلبات</span>
-          </div>
-          <div className={`${styles.navItem} ${activeTab === 'bills' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('bills'); setMobileMenuOpen(false); }}>
-            <span>الفواتير</span>
-          </div>
-          <div className={`${styles.navItem} ${activeTab === 'products' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
-            <span>المنتجات</span>
-          </div>
-          <div className={`${styles.navItem} ${activeTab === 'website_edit' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('website_edit'); setMobileMenuOpen(false); }}>
-            <span>تعديل الموقع</span>
-          </div>
-          <div className={`${styles.navItem} ${activeTab === 'messages' ? styles.navItemActive : ''}`} onClick={() => { setActiveTab('messages'); setMobileMenuOpen(false); }}>
-            <span>رسائل التواصل</span>
-            {unreadCount > 0 && (
-              <span className={styles.sidebarBadge}>{unreadCount}</span>
-            )}
-          </div>
+        <nav className="flex flex-col gap-1.5 flex-1 w-full overflow-y-auto hide-scrollbar">
+          {/* Dashboard (Main) Link */}
+          {hasAccess('dashboard') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'dashboard' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">dashboard</span>
+              <span>لوحة التحكم</span>
+            </div>
+          )}
 
-          <div className={styles.navItem} onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}>
+          {/* Clients Link */}
+          {hasAccess('clients') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'clients' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('clients'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">group</span>
+              <span>العملاء</span>
+            </div>
+          )}
+
+          {/* Appointments Link */}
+          {hasAccess('appointments') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'appointments' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('appointments'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">calendar_today</span>
+              <span>المواعيد</span>
+            </div>
+          )}
+
+          {/* Inspections Link */}
+          {hasAccess('inspections') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'inspections' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('inspections'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">assignment</span>
+              <span>أوامر المعاينة</span>
+            </div>
+          )}
+
+          {/* Installations Link */}
+          {hasAccess('installations') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'installations' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('installations'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">handyman</span>
+              <span>أوامر التركيب</span>
+            </div>
+          )}
+
+          {/* Maintenance Link */}
+          {hasAccess('maintenance') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'maintenance' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('maintenance'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">build</span>
+              <span>أوامر الصيانة</span>
+            </div>
+          )}
+
+          {/* Orders Link */}
+          {hasAccess('orders') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'orders' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('orders'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">shopping_cart</span>
+              <span>الطلبات</span>
+            </div>
+          )}
+
+          {/* Invoices (Bills) Link */}
+          {hasAccess('bills') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'bills' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('bills'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">description</span>
+              <span>الفواتير</span>
+            </div>
+          )}
+
+          {/* Products Link */}
+          {hasAccess('products') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'products' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">inventory</span>
+              <span>المنتجات</span>
+            </div>
+          )}
+
+          {/* Expenses Link */}
+          {hasAccess('expenses') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'expenses' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('expenses'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">payments</span>
+              <span>المصروفات</span>
+            </div>
+          )}
+
+          {/* Employees Link */}
+          {hasAccess('employees') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'employees' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('employees'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">badge</span>
+              <span>الموظفون</span>
+            </div>
+          )}
+
+          {/* Reports Link */}
+          {hasAccess('reports') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'reports' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('reports'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">assessment</span>
+              <span>التقارير</span>
+            </div>
+          )}
+
+          {/* Contact Messages Link */}
+          {hasAccess('messages') && (
+            <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'messages' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('messages'); setMobileMenuOpen(false); }}>
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-base">mail</span>
+                <span>رسائل التواصل</span>
+              </div>
+              {unreadCount > 0 && (
+                <span className="bg-[#b91c1c] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{unreadCount}</span>
+              )}
+            </div>
+          )}
+
+          {/* Website Management (Edit) Link */}
+          {hasAccess('website_edit') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'website_edit' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('website_edit'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">edit_document</span>
+              <span>تعديل الموقع</span>
+            </div>
+          )}
+
+          {/* Users Management Link */}
+          {hasAccess('users') && (
+            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+              activeTab === 'users' 
+                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'
+            }`} onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}>
+              <span className="material-symbols-outlined text-base">group</span>
+              <span>إدارة المستخدمين</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5" onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}>
+            <span className="material-symbols-outlined text-base">settings</span>
             <span>الإعدادات</span>
           </div>
-          <div className={styles.navItem} onClick={handleSignOut}>
+
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5" onClick={handleSignOut}>
+            <span className="material-symbols-outlined text-base">logout</span>
             <span>تسجيل الخروج</span>
           </div>
         </nav>
-        <div className={styles.sidebarFooter}>Crystal Blinds © 2024</div>
+
+        {/* Current user role card indicator at bottom of sidebar */}
+        <div className="w-full flex flex-col gap-2 pt-4 border-t border-white/5">
+          <div className="bg-[#3E2723]/35 border border-[#d4af37]/25 p-3 rounded-xl flex items-center gap-3">
+            <span className="material-symbols-outlined text-[#d4af37] text-xl">workspace_premium</span>
+            <div className="flex flex-col text-right text-white">
+              <span className="text-[9px] opacity-60">الصلاحية الحالية</span>
+              <span className="text-xs font-bold">
+                {userRole === 'admin' ? 'مدير عام' : 
+                 userRole === 'customer_service' ? 'خدمة عملاء' :
+                 userRole === 'sales' ? 'مبيعات' :
+                 userRole === 'accountant' ? 'محاسب مالي' :
+                 userRole === 'technician' ? 'فني تركيبات' : 'موظف'}
+              </span>
+            </div>
+          </div>
+          <div className="text-[10px] text-white/30 text-center mt-2">Crystal Blinds © 2024</div>
+        </div>
       </aside>
 
       {/* Main */}
@@ -870,7 +1293,25 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {activeTab === 'appointments' ? (
+        {activeTab === 'dashboard' ? (
+          <AdvancedDashboardView
+            appointments={appointments}
+            orders={orders}
+            bills={bills}
+            products={products}
+            messages={messages}
+            unreadCount={unreadCount}
+            userRole={userRole}
+            userProfile={userProfile}
+            setActiveTab={setActiveTab}
+            openNewBillModal={openNewBillModal}
+            setShowAddModal={setShowAddModal}
+            setShowProductModal={setShowProductModal}
+            setShowPartnerModal={setShowPartnerModal}
+            setShowUserModal={setShowUserModal}
+            setShowSettings={setShowSettings}
+          />
+        ) : activeTab === 'appointments' ? (
           <>
             {/* Header */}
         <header className={styles.header}>
@@ -1278,6 +1719,7 @@ export default function AdminDashboard() {
                         <td style={{ color: '#b45309', fontWeight: 'bold' }}>{b.final_total} ج.م</td>
                         <td onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '8px' }}>
                           <button onClick={() => handlePrint(b)} className={styles.refreshBtn} style={{ padding: '4px 8px', margin: 0 }}>طباعة</button>
+                          <button onClick={() => handlePrint(b)} className={styles.downloadBtn} style={{ padding: '4px 8px', margin: 0 }}>تنزيل PDF</button>
                           <button onClick={() => handleDeleteBill(b.id)} className={styles.deleteBtn} style={{ padding: '4px 8px', margin: 0 }}>حذف</button>
                         </td>
                       </tr>
@@ -1372,6 +1814,77 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        ) : activeTab === 'users' && userRole === 'admin' ? (
+          <div className={styles.websiteEditContainer}>
+            <header className={styles.header}>
+              <div>
+                <h1 className={styles.headerTitle}>إدارة المستخدمين</h1>
+                <p className={styles.headerSub}>إضافة وحذف وتعديل أدوار موظفي لوحة التحكم</p>
+              </div>
+              <div className={styles.headerActions}>
+                <button className={styles.addBtn} onClick={() => { setNewUser({ name: '', email: '', password: '', role: 'employee' }); setShowUserModal(true); }}>+ إضافة مستخدم جديد</button>
+              </div>
+            </header>
+
+            {loadingUsers ? (
+              <div className={styles.loadingBox}><span className={styles.spinner} />جاري التحميل...</div>
+            ) : (
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>الاسم</th>
+                      <th>البريد الإلكتروني</th>
+                      <th>الصلاحية</th>
+                      <th>تاريخ الإنشاء</th>
+                      <th>إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u.id} className={styles.tableRow}>
+                        <td style={{ fontWeight: 'bold' }}>{u.name || '—'}</td>
+                        <td>{u.email}</td>
+                        <td>
+                          <span className={`${styles.badge} ${u.role === 'admin' ? styles.statusConfirmed : styles.statusPending}`}>
+                            {u.role === 'admin' ? 'مدير (Admin)' : 'موظف (Employee)'}
+                          </span>
+                        </td>
+                        <td>{new Date(u.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                        <td onClick={e => e.stopPropagation()}>
+                          <button 
+                            type="button" 
+                            onClick={() => handleDeleteUser(u.id)} 
+                            className={styles.deleteBtn} 
+                            style={{ padding: '4px 8px', margin: 0 }}
+                          >
+                            حذف
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && (
+                      <tr><td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>لا يوجد مستخدمون بعد.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'clients' ? (
+          <ClientsView />
+        ) : activeTab === 'inspections' ? (
+          <InspectionsView userRole={userRole} userProfile={userProfile} />
+        ) : activeTab === 'installations' ? (
+          <InstallationsView userRole={userRole} />
+        ) : activeTab === 'maintenance' ? (
+          <MaintenanceView userRole={userRole} />
+        ) : activeTab === 'expenses' ? (
+          <ExpensesView />
+        ) : activeTab === 'employees' ? (
+          <EmployeesView />
+        ) : activeTab === 'reports' ? (
+          <ReportsView />
         ) : null}
       </main>
 
@@ -1555,7 +2068,14 @@ export default function AdminDashboard() {
                 <div className={styles.detailItem}><span className={styles.detailLabel}>عدد القطع</span><span>{selectedOrder.pieces}</span></div>
                 <div className={styles.detailItem}><span className={styles.detailLabel}>لون / نوع</span><span>كود اللون: {selectedOrder.color_id} | كود النوع: {selectedOrder.type_id}</span></div>
                 <div className={styles.detailItem}><span className={styles.detailLabel}>الإجمالي</span><span style={{color: '#b45309', fontWeight: 'bold'}}>{selectedOrder.total_price} ج.م</span></div>
-                <div className={styles.detailItem}><span className={styles.detailLabel}>طريقة الدفع</span><span>الدفع عند الاستلام</span></div>
+                <div className={styles.detailItem}>
+                  <span className={styles.detailLabel}>طريقة الدفع</span>
+                  <span>
+                    {selectedOrder.payment_method === 'wallet_instapay'
+                      ? 'المحفظة الإلكترونية / إنستا باي'
+                      : 'الدفع عند الاستلام'}
+                  </span>
+                </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>الحالة</span>
                   <select className={styles.modalSelect} value={selectedOrder.status}
@@ -1566,9 +2086,104 @@ export default function AdminDashboard() {
                     <option value="cancelled">ملغي</option>
                   </select>
                 </div>
+
+                {selectedOrder.payment_method === 'wallet_instapay' && (
+                  <>
+                    <div className={styles.detailItem}>
+                      <span className={styles.detailLabel}>رقم واتساب للتواصل</span>
+                      <span>
+                        {selectedOrder.whatsapp_number ? (
+                          <a
+                            href={`https://wa.me/${selectedOrder.whatsapp_number.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.whatsappLink}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">chat</span>
+                            {selectedOrder.whatsapp_number}
+                          </a>
+                        ) : '—'}
+                      </span>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <span className={styles.detailLabel}>حالة الدفع</span>
+                      <span className={`${styles.badge} ${
+                        selectedOrder.payment_status === 'success' ? styles.statusCompleted :
+                        selectedOrder.payment_status === 'failed' ? styles.statusCancelled :
+                        styles.statusPending
+                      }`}>
+                        {selectedOrder.payment_status === 'success' ? 'مقبول (تم تأكيد الدفع)' :
+                         selectedOrder.payment_status === 'failed' ? 'مرفوض' :
+                         'قيد المراجعة'}
+                      </span>
+                    </div>
+                    <div className={`${styles.detailItem} ${styles.detailFull}`}>
+                      <span className={styles.detailLabel} style={{ marginBottom: '8px' }}>إيصال التحويل</span>
+                      <div>
+                        {selectedOrder.transaction_image_url ? (
+                          <a href={selectedOrder.transaction_image_url} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={selectedOrder.transaction_image_url}
+                              alt="إيصال التحويل"
+                              className={styles.receiptThumbnail}
+                            />
+                          </a>
+                        ) : (
+                          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>لم يتم إرفاق إيصال!</span>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             <div className={styles.modalFooter}>
+              {selectedOrder.payment_method === 'wallet_instapay' && (
+                <>
+                  {selectedOrder.payment_status === 'pending' && (
+                    <div style={{ display: 'flex', gap: '8px', marginRight: 'auto' }}>
+                      <button
+                        onClick={() => updateOrderPaymentStatus(selectedOrder.id, 'success')}
+                        className={styles.confirmPayBtn}
+                        disabled={saving}
+                      >
+                        {saving ? 'جاري التأكيد...' : 'تأكيد الدفع'}
+                      </button>
+                      <button
+                        onClick={() => updateOrderPaymentStatus(selectedOrder.id, 'failed')}
+                        className={styles.rejectPayBtn}
+                        disabled={saving}
+                      >
+                        {saving ? 'جاري الرفض...' : 'رفض الدفع'}
+                      </button>
+                    </div>
+                  )}
+                  {selectedOrder.payment_status === 'success' && (
+                    <a
+                      href={getWhatsAppMessageLink(selectedOrder, true)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.whatsappNotifyBtn}
+                      style={{ marginRight: 'auto' }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">send</span>
+                      إرسال إشعار النجاح (واتساب)
+                    </a>
+                  )}
+                  {selectedOrder.payment_status === 'failed' && (
+                    <a
+                      href={getWhatsAppMessageLink(selectedOrder, false)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.whatsappNotifyBtn}
+                      style={{ marginRight: 'auto', backgroundColor: '#ef4444' }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">send</span>
+                      إرسال إشعار الرفض (واتساب)
+                    </a>
+                  )}
+                </>
+              )}
               <button className={styles.cancelBtn} onClick={() => setShowOrderModal(false)}>إغلاق</button>
             </div>
           </div>
@@ -1980,6 +2595,19 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className={styles.modalFooter}>
+              {selectedBill.id && (
+                <button 
+                  type="button"
+                  className={styles.downloadBtn} 
+                  onClick={() => {
+                    const billObj = bills.find(b => b.id === selectedBill.id);
+                    if (billObj) handlePrint(billObj);
+                  }}
+                  style={{ marginLeft: 'auto', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                >
+                  طباعة وتحميل PDF
+                </button>
+              )}
               <button className={styles.saveBtn} onClick={handleSaveBill} disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ الفاتورة'}</button>
               <button className={styles.cancelBtn} onClick={() => setShowBillModal(false)}>إلغاء</button>
             </div>
@@ -2108,187 +2736,295 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* ── User Modal ── */}
+      {showUserModal && (
+        <div className={styles.overlay} onClick={() => setShowUserModal(false)}>
+          <div className={styles.modal} style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>إضافة مستخدم جديد</h2>
+              <button className={styles.closeBtn} onClick={() => setShowUserModal(false)}>✕</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.formGrid} style={{ gridTemplateColumns: '1fr' }}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>الاسم كامل *</label>
+                  <input 
+                    className={styles.formInput} 
+                    value={newUser.name} 
+                    onChange={e => setNewUser({ ...newUser, name: e.target.value })} 
+                    placeholder="أدخل اسم الموظف"
+                    required
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>البريد الإلكتروني *</label>
+                  <input 
+                    className={styles.formInput} 
+                    type="email"
+                    dir="ltr"
+                    value={newUser.email} 
+                    onChange={e => setNewUser({ ...newUser, email: e.target.value })} 
+                    placeholder="employee@crystalblinds.com"
+                    required
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>كلمة المرور *</label>
+                  <input 
+                    className={styles.formInput} 
+                    type="password"
+                    dir="ltr"
+                    value={newUser.password} 
+                    onChange={e => setNewUser({ ...newUser, password: e.target.value })} 
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>الصلاحية / الدور *</label>
+                  <select 
+                    className={styles.formInput} 
+                    value={newUser.role} 
+                    onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                    style={{ outline: 'none', background: 'white' }}
+                  >
+                    <option value="employee">موظف (Employee) - صلاحيات محدودة</option>
+                    <option value="admin">مدير (Admin) - صلاحيات كاملة</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.saveBtn} onClick={handleSaveUser} disabled={saving}>
+                {saving ? 'جاري الحفظ...' : 'إنشاء الحساب'}
+              </button>
+              <button className={styles.cancelBtn} onClick={() => setShowUserModal(false)}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
 
 
 
     {/* ── Print Area (Outside .shell for print formatting) ── */}
     {selectedBillForPrint && (
-      <div className={styles.printInvoiceArea}>
-        <div className={styles.invoiceHeader}>
-          <div className={styles.brandLeft}>
-            <img src="/logo2.png" className={styles.brandLogo} alt="Crystal Blinds Logo" />
-            <p className={styles.brandSlogan}>جودة – دقة – ضمان</p>
+      <div className={styles.printInvoiceArea} dir="rtl">
+        {/* Top Header Section */}
+        <div className={styles.invoiceHeaderNew}>
+          {/* Logo on top left */}
+          <div className={styles.logoBlock}>
+            <div className={styles.logoWrapper}>
+              <img src="/logo.png" className={styles.brandLogoNew} alt="Crystal Blinds Logo" />
+            </div>
           </div>
           
-          <div className={styles.invoiceTitleBlock}>
-            <h1 className={styles.invoiceTitleAr}>فاتورة مبيعات</h1>
-            <p className={styles.invoiceTitleEn}>SALES INVOICE</p>
-          </div>
-
-          <div className={styles.invoiceNumBlock}>
-            <span className={styles.invoiceNumLabel}>رقم الفاتورة</span>
-            <span className={styles.invoiceNumVal}>{selectedBillForPrint.invoice_number}</span>
-          </div>
-        </div>
-
-        <div className={styles.invoiceInfoGrid}>
-          <div className={styles.infoCard}>
-            <div className={styles.infoCardHeader}>بيانات العميل</div>
-            <div className={styles.infoCardBody}>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>اسم العميل:</span>
-                <span className={styles.infoVal}>{selectedBillForPrint.client_name}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>رقم الهاتف:</span>
-                <span className={styles.infoVal} dir="ltr">{selectedBillForPrint.client_phone || '—'}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>العنوان:</span>
-                <span className={styles.infoVal}>{selectedBillForPrint.client_address || '—'}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>ملاحظات:</span>
-                <span className={styles.infoVal}>{selectedBillForPrint.notes || '—'}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.infoCard}>
-            <div className={styles.infoCardHeader}>تفاصيل الفاتورة</div>
-            <div className={styles.infoCardBody}>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>التاريخ:</span>
-                <span className={styles.infoVal}>
-                  {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'numeric', day: 'numeric' })}
-                </span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>الوقت:</span>
-                <span className={styles.infoVal} dir="ltr">
-                  {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                </span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>رقم الطلب:</span>
-                <span className={styles.infoVal}>{selectedBillForPrint.order_number || '—'}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>طريقة الدفع:</span>
-                <span className={styles.infoVal}>{selectedBillForPrint.payment_method}</span>
-              </div>
-              {selectedBillForPrint.delivery_date && (
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>موعد التسليم:</span>
-                  <span className={styles.infoVal}>
-                    {new Date(selectedBillForPrint.delivery_date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'numeric', day: 'numeric' })}
-                  </span>
-                </div>
-              )}
-            </div>
+          {/* Company details on top right */}
+          <div className={styles.companyInfoBlock} dir="ltr">
+            <h2 className={styles.companyNameEn}>Crystal Blinds</h2>
+            <p className={styles.companyAddressEn}>2 shebeen st. salah el dien square</p>
+            <p className={styles.companyAddressEn}>heliopolis, Cairo</p>
+            <p className={styles.companyAddressEn}>Egypt</p>
+            <p className={styles.companyPhoneEn}>Tel: 01100080609 / 01020909498</p>
           </div>
         </div>
 
-        <table className={styles.printTable}>
+        {/* Decorative Wave/Line */}
+        <div className={styles.headerDecorativeWave} />
+
+        {/* Title Block */}
+        <div className={styles.titleContainer}>
+          <div className={styles.titleLeftAr}>معرض كريستال للستائر</div>
+          <div className={styles.titleRightEn}>
+            <span className={styles.titleProforma}>PROFORMA Invoice</span>{' '}
+            <span className={styles.titleInvoiceNum}>{selectedBillForPrint.invoice_number}</span>
+          </div>
+        </div>
+
+        {/* Metadata Pill Box */}
+        <div className={styles.metaPillBox}>
+          <div className={styles.metaPillCol}>
+            <span className={styles.metaLabel}>Invoice Date</span>
+            <span className={styles.metaVal}>
+              {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('en-GB')}
+            </span>
+          </div>
+          <div className={styles.metaPillCol}>
+            <span className={styles.metaLabel}>Due Date</span>
+            <span className={styles.metaVal}>
+              {selectedBillForPrint.delivery_date 
+                ? new Date(selectedBillForPrint.delivery_date).toLocaleDateString('en-GB')
+                : new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('en-GB')}
+            </span>
+          </div>
+          <div className={styles.metaPillCol}>
+            <span className={styles.metaLabel}>Source</span>
+            <span className={styles.metaVal}>{selectedBillForPrint.order_number || 'S03978'}</span>
+          </div>
+          <div className={styles.metaPillCol}>
+            <span className={styles.metaLabel}>Total Count</span>
+            <span className={styles.metaVal}>
+              {selectedBillForPrint.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
+            </span>
+          </div>
+          <div className={styles.metaPillCol}>
+            <span className={styles.metaLabel}>Total Quantity</span>
+            <span className={styles.metaVal}>
+              {selectedBillForPrint.items.reduce((sum, item) => {
+                const itemQty = item.calcType === 'unit' 
+                  ? Number(item.quantity) 
+                  : (Number(item.width || 0) * Number(item.height || 0) * Number(item.quantity || 1));
+                return sum + itemQty;
+              }, 0).toFixed(2)}
+            </span>
+          </div>
+        </div>
+
+        {/* Client details Card */}
+        <div className={styles.clientDetailsCard}>
+          <div className={styles.clientDetailsHeader}>بيانات العميل المستلم</div>
+          <div className={styles.clientDetailsBody}>
+            <div><b>الاسم:</b> {selectedBillForPrint.client_name}</div>
+            <div><b>رقم الهاتف:</b> {selectedBillForPrint.client_phone || '—'}</div>
+            <div><b>العنوان بالتفصيل:</b> {selectedBillForPrint.client_address || 
+              orders.find((o: any) => o.client_name === selectedBillForPrint.client_name || (o.client_phone && o.client_phone === selectedBillForPrint.client_phone))?.client_address ||
+              appointments.find((a: any) => a.client_name === selectedBillForPrint.client_name || (a.client_phone && a.client_phone === selectedBillForPrint.client_phone))?.client_address ||
+              '—'}</div>
+            {selectedBillForPrint.notes && <div><b>ملاحظات إضافية:</b> {selectedBillForPrint.notes}</div>}
+          </div>
+        </div>
+
+        {/* Items Table */}
+        <table className={styles.premiumInvoiceTable}>
           <thead>
             <tr>
-              <th style={{ width: '5%' }}>م</th>
-              <th style={{ width: '40%', textAlign: 'right' }}>الصنف / النوع</th>
-              <th style={{ width: '10%' }}>الطول (م)</th>
-              <th style={{ width: '10%' }}>العرض (م)</th>
-              <th style={{ width: '10%' }}>عدد الستائر</th>
-              <th style={{ width: '12%' }}>سعر المتر (ج.م)</th>
-              <th style={{ width: '13%' }}>الإجمالي (ج.م)</th>
+              <th>NOTE</th>
+              <th>DESCRIPTION</th>
+              <th>COLOR</th>
+              <th>COUNT</th>
+              <th>WIDTH</th>
+              <th>HEIGHT</th>
+              <th>QUANTITY</th>
+              <th>UNIT PRICE</th>
+              <th>DISC.%</th>
+              <th>TAXES</th>
+              <th>AMOUNT</th>
             </tr>
           </thead>
           <tbody>
-            {selectedBillForPrint.items.map((item, idx) => (
-              <tr key={idx}>
-                <td>{idx + 1}</td>
-                <td style={{ textAlign: 'right' }}>{item.name}</td>
-                <td>{item.calcType === 'unit' || item.calcType === 'linear_width' ? '—' : Number(item.height || 0).toFixed(2)}</td>
-                <td>{item.calcType === 'unit' || item.calcType === 'linear_height' ? '—' : Number(item.width || 0).toFixed(2)}</td>
-                <td>{item.quantity}</td>
-                <td>{Number(item.price || 0).toFixed(2)}</td>
-                <td>{Number(item.total || 0).toFixed(2)}</td>
-              </tr>
-            ))}
+            {selectedBillForPrint.items.map((item, idx) => {
+              const qty = item.calcType === 'unit' 
+                ? Number(item.quantity) 
+                : (Number(item.width || 0) * Number(item.height || 0) * Number(item.quantity || 1));
+              const discountPct = selectedBillForPrint.discount && selectedBillForPrint.total_items_price 
+                ? Math.round((Number(selectedBillForPrint.discount) / Number(selectedBillForPrint.total_items_price)) * 100)
+                : 0;
+
+              return (
+                <tr key={idx}>
+                  <td>{selectedBillForPrint.notes || '—'}</td>
+                  <td>{item.name}</td>
+                  <td>L3-502</td>
+                  <td>{item.quantity}</td>
+                  <td>{item.calcType === 'unit' || item.calcType === 'linear_height' ? '—' : Number(item.width || 0).toFixed(2)}</td>
+                  <td>{item.calcType === 'unit' || item.calcType === 'linear_width' ? '—' : Number(item.height || 0).toFixed(2)}</td>
+                  <td>{qty.toFixed(2)} Units</td>
+                  <td>{Number(item.price || 0).toFixed(2)}</td>
+                  <td>{discountPct > 0 ? `${discountPct}%` : '0%'}</td>
+                  <td>Untaxed</td>
+                  <td>{Number(item.total || 0).toFixed(2)} LE</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
-        <div className={styles.invoiceFooterGrid}>
-          <div>
-            <table className={styles.printTotalsTable}>
+        {/* Bottom Section (Summary + Terms) */}
+        <div className={styles.premiumFooterLayout}>
+          {/* Terms & Conditions (Left) */}
+          <div className={styles.premiumTermsBox}>
+            <div className={styles.paymentComm}>
+              <b>Payment Communication:</b> {selectedBillForPrint.invoice_number}
+            </div>
+            
+            <div className={styles.termsSection}>
+              <span className={styles.termsSectionTitle}>الاحكام والشروط :</span>
+              <ul className={styles.termsSectionList}>
+                <li>جميع الاسعار بالجنيه المصرى وغير شامله ضريبه القيمه المضافه.</li>
+                <li>شروط الدفع: 80% دفعه مقدمه 20% قبل التركيب.</li>
+                <li>الستاره التى تقل مساحتها عن 2م مربع تحسب 2م مربع.</li>
+                <li>مده التوريد والتركيب 7 ايام عمل من تاريخ امر التوريد.</li>
+              </ul>
+            </div>
+
+            <div className={styles.termsSection}>
+              <span className={styles.termsSectionTitle}>سياسه مابعد البيع والضمان :</span>
+              <p className={styles.termsSectionText}>
+                ان هدف كريستال للستائر الاساسى كشركه تعمل فى مجال الستائر بأنواعها المتعدده ارضاء عملائنا الكرام بتقديم افضل منتج مع التركيز على خدمه ما بعد البيع.
+              </p>
+            </div>
+
+            <div className={styles.termsSection}>
+              <span className={styles.termsSectionTitle}>الشروط العامة لخدمه ما بعد البيع :</span>
+              <p className={styles.termsSectionText}>
+                تقدم كريستال للستائر لعملائها الكرام شهاده ضمان ساريه لمده ثلاث سنوات من تاريخ التركيب ضد عيوب الصناعه تشمل الستاره ومحتواها. تتضمن خدمه مابعد البيع الاصلاح والصيانه مجانا وبدون اى رسوم.
+              </p>
+            </div>
+          </div>
+
+          {/* Totals table (Right) */}
+          <div className={styles.premiumTotalsBox}>
+            <table className={styles.premiumTotalsTable}>
               <tbody>
                 <tr>
-                  <td>إجمالي الأصناف</td>
-                  <td>{Number(selectedBillForPrint.total_items_price || 0).toFixed(2)} ج.م</td>
+                  <td>Untaxed Amount</td>
+                  <td>{Number(selectedBillForPrint.total_items_price || 0).toFixed(2)} LE</td>
                 </tr>
-                <tr>
-                  <td>خصم</td>
-                  <td>{Number(selectedBillForPrint.discount || 0).toFixed(2)} ج.م</td>
+                {Number(selectedBillForPrint.discount || 0) > 0 && (
+                  <tr>
+                    <td>Discount</td>
+                    <td>{Number(selectedBillForPrint.discount || 0).toFixed(2)} LE</td>
+                  </tr>
+                )}
+                {Number(selectedBillForPrint.installation_cost || 0) > 0 && (
+                  <tr>
+                    <td>Installation Cost</td>
+                    <td>{Number(selectedBillForPrint.installation_cost || 0).toFixed(2)} LE</td>
+                  </tr>
+                )}
+                {Number(selectedBillForPrint.transport_cost || 0) > 0 && (
+                  <tr>
+                    <td>Transport Cost</td>
+                    <td>{Number(selectedBillForPrint.transport_cost || 0).toFixed(2)} LE</td>
+                  </tr>
+                )}
+                <tr className={styles.premiumFinalRow}>
+                  <td>Total</td>
+                  <td>{Number(selectedBillForPrint.final_total || 0).toFixed(2)} LE</td>
                 </tr>
-                <tr>
-                  <td>إجمالي بعد الخصم</td>
-                  <td>{(Number(selectedBillForPrint.total_items_price || 0) - Number(selectedBillForPrint.discount || 0)).toFixed(2)} ج.م</td>
-                </tr>
-                <tr>
-                  <td>تكلفة التركيب</td>
-                  <td>{Number(selectedBillForPrint.installation_cost || 0).toFixed(2)} ج.م</td>
-                </tr>
-                <tr>
-                  <td>تكلفة النقل</td>
-                  <td>{Number(selectedBillForPrint.transport_cost || 0).toFixed(2)} ج.م</td>
-                </tr>
-                <tr className={styles.finalTotalRow}>
-                  <td>الإجمالي النهائي</td>
-                  <td>{Number(selectedBillForPrint.final_total || 0).toFixed(2)} ج.م</td>
-                </tr>
-                <tr>
-                  <td>المدفوع / العربون</td>
-                  <td>{Number(selectedBillForPrint.deposit || 0).toFixed(2)} ج.م</td>
-                </tr>
-                <tr className={styles.finalTotalRow}>
-                  <td>المتبقي</td>
-                  <td>{Number(selectedBillForPrint.remaining_amount || 0).toFixed(2)} ج.م</td>
+                {Number(selectedBillForPrint.deposit || 0) > 0 && (
+                  <tr>
+                    <td>Deposit / المدفوع</td>
+                    <td>{Number(selectedBillForPrint.deposit || 0).toFixed(2)} LE</td>
+                  </tr>
+                )}
+                <tr className={styles.premiumRemainingRow}>
+                  <td>Remaining / المتبقي</td>
+                  <td>{Number(selectedBillForPrint.remaining_amount || 0).toFixed(2)} LE</td>
                 </tr>
               </tbody>
             </table>
-          </div>
 
-          <div className={styles.termsCard}>
-            <div>
-              <h3 className={styles.termsTitle}>ملاحظات وشروط</h3>
-              <ul className={styles.termsList}>
-                <li>الأسعار تشمل التركيب داخل القاهرة والجيزة.</li>
-                <li>الضمان 3 سنوات على الخامات وسنة على التركيب.</li>
-                <li>مدة تنفيذ الطلب من 5 إلى 10 أيام عمل.</li>
-                <li>هذه الفاتورة صالحة لمدة 15 يوم من تاريخ الإصدار.</li>
-              </ul>
-            </div>
-            
-            <div className={styles.signatureBlock}>
-              <div className={styles.signatureTitle}>توقيع العميل</div>
-              <div className={styles.signatureLine}>............................................................</div>
+            <div className={styles.signatureBlockNew}>
+              <div className={styles.signatureTitleNew}>توقيع العميل بالاستلام والاعتماد</div>
+              <div className={styles.signatureLineNew}>____________________________________</div>
             </div>
           </div>
         </div>
 
-        <div className={styles.printContactFooter}>
-          <div className={styles.contactItem}>
-            <span>هاتف: 01100080609 / 01020909498</span>
-          </div>
-          <div className={styles.contactItem}>
-            <span>العنوان: 74 شارع 15 مايو أمام مجمع الصوالحة الإسلامي، محطة الفيلا، شبرا الخيمة</span>
-          </div>
-          <div className={styles.contactItem}>
-            <span>موقعنا: crystalblinds.com</span>
-          </div>
-        </div>
-        
-        <div className={styles.thankYouText}>
-          شكرا لاختياركم كريستال للستائر
+        <div className={styles.thankYouNew}>
+          شكراً لاختياركم معرض كريستال للستائر - نتمنى لكم تجربة تسوق مميزة
         </div>
       </div>
     )}

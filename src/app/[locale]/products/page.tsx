@@ -1,5 +1,6 @@
 import ProductCards from "../ProductCards";
 import { getProducts } from "@/lib/products";
+import PageHero from "../PageHero";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -17,23 +18,15 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
   return (
     <>
       {/* Hero Banner */}
-      <section className="relative bg-[#FFFDFA] text-[#3E2723] pt-40 pb-20 px-6 md:px-12 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-</div>
-        <div className={`relative z-10 max-w-7xl mx-auto ${isAr ? 'text-right' : ''}`}>
-          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-4 block">
-            {isAr ? 'مجموعتنا' : 'Our Collection'}
-          </span>
-          <h1 className="font-headline text-5xl md:text-7xl text-[#3E2723] leading-tight">
-            {isAr ? 'منتجاتنا' : 'Our'} <span className="text-[#d4af37] italic font-light">{isAr ? '' : 'Products'}</span>
-          </h1>
-          <p className="text-[#3E2723]/60 mt-4 max-w-xl text-sm md:text-base leading-relaxed">
-            {isAr
-              ? 'اكتشف مجموعتنا الكاملة من الستائر الفاخرة — من الرول إلى الزيبرا والمطبوع، لكل مساحة حل مثالي.'
-              : 'Explore our full range of premium window treatments — from blackout to zebra and custom printed, a perfect solution for every space.'}
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title={isAr ? "منتجاتنا" : "Our Products"}
+        bgImage="/hero_bg.png"
+        isAr={isAr}
+        breadcrumbs={[
+          { label: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
+          { label: isAr ? "منتجاتنا" : "Our Products" },
+        ]}
+      />
 
       {/* Products Grid */}
       <section className="bg-[#FFFDFA] relative overflow-hidden py-0">

@@ -134,14 +134,15 @@ export default function ReservationSection({ isAr }: Props) {
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Heading */}
-        <div className={`mb-14 ${isAr ? 'text-right' : 'text-left'}`}>
-          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-4 block">
+        <div className="mb-14 flex flex-col items-center text-center max-w-3xl mx-auto relative">
+          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-3 block">
             {isAr ? 'احجز موعدك' : 'Book an Appointment'}
           </span>
-          <h3 className="font-headline text-4xl md:text-5xl text-[#3E2723] leading-tight">
-            {isAr ? 'حدد وقتاً' : 'Schedule a'} <span className="text-[#d4af37] italic font-light">{isAr ? 'مناسباً لك' : 'Visit'}</span>
-          </h3>
-          <p className="text-[#3E2723]/75 text-sm font-light mt-3 max-w-lg">
+          <h2 className="font-headline text-3xl md:text-5xl font-bold text-[#3E2723] leading-tight mb-4">
+            {isAr ? 'حدد وقتاً مناسباً لك' : 'Schedule a Visit'}
+          </h2>
+          <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mb-6" />
+          <p className="text-[#3E2723]/70 font-light text-sm mt-1 max-w-lg mx-auto">
             {isAr ? 'اختر نوع الخدمة والتاريخ والوقت المناسب، وسيتواصل معك فريقنا لتأكيد الموعد.' : 'Choose a service type, date, and time. Our team will contact you to confirm.'}
           </p>
         </div>

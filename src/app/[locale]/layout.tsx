@@ -105,11 +105,15 @@ export default async function RootLayout({
   const navLinks = isAr
     ? [
         { label: "الرئيسية", href: `/${locale}` },
+        { label: "من نحن", href: `/${locale}/about` },
+        { label: "مشاريعنا", href: `/${locale}/projects` },
         { label: "المنتجات", href: `/${locale}/products` },
         { label: "اتصل بنا",  href: `/${locale}/contact` },
       ]
     : [
         { label: "Home", href: `/${locale}` },
+        { label: "About Us", href: `/${locale}/about` },
+        { label: "Projects", href: `/${locale}/projects` },
         { label: "Products", href: `/${locale}/products` },
         { label: "Contact", href: `/${locale}/contact` },
       ];
