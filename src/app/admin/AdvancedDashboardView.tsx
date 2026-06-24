@@ -21,6 +21,7 @@ interface AdvancedDashboardViewProps {
   setShowPartnerModal: (show: boolean) => void;
   setShowUserModal: (show: boolean) => void;
   setShowSettings: (show: boolean) => void;
+  handleSignOut: () => void;
 }
 
 export default function AdvancedDashboardView({
@@ -39,6 +40,7 @@ export default function AdvancedDashboardView({
   setShowPartnerModal,
   setShowUserModal,
   setShowSettings,
+  handleSignOut,
 }: AdvancedDashboardViewProps) {
   // 1. Current Date formatting
   const formattedDate = useMemo(() => {
@@ -244,69 +246,45 @@ export default function AdvancedDashboardView({
         
         {/* User Card info (Left) */}
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-[#3E2723]/10 flex items-center justify-center border border-[#3E2723]/20 text-[#d4af37] font-bold text-lg overflow-hidden shrink-0">
-            {userProfile?.name?.slice(0, 1) || 'أ'}
+          <div className="w-9 h-9 rounded-xl bg-[#3E2723]/5 flex items-center justify-center text-[#3E2723]/70 border border-[#3E2723]/10 shrink-0">
+            <span className="material-symbols-outlined text-lg">person</span>
           </div>
           <div className="flex flex-col text-right items-start">
             <span className="font-bold text-sm text-[#3E2723]">{userProfile?.name || 'أحمد المدير'}</span>
-            <span className="text-[11px] text-[#3E2723]/60 font-semibold">
+            <span className="text-[10px] text-[#3E2723]/50 font-semibold">
               {userRole === 'admin' ? 'المدير العام' : 
-               userRole === 'customer_service' ? 'خدمة العملاء' :
+               userRole === 'customer_service' ? 'خدمة عملاء' :
                userRole === 'sales' ? 'المبيعات' :
                userRole === 'accountant' ? 'المحاسب المالي' :
                userRole === 'technician' ? 'فني تركيبات' : 'موظف'}
             </span>
           </div>
-          <div className="relative mr-4 cursor-pointer hover:opacity-85 shrink-0" onClick={() => setActiveTab('messages')}>
-            <span className="material-symbols-outlined text-[#3E2723]/70 text-2xl">notifications</span>
+          <div className="relative mr-2 cursor-pointer hover:opacity-85 shrink-0" onClick={() => setActiveTab('messages')}>
+            <span className="material-symbols-outlined text-[#3E2723]/70 text-xl">notifications</span>
             {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#b91c1c] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#b91c1c] text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
                 {unreadCount}
               </span>
             )}
           </div>
-        </div>
-
-        {/* Top metrics summary (Center) */}
-        <div className="hidden xl:flex items-center gap-6">
-          <div className="flex items-center gap-2 border-l border-[#3E2723]/10 pl-6 shrink-0">
-            <span className="material-symbols-outlined text-[#d4af37] text-2xl">calendar_month</span>
-            <div className="flex flex-col text-right items-start">
-              <span className="text-[11px] text-[#3E2723]/50">مواعيد اليوم</span>
-              <span className="font-bold text-sm">{todayAppts.length || 8}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 border-l border-[#3E2723]/10 pl-6 shrink-0">
-            <span className="material-symbols-outlined text-[#d4af37] text-2xl">payments</span>
-            <div className="flex flex-col text-right items-start">
-              <span className="text-[11px] text-[#3E2723]/50">فواتير مستحقة</span>
-              <span className="font-bold text-sm">{dueBillsCount}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 border-l border-[#3E2723]/10 pl-6 shrink-0">
-            <span className="material-symbols-outlined text-[#d4af37] text-2xl">assignment</span>
-            <div className="flex flex-col text-right items-start">
-              <span className="text-[11px] text-[#3E2723]/50">أوامر قيد التنفيذ</span>
-              <span className="font-bold text-sm">{activeOrders.length || 15}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="material-symbols-outlined text-[#ef4444] text-2xl">error</span>
-            <div className="flex flex-col text-right items-start">
-              <span className="text-[11px] text-[#3E2723]/50">تنبيهات هامة</span>
-              <span className="font-bold text-sm text-[#ef4444]">{unreadCount + 5}</span>
-            </div>
-          </div>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1.5 px-3 py-1.5 mr-2 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 hover:border-red-300 text-xs font-bold transition-all duration-200 shrink-0"
+            title="تسجيل الخروج"
+          >
+            <span className="material-symbols-outlined text-sm">logout</span>
+            <span>تسجيل الخروج</span>
+          </button>
         </div>
 
         {/* Date and Navigation (Right) */}
         <div className="flex items-center gap-3">
           <div className="flex flex-col text-right items-start">
             <span className="text-xs font-bold text-[#d4af37]">{formattedDate}</span>
-            <span className="text-[10px] text-[#3E2723]/60">نظام إدارة كريستال للستائر</span>
+            <span className="text-[10px] text-[#3E2723]/40 font-semibold">{`نظام إدارة كريستال للستائر`}</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37] shrink-0">
-            <span className="material-symbols-outlined">calendar_today</span>
+          <div className="w-9 h-9 rounded-xl bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37] shrink-0">
+            <span className="material-symbols-outlined text-lg">calendar_today</span>
           </div>
         </div>
       </div>

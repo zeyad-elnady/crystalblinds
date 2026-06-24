@@ -18,6 +18,11 @@ export async function POST(req: NextRequest) {
         persistSession: false,
         autoRefreshToken: false,
       },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
     });
 
     const { data: { user }, error: authErr } = await clientUser.auth.getUser(token);
@@ -73,7 +78,7 @@ export async function POST(req: NextRequest) {
     // In case the DB trigger didn't run or is not set up yet, we also attempt a direct insert
     // to keep it 100% resilient.
     if (signUpData.user) {
-      await clientAdmin.from('profiles').upsert({
+      await clientUser.from('profiles').upsert({
         id: signUpData.user.id,
         email,
         name,
@@ -102,6 +107,11 @@ export async function DELETE(req: NextRequest) {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
     });
 

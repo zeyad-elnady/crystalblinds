@@ -26,12 +26,12 @@ export type CalcType = 'square_meter' | 'linear_width' | 'linear_height' | 'unit
 
 export interface BillItem {
   name: string;
-  height: number;
-  width: number;
-  quantity: number;
-  price: number;
+  height: number | string;
+  width: number | string;
+  quantity: number | string;
+  price: number | string;
   calcType: CalcType;
-  total: number;
+  total: number | string;
 }
 
 export interface Bill {

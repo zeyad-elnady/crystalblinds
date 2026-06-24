@@ -1264,6 +1264,14 @@
   border-color: #86efac;
 }
 
+/* Sidebar Collapsed State (Desktop only) */
+@media (min-width: 901px) {
+  .sidebarCollapsed {
+    width: 78px !important;
+    padding: 1.5rem 0.5rem !important;
+  }
+}
+
 
 
 

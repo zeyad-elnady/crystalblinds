@@ -49,7 +49,7 @@ export default async function HomePage({
 
       {/* ── Curtain Price Calculator Section ── */}
       <section className="relative z-20 bg-[#FFFDFA]">
-        <CurtainCalculator isAr={isAr} />
+        <CurtainCalculator isAr={isAr} products={products} />
       </section>
 
       {/* ── Customer Testimonials Section ── */}

@@ -15,7 +15,11 @@ export default function LoginForm() {
     setLoading(true); setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      if (error.message.toLowerCase().includes('confirm') || error.message.toLowerCase().includes('not confirmed')) {
+        setError('يرجى تأكيد البريد الإلكتروني أولاً لتسجيل الدخول');
+      } else {
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      }
       setLoading(false);
     } else {
       window.location.replace('/admin');

@@ -71,6 +71,19 @@ export default function AdminDashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth > 900);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const showFullMenu = !sidebarCollapsed || !isDesktop;
   const [saving, setSaving]             = useState(false);
 
   // New states for active tab
@@ -362,7 +375,17 @@ export default function AdminDashboard() {
     setSaving(true);
     
     const items = selectedBill.items || [];
-    const totalItemsPrice = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+    const cleanedItems = items.map(item => ({
+      name: item.name || '',
+      calcType: item.calcType || 'square_meter',
+      width: item.width === '' ? 0 : (Number(item.width) || 0),
+      height: item.height === '' ? 0 : (Number(item.height) || 0),
+      quantity: item.quantity === '' ? 0 : (Number(item.quantity) || 0),
+      price: item.price === '' ? 0 : (Number(item.price) || 0),
+      total: item.total === '' ? 0 : (Number(item.total) || 0)
+    }));
+
+    const totalItemsPrice = cleanedItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     const discount = Number(selectedBill.discount) || 0;
     const installation = Number(selectedBill.installation_cost) || 0;
     const transport = Number(selectedBill.transport_cost) || 0;
@@ -379,7 +402,7 @@ export default function AdminDashboard() {
       order_number: selectedBill.order_number || null,
       payment_method: selectedBill.payment_method || 'نقدي',
       delivery_date: selectedBill.delivery_date || null,
-      items: items,
+      items: cleanedItems,
       total_items_price: totalItemsPrice,
       discount: discount,
       installation_cost: installation,
@@ -567,23 +590,30 @@ export default function AdminDashboard() {
     const item = { ...newItems[index], [field]: value };
 
     if (['width', 'height', 'quantity', 'price', 'calcType'].includes(field)) {
-      const qty = Number(item.quantity) || 0;
-      const w = Number(item.width) || 0;
-      const h = Number(item.height) || 0;
-      const p = Number(item.price) || 0;
-      const mode = item.calcType;
+      const qtyStr = item.quantity;
+      const priceStr = item.price;
 
-      if (mode === 'square_meter') {
-        item.total = Math.round((qty * w * h * p) * 100) / 100;
-      } else if (mode === 'linear_width') {
-        item.total = Math.round((qty * w * p) * 100) / 100;
-      } else if (mode === 'linear_height') {
-        item.total = Math.round((qty * h * p) * 100) / 100;
+      if (qtyStr === '' || priceStr === '') {
+        item.total = '';
       } else {
-        item.total = Math.round((qty * p) * 100) / 100;
+        const qty = Number(qtyStr) || 0;
+        const w = Number(item.width) || 0;
+        const h = Number(item.height) || 0;
+        const p = Number(priceStr) || 0;
+        const mode = item.calcType;
+
+        if (mode === 'square_meter') {
+          item.total = Math.round((qty * w * h * p) * 100) / 100;
+        } else if (mode === 'linear_width') {
+          item.total = Math.round((qty * w * p) * 100) / 100;
+        } else if (mode === 'linear_height') {
+          item.total = Math.round((qty * h * p) * 100) / 100;
+        } else {
+          item.total = Math.round((qty * p) * 100) / 100;
+        }
       }
     } else if (field === 'total') {
-      item.total = Number(value) || 0;
+      item.total = value === '' ? '' : (Number(value) || 0);
     }
 
     newItems[index] = item;
@@ -634,12 +664,12 @@ export default function AdminDashboard() {
     if (!selectedBill) return;
     const newItem: BillItem = {
       name: '',
-      height: 1.00,
-      width: 1.00,
-      quantity: 1,
-      price: 0,
+      height: '',
+      width: '',
+      quantity: '',
+      price: '',
       calcType: 'square_meter',
-      total: 0
+      total: ''
     };
     setSelectedBill({
       ...selectedBill,
@@ -1035,6 +1065,24 @@ export default function AdminDashboard() {
   const today      = new Date().toISOString().split('T')[0];
   const todayCount = appointments.filter(a => a.appointment_date === today).length;
 
+  const sidebarLinks = [
+    { tab: 'dashboard', label: 'لوحة التحكم', icon: 'dashboard', access: 'dashboard' },
+    { tab: 'clients', label: 'العملاء', icon: 'group', access: 'clients' },
+    { tab: 'appointments', label: 'المواعيد', icon: 'calendar_today', access: 'appointments' },
+    { tab: 'inspections', label: 'أوامر المعاينة', icon: 'assignment', access: 'inspections' },
+    { tab: 'installations', label: 'أوامر التركيب', icon: 'handyman', access: 'installations' },
+    { tab: 'maintenance', label: 'أوامر الصيانة', icon: 'build', access: 'maintenance' },
+    { tab: 'orders', label: 'الطلبات', icon: 'shopping_cart', access: 'orders' },
+    { tab: 'bills', label: 'الفواتير', icon: 'description', access: 'bills' },
+    { tab: 'products', label: 'المنتجات', icon: 'inventory', access: 'products' },
+    { tab: 'expenses', label: 'المصروفات', icon: 'payments', access: 'expenses' },
+    { tab: 'employees', label: 'الموظفون', icon: 'badge', access: 'employees' },
+    { tab: 'reports', label: 'التقارير', icon: 'assessment', access: 'reports' },
+    { tab: 'messages', label: 'رسائل التواصل', icon: 'mail', access: 'messages', showUnread: true },
+    { tab: 'website_edit', label: 'تعديل الموقع', icon: 'edit_document', access: 'website_edit' },
+    { tab: 'users', label: 'إدارة المستخدمين', icon: 'group', access: 'users' },
+  ];
+
   if (roleChecking) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fdfbf7', fontFamily: 'Tajawal, sans-serif', color: '#3E2723', flexDirection: 'column', gap: '15px' }}>
@@ -1057,225 +1105,94 @@ export default function AdminDashboard() {
           <div className={styles.mobileBackdrop} onClick={() => setMobileMenuOpen(false)} />
         )}
       {/* Sidebar */}
-      <aside className={`${styles.sidebar} !bg-[#2B1B17] !border-l border-white/5 !text-white/70 shadow-xl`}>
+      <aside className={`${styles.sidebar} ${sidebarCollapsed ? styles.sidebarCollapsed : ''} !bg-[#2B1B17] !border-l border-white/5 !text-white/70 shadow-xl transition-all duration-300`}>
         <button className={styles.mobileClose} onClick={() => setMobileMenuOpen(false)}>✕</button>
+        {isDesktop && (
+          <div className={`flex w-full ${showFullMenu ? 'justify-start px-4' : 'justify-center'} pt-2`}>
+            <button 
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="text-white/50 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all duration-200"
+              title={sidebarCollapsed ? "فتح القائمة" : "إغلاق القائمة"}
+            >
+              <span className="material-symbols-outlined text-lg leading-none">
+                {sidebarCollapsed ? "chevron_left" : "chevron_right"}
+              </span>
+            </button>
+          </div>
+        )}
         <div className="flex flex-col items-center gap-2 pb-5 border-b border-white/5 w-full">
-          <img src="/logo2.png" alt="Crystal Blinds" className="h-[105px] object-contain filter brightness-0 invert" />
-          <span className="text-[10px] text-[#d4af37] font-extrabold tracking-widest uppercase">CRYSTAL BLINDS</span>
+          {showFullMenu ? (
+            <span className="text-xs text-[#d4af37] font-extrabold tracking-widest uppercase py-2">CRYSTAL BLINDS</span>
+          ) : (
+            <span className="text-xs text-[#d4af37] font-extrabold uppercase py-2">C</span>
+          )}
         </div>
         <nav className="flex flex-col gap-1.5 flex-1 w-full overflow-y-auto hide-scrollbar">
-          {/* Dashboard (Main) Link */}
-          {hasAccess('dashboard') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'dashboard' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">dashboard</span>
-              <span>لوحة التحكم</span>
-            </div>
-          )}
-
-          {/* Clients Link */}
-          {hasAccess('clients') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'clients' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('clients'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">group</span>
-              <span>العملاء</span>
-            </div>
-          )}
-
-          {/* Appointments Link */}
-          {hasAccess('appointments') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'appointments' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('appointments'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">calendar_today</span>
-              <span>المواعيد</span>
-            </div>
-          )}
-
-          {/* Inspections Link */}
-          {hasAccess('inspections') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'inspections' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('inspections'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">assignment</span>
-              <span>أوامر المعاينة</span>
-            </div>
-          )}
-
-          {/* Installations Link */}
-          {hasAccess('installations') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'installations' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('installations'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">handyman</span>
-              <span>أوامر التركيب</span>
-            </div>
-          )}
-
-          {/* Maintenance Link */}
-          {hasAccess('maintenance') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'maintenance' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('maintenance'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">build</span>
-              <span>أوامر الصيانة</span>
-            </div>
-          )}
-
-          {/* Orders Link */}
-          {hasAccess('orders') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'orders' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('orders'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">shopping_cart</span>
-              <span>الطلبات</span>
-            </div>
-          )}
-
-          {/* Invoices (Bills) Link */}
-          {hasAccess('bills') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'bills' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('bills'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">description</span>
-              <span>الفواتير</span>
-            </div>
-          )}
-
-          {/* Products Link */}
-          {hasAccess('products') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'products' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('products'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">inventory</span>
-              <span>المنتجات</span>
-            </div>
-          )}
-
-          {/* Expenses Link */}
-          {hasAccess('expenses') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'expenses' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('expenses'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">payments</span>
-              <span>المصروفات</span>
-            </div>
-          )}
-
-          {/* Employees Link */}
-          {hasAccess('employees') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'employees' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('employees'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">badge</span>
-              <span>الموظفون</span>
-            </div>
-          )}
-
-          {/* Reports Link */}
-          {hasAccess('reports') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'reports' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('reports'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">assessment</span>
-              <span>التقارير</span>
-            </div>
-          )}
-
-          {/* Contact Messages Link */}
-          {hasAccess('messages') && (
-            <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'messages' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('messages'); setMobileMenuOpen(false); }}>
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-base">mail</span>
-                <span>رسائل التواصل</span>
+          {sidebarLinks.map(link => {
+            if (!hasAccess(link.access)) return null;
+            const isActive = activeTab === link.tab;
+            return (
+              <div 
+                key={link.tab}
+                className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`} 
+                onClick={() => { setActiveTab(link.tab as any); setMobileMenuOpen(false); }}
+                title={!showFullMenu ? link.label : undefined}
+              >
+                <div className="relative flex items-center justify-center">
+                  <span className="material-symbols-outlined text-base">{link.icon}</span>
+                  {link.showUnread && unreadCount > 0 && !showFullMenu && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-[#b91c1c] text-white text-[8px] font-bold w-3 h-3 rounded-full flex items-center justify-center animate-pulse" />
+                  )}
+                </div>
+                {showFullMenu && <span>{link.label}</span>}
+                {link.showUnread && unreadCount > 0 && showFullMenu && (
+                  <span className="bg-[#b91c1c] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center mr-auto">{unreadCount}</span>
+                )}
               </div>
-              {unreadCount > 0 && (
-                <span className="bg-[#b91c1c] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{unreadCount}</span>
-              )}
-            </div>
-          )}
+            );
+          })}
 
-          {/* Website Management (Edit) Link */}
-          {hasAccess('website_edit') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'website_edit' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('website_edit'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">edit_document</span>
-              <span>تعديل الموقع</span>
-            </div>
-          )}
-
-          {/* Users Management Link */}
-          {hasAccess('users') && (
-            <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${
-              activeTab === 'users' 
-                ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm' 
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`} onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}>
-              <span className="material-symbols-outlined text-base">group</span>
-              <span>إدارة المستخدمين</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5" onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}>
+          <div 
+            className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5`} 
+            onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}
+            title={!showFullMenu ? "الإعدادات" : undefined}
+          >
             <span className="material-symbols-outlined text-base">settings</span>
-            <span>الإعدادات</span>
+            {showFullMenu && <span>الإعدادات</span>}
           </div>
 
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5" onClick={handleSignOut}>
+          <div 
+            className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5`} 
+            onClick={handleSignOut}
+            title={!showFullMenu ? "تسجيل الخروج" : undefined}
+          >
             <span className="material-symbols-outlined text-base">logout</span>
-            <span>تسجيل الخروج</span>
+            {showFullMenu && <span>تسجيل الخروج</span>}
           </div>
         </nav>
 
         {/* Current user role card indicator at bottom of sidebar */}
         <div className="w-full flex flex-col gap-2 pt-4 border-t border-white/5">
-          <div className="bg-[#3E2723]/35 border border-[#d4af37]/25 p-3 rounded-xl flex items-center gap-3">
-            <span className="material-symbols-outlined text-[#d4af37] text-xl">workspace_premium</span>
-            <div className="flex flex-col text-right text-white">
-              <span className="text-[9px] opacity-60">الصلاحية الحالية</span>
-              <span className="text-xs font-bold">
-                {userRole === 'admin' ? 'مدير عام' : 
-                 userRole === 'customer_service' ? 'خدمة عملاء' :
-                 userRole === 'sales' ? 'مبيعات' :
-                 userRole === 'accountant' ? 'محاسب مالي' :
-                 userRole === 'technician' ? 'فني تركيبات' : 'موظف'}
-              </span>
-            </div>
+          <div className={`bg-[#3E2723]/35 border border-[#d4af37]/25 p-3 rounded-xl flex items-center ${showFullMenu ? 'gap-3' : 'justify-center'}`} title={!showFullMenu ? "الصلاحية الحالية" : undefined}>
+            <span className="material-symbols-outlined text-[#d4af37] text-xl shrink-0">workspace_premium</span>
+            {showFullMenu && (
+              <div className="flex flex-col text-right text-white">
+                <span className="text-[9px] opacity-60">الصلاحية الحالية</span>
+                <span className="text-xs font-bold">
+                  {userRole === 'admin' ? 'مدير عام' : 
+                   userRole === 'customer_service' ? 'خدمة عملاء' :
+                   userRole === 'sales' ? 'مبيعات' :
+                   userRole === 'accountant' ? 'محاسب مالي' :
+                   userRole === 'technician' ? 'فني تركيبات' : 'موظف'}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="text-[10px] text-white/30 text-center mt-2">Crystal Blinds © 2024</div>
+          {showFullMenu && <div className="text-[10px] text-white/30 text-center mt-2">Crystal Blinds © 2024</div>}
         </div>
       </aside>
 
@@ -1310,6 +1227,7 @@ export default function AdminDashboard() {
             setShowPartnerModal={setShowPartnerModal}
             setShowUserModal={setShowUserModal}
             setShowSettings={setShowSettings}
+            handleSignOut={handleSignOut}
           />
         ) : activeTab === 'appointments' ? (
           <>
