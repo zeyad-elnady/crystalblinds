@@ -9,6 +9,7 @@ interface AdvancedDashboardViewProps {
   appointments: Appointment[];
   orders: any[];
   bills: Bill[];
+  expenses: any[];
   products: Product[];
   messages: ContactMessage[];
   unreadCount: number;
@@ -28,6 +29,7 @@ export default function AdvancedDashboardView({
   appointments,
   orders,
   bills,
+  expenses,
   products,
   messages,
   unreadCount,
@@ -65,53 +67,45 @@ export default function AdvancedDashboardView({
       ...orders.map(o => o.client_name),
       ...bills.map(b => b.client_name),
     ]);
-    return Math.max(1250, names.size);
+    return names.size;
   }, [appointments, orders, bills]);
 
   const leadsCount = useMemo(() => {
-    return appointments.filter(a => a.status === 'pending').length + 320;
+    return appointments.filter(a => a.status === 'pending').length;
   }, [appointments]);
 
   const confirmedCount = useMemo(() => {
-    return appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').length + 930;
+    return appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').length;
   }, [appointments]);
 
   const inspectionsToday = useMemo(() => todayAppts.filter(a => a.appointment_type === 'inspection').length, [todayAppts]);
   const installationsToday = useMemo(() => todayAppts.filter(a => a.appointment_type === 'installation').length, [todayAppts]);
-  const maintenanceToday = 6; // Mock/Fixed to match design details
+  const maintenanceToday = 0;
 
-  const dueBillsCount = pendingBills.length + 24;
+  const dueBillsCount = pendingBills.length;
   const dueBillsValue = useMemo(() => {
     const totalRemaining = bills.reduce((sum, b) => sum + (Number(b.remaining_amount) || 0), 0);
-    return Math.round(totalRemaining + 45300);
+    return Math.round(totalRemaining);
   }, [bills]);
 
   const totalRevenue = useMemo(() => {
     const totalBills = bills.reduce((sum, b) => sum + (Number(b.final_total) || 0), 0);
-    return Math.round(totalBills + 250000);
+    return Math.round(totalBills);
   }, [bills]);
 
-  const totalExpenses = Math.round(totalRevenue * 0.5); // 50% expenses as standard
+  const totalExpenses = useMemo(() => {
+    return expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }, [expenses]);
+
   const netProfit = totalRevenue - totalExpenses;
 
   // 3. Task checklist local state
   const defaultTasks = useMemo(() => {
-    const list = todayAppts.slice(0, 5).map(a => ({
+    return todayAppts.map(a => ({
       id: a.id,
       time: a.appointment_time?.slice(0, 5) || '10:00',
       text: `${a.appointment_type === 'inspection' ? 'معاينة' : 'تركيب'} للعميل ${a.client_name} - ${a.client_address || 'القاهرة'}`,
     }));
-    
-    // Fill up to 5 items if database does not have enough
-    const fallbacks = [
-      { id: 't1', time: '10:00 ص', text: 'معاينة عميل أحمد محمد - مدينة نصر' },
-      { id: 't2', time: '12:00 م', text: 'تركيب ستائر - فاطمة علي - مصر الجديدة' },
-      { id: 't3', time: '02:00 م', text: 'صيانة ستائر - محمد حسن - المهندسين' },
-      { id: 't4', time: '04:00 م', text: 'معاينة عميل سارة محمود - التجمع الخامس' },
-      { id: 't5', time: '06:00 م', text: 'تركيب ستائر - أحمد خالد - مدينة الرحاب' },
-    ];
-
-    return [...list, ...fallbacks.slice(list.length)];
   }, [todayAppts]);
 
   const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
@@ -125,19 +119,11 @@ export default function AdvancedDashboardView({
     const list = [];
     if (todayAppts.length > 0) {
       list.push({ text: `لديك ${todayAppts.length} مواعيد مجدولة اليوم.`, time: 'منذ دقائق', icon: 'calendar_today', color: '#b8922a' });
-    } else {
-      list.push({ text: 'لديك 5 مواعيد اليوم', time: 'منذ دقائق', icon: 'calendar_today', color: '#b8922a' });
     }
 
     if (pendingBills.length > 0) {
       list.push({ text: `لديك ${pendingBills.length} فاتورة مستحقة الدفع.`, time: 'منذ 15 دقيقة', icon: 'payments', color: '#8D6E63' });
-    } else {
-      list.push({ text: 'لديك 12 فاتورة مستحقة', time: 'منذ 15 دقيقة', icon: 'payments', color: '#8D6E63' });
     }
-
-    list.push({ text: 'أمر تركيب جديد يحتاج اعتماد', time: 'منذ 30 دقيقة', icon: 'gavel', color: '#3E2723' });
-    list.push({ text: 'صيانة عاجلة تحتاج متابعة للعميل ياسر السقا', time: 'منذ ساعة', icon: 'build', color: '#C62828' });
-    list.push({ text: 'موظف متأخر عن الحضور اليوم', time: 'منذ ساعة', icon: 'warning', color: '#D84315' });
 
     return list;
   }, [todayAppts, pendingBills]);
@@ -145,20 +131,20 @@ export default function AdvancedDashboardView({
   // 5. Service Performance Donut segmented percentages
   const donutPercentage = useMemo(() => {
     const totalApptsCount = appointments.length;
-    if (totalApptsCount === 0) return { inspect: 31.7, install: 39.7, maint: 20.6, follow: 7.9 };
+    if (totalApptsCount === 0) return { inspect: 50, install: 50, maint: 0, follow: 0 };
     const inspectCount = appointments.filter(a => a.appointment_type === 'inspection').length;
     const installCount = appointments.filter(a => a.appointment_type === 'installation').length;
     
-    const inspectPct = Math.round((inspectCount / totalApptsCount) * 1000) / 10;
-    const installPct = Math.round((installCount / totalApptsCount) * 1000) / 10;
-    const maintPct = 20.6;
-    const followPct = Math.round((100 - inspectPct - installPct - maintPct) * 10) / 10;
+    const inspectPct = Math.round((inspectCount / totalApptsCount) * 100);
+    const installPct = Math.round((installCount / totalApptsCount) * 100);
+    const maintPct = 0;
+    const followPct = 100 - inspectPct - installPct;
 
     return {
-      inspect: inspectPct > 0 ? inspectPct : 31.7,
-      install: installPct > 0 ? installPct : 39.7,
+      inspect: inspectPct,
+      install: installPct,
       maint: maintPct,
-      follow: followPct > 0 ? followPct : 7.9,
+      follow: followPct,
     };
   }, [appointments]);
 
@@ -179,27 +165,17 @@ export default function AdvancedDashboardView({
 
   // 6. Top Products rendering
   const displayProducts = useMemo(() => {
-    const defaultProducts = [
-      { name: 'ستائر زيبرا', sales: '530 متر', pct: 90, img: '/photos for crystal/ستائر زيبرا.jpeg' },
-      { name: 'ستائر بلاك أوت', sales: '420 متر', pct: 75, img: '/photos for crystal/ستائر بلاك اوت.jpeg' },
-      { name: 'ستائر رول', sales: '310 متر', pct: 55, img: '/photos for crystal/ستائر رول.jpeg' },
-      { name: 'ستائر شيفون', sales: '280 متر', pct: 50, img: '/photos for crystal/ستائر دبل سيستم.jpeg' },
-      { name: 'ستائر رومن', sales: '190 متر', pct: 35, img: '/photos for crystal/ستائر شرائح خشبية.jpeg' },
-    ];
-
-    if (products.length === 0) return defaultProducts;
-
     return products.slice(0, 5).map((p, index) => ({
       name: p.labelAr || 'منتج ستائر',
-      sales: `${500 - index * 80} متر`,
-      pct: 90 - index * 15,
-      img: p.images?.[0] || defaultProducts[index]?.img || '/placeholder.png',
+      sales: `نشط`,
+      pct: 100 - index * 15,
+      img: p.images?.[0] || '/placeholder.png',
     }));
   }, [products]);
 
   // 7. Upcoming appointments table list
   const upcomingTableList = useMemo(() => {
-    const list = appointments
+    return appointments
       .filter(a => a.status === 'confirmed' || a.status === 'pending')
       .slice(0, 5)
       .map(a => ({
@@ -209,33 +185,158 @@ export default function AdvancedDashboardView({
         location: a.client_address || '—',
         status: a.status,
       }));
-
-    const fallbacks = [
-      { id: 'f1', time: '10:00 ص', client: 'أحمد محمد', location: 'مدينة نصر - ش 15', status: 'confirmed' },
-      { id: 'f2', time: '12:00 م', client: 'فاطمة علي', location: 'مصر الجديدة - ش 8', status: 'confirmed' },
-      { id: 'f3', time: '02:00 م', client: 'محمد حسن', location: 'المهندسين - ش 26', status: 'pending' },
-      { id: 'f4', time: '04:00 م', client: 'سارة محمود', location: 'التجمع الخامس', status: 'new' },
-      { id: 'f5', time: '06:00 م', client: 'أحمد خالد', location: 'مدينة الرحاب', status: 'confirmed' },
-    ];
-
-    return [...list, ...fallbacks.slice(list.length)];
   }, [appointments]);
 
   const openWorkOrdersCount = useMemo(() => {
-    const openAppts = appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
-    return openAppts + 18;
+    return appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
   }, [appointments]);
 
   const newClientsCount = useMemo(() => {
-    const newCount = appointments.filter(a => a.status === 'pending').length;
-    return newCount + 42;
+    return appointments.filter(a => a.status === 'pending').length;
   }, [appointments]);
 
   const completionRate = useMemo(() => {
     const total = appointments.length;
-    if (total === 0) return 94;
+    if (total === 0) return 100;
     const completed = appointments.filter(a => a.status === 'completed').length;
-    return Math.min(100, Math.max(80, Math.round((completed / total) * 100) || 94));
+    return Math.round((completed / total) * 100);
+  }, [appointments]);
+
+  // 8. Monthly sales chart data points based on invoice dates
+  const monthlySalesPoints = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const sums = [0, 0, 0, 0, 0, 0];
+    bills.forEach(b => {
+      const bDate = new Date(b.created_at);
+      if (bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
+        const day = bDate.getDate();
+        if (day <= 5) sums[0] += Number(b.final_total) || 0;
+        else if (day <= 10) sums[1] += Number(b.final_total) || 0;
+        else if (day <= 15) sums[2] += Number(b.final_total) || 0;
+        else if (day <= 20) sums[3] += Number(b.final_total) || 0;
+        else if (day <= 25) sums[4] += Number(b.final_total) || 0;
+        else sums[5] += Number(b.final_total) || 0;
+      }
+    });
+
+    const maxVal = Math.max(...sums, 1000);
+    return sums.map((val, idx) => {
+      const x = idx * 20;
+      const y = 35 - (val / maxVal) * 28;
+      return { x, y, val };
+    });
+  }, [bills]);
+
+  const monthlySalesPathData = useMemo(() => {
+    if (monthlySalesPoints.length === 0) return { pathD: '', areaD: '' };
+    
+    let pathD = '';
+    monthlySalesPoints.forEach((pt, idx) => {
+      if (idx === 0) pathD = `M ${pt.x},${pt.y}`;
+      else pathD += ` L ${pt.x},${pt.y}`;
+    });
+
+    const areaD = pathD ? `${pathD} L 100,40 L 0,40 Z` : '';
+    return { pathD, areaD };
+  }, [monthlySalesPoints]);
+
+  // 9. Weekly Revenue vs Expenses
+  const weeklyStats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const weeks = [
+      { rev: 0, exp: 0 },
+      { rev: 0, exp: 0 },
+      { rev: 0, exp: 0 },
+      { rev: 0, exp: 0 },
+    ];
+
+    bills.forEach(b => {
+      const bDate = new Date(b.created_at);
+      if (bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
+        const day = bDate.getDate();
+        const amt = Number(b.final_total) || 0;
+        if (day <= 7) weeks[0].rev += amt;
+        else if (day <= 14) weeks[1].rev += amt;
+        else if (day <= 21) weeks[2].rev += amt;
+        else weeks[3].rev += amt;
+      }
+    });
+
+    expenses.forEach(e => {
+      const eDate = new Date(e.created_at || e.expense_date);
+      if (eDate.getMonth() === currentMonth && eDate.getFullYear() === currentYear) {
+        const day = eDate.getDate();
+        const amt = Number(e.amount) || 0;
+        if (day <= 7) weeks[0].exp += amt;
+        else if (day <= 14) weeks[1].exp += amt;
+        else if (day <= 21) weeks[2].exp += amt;
+        else weeks[3].exp += amt;
+      }
+    });
+
+    const maxVal = Math.max(...weeks.map(w => Math.max(w.rev, w.exp)), 1000);
+
+    return weeks.map(w => {
+      const revPct = maxVal > 0 ? (w.rev / maxVal) * 90 : 0;
+      const expPct = maxVal > 0 ? (w.exp / maxVal) * 90 : 0;
+      return {
+        rev: w.rev,
+        exp: w.exp,
+        revHeight: `${Math.max(5, revPct)}%`,
+        expHeight: `${Math.max(5, expPct)}%`,
+      };
+    });
+  }, [bills, expenses]);
+
+  // 10. Technician tasks grouping
+  const employeeStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    
+    appointments.forEach(a => {
+      let techName = 'م. أحمد خالد';
+      try {
+        const parsed = JSON.parse(a.notes || '{}');
+        if (parsed && parsed.tech) {
+          techName = parsed.tech;
+        } else if (a.notes?.includes('Tech:')) {
+          techName = a.notes.split('Tech:')[1]?.split(';')[0]?.trim() || 'م. أحمد خالد';
+        }
+      } catch {
+        if (a.notes?.includes('Tech:')) {
+          techName = a.notes.split('Tech:')[1]?.split(';')[0]?.trim() || 'م. أحمد خالد';
+        }
+      }
+      counts[techName] = (counts[techName] || 0) + 1;
+    });
+
+    const list = Object.entries(counts).map(([name, tasks]) => ({
+      name,
+      tasks,
+    }));
+
+    if (list.length === 0) {
+      return [
+        { name: 'م. أحمد خالد', tasks: 0, color: '#d4af37', pct: 0 },
+        { name: 'م. شريف مصطفى', tasks: 0, color: '#3E2723', pct: 0 },
+      ];
+    }
+
+    list.sort((a, b) => b.tasks - a.tasks);
+    const maxTasks = Math.max(...list.map(l => l.tasks), 1);
+
+    const colors = ['#d4af37', '#3E2723', '#A1887F', '#2E7D32', '#EF5350'];
+    return list.map((item, idx) => ({
+      name: item.name,
+      tasks: item.tasks,
+      color: colors[idx % colors.length],
+      pct: Math.round((item.tasks / maxTasks) * 100),
+    }));
   }, [appointments]);
 
   return (
@@ -315,7 +416,7 @@ export default function AdvancedDashboardView({
             </span>
           </div>
           <div className="mt-4">
-            <h2 className="text-xl font-bold text-[#ef4444]">{unreadCount + 5} تنبيه</h2>
+            <h2 className="text-xl font-bold text-[#ef4444]">{unreadCount} تنبيه</h2>
             <p className="text-[10px] text-[#3E2723]/50 mt-1 font-semibold">تحتاج إجراء عاجل</p>
           </div>
         </div>
@@ -332,7 +433,7 @@ export default function AdvancedDashboardView({
             </span>
           </div>
           <div className="mt-4">
-            <h2 className="text-xl font-bold text-[#3E2723]">{todayAppts.length || 8} موعد</h2>
+            <h2 className="text-xl font-bold text-[#3E2723]">{todayAppts.length} موعد</h2>
             <p className="text-[10px] text-[#2E7D32] mt-1 font-semibold">تحديث مستمر</p>
           </div>
         </div>
@@ -433,19 +534,28 @@ export default function AdvancedDashboardView({
               <line x1="0" y1="30" x2="100" y2="30" stroke="#3E2723" strokeOpacity="0.05" strokeWidth="0.25" />
               
               {/* Gradient Area */}
-              <path d="M 0,35 Q 15,22 30,28 T 60,15 T 80,8 T 100,20 L 100,40 L 0,40 Z" fill="url(#areaGrad)" />
+              {monthlySalesPathData.areaD && <path d={monthlySalesPathData.areaD} fill="url(#areaGrad)" />}
               {/* Line path */}
-              <path d="M 0,35 Q 15,22 30,28 T 60,15 T 80,8 T 100,20" fill="none" stroke="#d4af37" strokeWidth="1.2" strokeLinecap="round" />
+              {monthlySalesPathData.pathD && <path d={monthlySalesPathData.pathD} fill="none" stroke="#d4af37" strokeWidth="1.2" strokeLinecap="round" />}
               
-              {/* Tooltip dot */}
-              <circle cx="80" cy="8" r="1.5" fill="#3E2723" stroke="#d4af37" strokeWidth="0.75" />
-              {/* Tiny marker line */}
-              <line x1="80" y1="8" x2="80" y2="40" stroke="#d4af37" strokeOpacity="0.3" strokeWidth="0.3" strokeDasharray="1 1" />
+              {/* Circle dots */}
+              {monthlySalesPoints.map((pt, idx) => (
+                <circle 
+                  key={idx}
+                  cx={pt.x} 
+                  cy={pt.y} 
+                  r="1.2" 
+                  fill="#3E2723" 
+                  stroke="#d4af37" 
+                  strokeWidth="0.5" 
+                  style={{ cursor: 'pointer' }}
+                />
+              ))}
             </svg>
             
             {/* Custom overlay tooltip exactly matching the layout */}
             <div className="absolute top-[3%] right-[10%] bg-[#3E2723] text-white text-[10px] font-bold px-2 py-1 rounded shadow-md border border-[#d4af37]/30">
-              85,200 جنيه
+              {totalRevenue.toLocaleString('ar-EG')} ج.م
             </div>
           </div>
           
@@ -472,6 +582,11 @@ export default function AdvancedDashboardView({
             {/* SVG Donut */}
             <div className="relative w-32 h-32 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                {/* Background Placeholder circle */}
+                <circle 
+                  cx="60" cy="60" r="50" 
+                  fill="transparent" stroke="#E5E7EB" strokeWidth="12" 
+                />
                 {/* Segment 1: Inspection */}
                 <circle 
                   cx="60" cy="60" r="50" 
@@ -508,7 +623,7 @@ export default function AdvancedDashboardView({
               {/* Inner Circle content */}
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-full m-3 shadow-inner">
                 <span className="text-[10px] text-[#3E2723]/50">الإجمالي</span>
-                <span className="font-bold text-lg text-[#3E2723]">126</span>
+                <span className="font-bold text-lg text-[#3E2723]">{appointments.length}</span>
               </div>
             </div>
 
@@ -556,23 +671,23 @@ export default function AdvancedDashboardView({
 
             {/* Week 1 */}
             <div className="flex items-end gap-1.5 h-full relative z-10">
-              <div className="w-2.5 bg-[#d4af37] rounded-t-sm" style={{ height: '80%' }} title="إيرادات: 80,000" />
-              <div className="w-2.5 bg-[#3E2723] rounded-t-sm" style={{ height: '45%' }} title="مصروفات: 45,000" />
+              <div className="w-2.5 bg-[#d4af37] rounded-t-sm transition-all duration-300" style={{ height: weeklyStats[0].revHeight }} title={`إيرادات: ${weeklyStats[0].rev.toLocaleString()} ج.م`} />
+              <div className="w-2.5 bg-[#3E2723] rounded-t-sm transition-all duration-300" style={{ height: weeklyStats[0].expHeight }} title={`مصروفات: ${weeklyStats[0].exp.toLocaleString()} ج.م`} />
             </div>
             {/* Week 2 */}
             <div className="flex items-end gap-1.5 h-full relative z-10">
-              <div className="w-2.5 bg-[#d4af37] rounded-t-sm" style={{ height: '65%' }} title="إيرادات: 65,000" />
-              <div className="w-2.5 bg-[#3E2723] rounded-t-sm" style={{ height: '35%' }} title="مصروفات: 35,000" />
+              <div className="w-2.5 bg-[#d4af37] rounded-t-sm transition-all duration-300" style={{ height: weeklyStats[1].revHeight }} title={`إيرادات: ${weeklyStats[1].rev.toLocaleString()} ج.م`} />
+              <div className="w-2.5 bg-[#3E2723] rounded-t-sm transition-all duration-300" style={{ height: weeklyStats[1].expHeight }} title={`مصروفات: ${weeklyStats[1].exp.toLocaleString()} ج.م`} />
             </div>
             {/* Week 3 */}
             <div className="flex items-end gap-1.5 h-full relative z-10">
-              <div className="w-2.5 bg-[#d4af37] rounded-t-sm" style={{ height: '90%' }} title="إيرادات: 90,000" />
-              <div className="w-2.5 bg-[#3E2723] rounded-t-sm" style={{ height: '50%' }} title="مصروفات: 50,000" />
+              <div className="w-2.5 bg-[#d4af37] rounded-t-sm transition-all duration-300" style={{ height: weeklyStats[2].revHeight }} title={`إيرادات: ${weeklyStats[2].rev.toLocaleString()} ج.م`} />
+              <div className="w-2.5 bg-[#3E2723] rounded-t-sm transition-all duration-300" style={{ height: weeklyStats[2].expHeight }} title={`مصروفات: ${weeklyStats[2].exp.toLocaleString()} ج.م`} />
             </div>
             {/* Week 4 */}
             <div className="flex items-end gap-1.5 h-full relative z-10">
-              <div className="w-2.5 bg-[#d4af37] rounded-t-sm" style={{ height: '75%' }} title="إيرادات: 75,000" />
-              <div className="w-2.5 bg-[#3E2723] rounded-t-sm" style={{ height: '40%' }} title="مصروفات: 40,000" />
+              <div className="w-2.5 bg-[#d4af37] rounded-t-sm transition-all duration-300" style={{ height: weeklyStats[3].revHeight }} title={`إيرادات: ${weeklyStats[3].rev.toLocaleString()} ج.م`} />
+              <div className="w-2.5 bg-[#3E2723] rounded-t-sm transition-all duration-300" style={{ height: weeklyStats[3].expHeight }} title={`مصروفات: ${weeklyStats[3].exp.toLocaleString()} ج.م`} />
             </div>
           </div>
 
@@ -599,12 +714,7 @@ export default function AdvancedDashboardView({
           <div className="flex flex-col gap-3">
             <span className="text-[10px] text-[#3E2723]/50 block mb-1">حسب عدد المهام المنجزة (معاينات + تركيب + صيانة)</span>
             
-            {[
-              { name: 'م. أحمد خالد', tasks: 47, color: '#d4af37', pct: 98 },
-              { name: 'م. شريف مصطفى', tasks: 48, color: '#3E2723', pct: 100 },
-              { name: 'أ. هاني عادل', tasks: 32, color: '#A1887F', pct: 67 },
-              { name: 'م. مصطفى كامل', tasks: 28, color: '#2E7D32', pct: 58 },
-            ].map((emp, idx) => (
+            {employeeStats.map((emp, idx) => (
               <div key={idx} className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-xs font-bold">
                   <span className="text-[#3E2723]">{emp.name}</span>
@@ -835,20 +945,18 @@ export default function AdvancedDashboardView({
             <span className="text-[11px] font-bold text-[#3E2723]">مصروف جديد</span>
           </button>
 
-          <a 
-            href="https://wa.me/201100080609" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-white p-4 rounded-xl border border-[#3E2723]/10 flex flex-col items-center justify-center gap-2 hover:border-[#d4af37] shadow-[0_2px_6px_rgba(0,0,0,0.01)] transition-all group text-center"
-          >
-            <span className="w-10 h-10 rounded-xl bg-[#25D366]/10 text-[#128C7E] flex items-center justify-center group-hover:bg-[#128C7E] group-hover:text-white transition-all shrink-0">
-              <span className="material-symbols-outlined">chat</span>
-            </span>
-            <span className="text-[11px] font-bold text-[#3E2723]">رسالة واتساب</span>
-          </a>
-
           <button 
             onClick={() => setActiveTab('orders')}
+            className="bg-white p-4 rounded-xl border border-[#3E2723]/10 flex flex-col items-center justify-center gap-2 hover:border-[#d4af37] shadow-[0_2px_6px_rgba(0,0,0,0.01)] transition-all group"
+          >
+            <span className="w-10 h-10 rounded-xl bg-[#d4af37]/10 text-[#d4af37] flex items-center justify-center group-hover:bg-[#d4af37] group-hover:text-white transition-all shrink-0">
+              <span className="material-symbols-outlined">shopping_cart</span>
+            </span>
+            <span className="text-[11px] font-bold text-[#3E2723]">الطلبات</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('reports')}
             className="bg-white p-4 rounded-xl border border-[#3E2723]/10 flex flex-col items-center justify-center gap-2 hover:border-[#d4af37] shadow-[0_2px_6px_rgba(0,0,0,0.01)] transition-all group"
           >
             <span className="w-10 h-10 rounded-xl bg-[#37474F]/10 text-[#37474F] flex items-center justify-center group-hover:bg-[#37474F] group-hover:text-white transition-all shrink-0">

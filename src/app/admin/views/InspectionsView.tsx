@@ -16,6 +16,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
   
   // Techs list for assignment
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [dimensionsList, setDimensionsList] = useState<{ width: number; height: number; type: string; notes?: string }[]>([]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,7 +50,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
   const fetchTechnicians = async () => {
     try {
       const { data } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
-      setTechnicians(data || [{ id: 't1', name: 'م. أحمد خالد' }, { id: 't2', name: 'م. شريف مصطفى' }]);
+      setTechnicians(data && data.length > 0 ? data : [{ id: 't1', name: 'م. أحمد خالد' }, { id: 't2', name: 'م. شريف مصطفى' }]);
     } catch {
       setTechnicians([{ id: 't1', name: 'م. أحمد خالد' }, { id: 't2', name: 'م. شريف مصطفى' }]);
     }
@@ -69,17 +70,30 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
       // Map schema columns and parse mocks for extra details (images, dimensions)
       const mapped: InspectionOrder[] = (data || []).map((item: any) => {
         let dimensions = [];
+        let techName = 'م. أحمد خالد';
+        let adminNotes = '';
         try {
-          dimensions = JSON.parse(item.notes || '[]').dimensions || [];
+          const parsed = JSON.parse(item.notes || '{}');
+          if (parsed && typeof parsed === 'object') {
+            dimensions = parsed.dimensions || [];
+            techName = parsed.tech || 'م. أحمد خالد';
+            adminNotes = parsed.adminNotes || '';
+          } else {
+            dimensions = [{ width: 1.5, height: 2.2, type: 'رول سكرين', notes: 'شباك غرفة معيشة' }];
+          }
         } catch {
-          // Default mock dimensions if notes is plain text
+          if (item.notes?.includes('Tech:')) {
+            techName = item.notes.split('Tech:')[1]?.split(';')[0]?.trim() || 'م. أحمد خالد';
+          }
           dimensions = [{ width: 1.5, height: 2.2, type: 'رول سكرين', notes: 'شباك غرفة معيشة' }];
+          adminNotes = item.notes || '';
         }
         return {
           ...item,
-          technician_name: item.notes?.includes('Tech:') ? item.notes.split('Tech:')[1]?.split(';')[0]?.trim() : 'م. أحمد خالد',
+          technician_name: techName,
           dimensions,
           images: ['/photos for crystal/ستائر رول.jpeg'],
+          notes: adminNotes
         };
       });
 
@@ -139,10 +153,11 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
       appointment_time: '12:00',
       notes: '',
       technician_name: technicians[0]?.name || 'م. أحمد خالد',
-      dimensions_json: '[{"width": 2.0, "height": 2.5, "type": "رول", "notes": ""}]',
+      dimensions_json: '[]',
       images_json: '[]',
       status: 'pending',
     });
+    setDimensionsList([{ width: 2.0, height: 2.5, type: 'رول', notes: '' }]);
     setShowModal(true);
   };
 
@@ -160,6 +175,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
       images_json: JSON.stringify(order.images || []),
       status: order.status,
     });
+    setDimensionsList(order.dimensions || []);
     setShowModal(true);
   };
 
@@ -191,7 +207,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
     printWindow.document.write(`
       <html dir="rtl" lang="ar">
         <head>
-          <title>أمر معاينة - رقم ${order.id}</title>
+          <title>أمر معاينة - رقم ${order.id?.includes('-') ? order.id.split('-')[0] : order.id}</title>
           <style>
             body { font-family: 'Tajawal', sans-serif; color: #333; padding: 20px; line-height: 1.6; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #3E2723; padding-bottom: 15px; margin-bottom: 30px; }
@@ -211,7 +227,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
           <div class="header">
             <div>
               <div class="title">أمر معاينة ورفع مقاسات</div>
-              <div style="font-size: 12px; color: #777;">رقم المعاينة: ${order.id}</div>
+              <div style="font-size: 12px; color: #777;">رقم المعاينة: ${order.id?.includes('-') ? order.id.split('-')[0] : order.id}</div>
             </div>
             <img src="/logo.png" alt="Crystal Blinds" onerror="this.style.display='none'" />
           </div>
@@ -270,7 +286,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
     // Package technician and extra variables inside notes JSON string for simplicity
     const packedNotes = JSON.stringify({
       tech: formData.technician_name,
-      dimensions: JSON.parse(formData.dimensions_json),
+      dimensions: dimensionsList,
       adminNotes: formData.notes
     });
 
@@ -296,7 +312,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
     } catch {
       // Simulation offline save
       if (editingOrder) {
-        setOrders(prev => prev.map(o => o.id === editingOrder.id ? { ...o, ...payload, technician_name: formData.technician_name, dimensions: JSON.parse(formData.dimensions_json) } : o));
+        setOrders(prev => prev.map(o => o.id === editingOrder.id ? { ...o, ...payload, technician_name: formData.technician_name, dimensions: dimensionsList } : o));
       } else {
         const mockNew: InspectionOrder = {
           id: 'INSP-' + String(Date.now()).slice(-4),
@@ -308,7 +324,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
           appointment_type: 'inspection',
           status: formData.status,
           technician_name: formData.technician_name,
-          dimensions: JSON.parse(formData.dimensions_json),
+          dimensions: dimensionsList,
           images: [],
           curtain_type: '',
           notes: packedNotes,
@@ -403,7 +419,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
               <div className="flex justify-between items-start">
                 <div className="flex flex-col text-right">
                   <span className="text-[10px] text-[#3E2723]/50">رقم المعاينة</span>
-                  <span className="font-extrabold text-sm text-[#3E2723]">{order.id}</span>
+                  <span className="font-extrabold text-sm text-[#3E2723]" dir="ltr">{order.id?.includes('-') ? order.id.split('-')[0] : order.id}</span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                   order.status === 'completed' ? 'bg-green-500/10 text-green-700' :
@@ -566,15 +582,88 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-[#3E2723]/70">المقاسات (JSON Format)</label>
-                <textarea
-                  value={formData.dimensions_json}
-                  onChange={e => setFormData(prev => ({ ...prev, dimensions_json: e.target.value }))}
-                  rows={2}
-                  placeholder='[{"width":2.2, "height":2.8, "type":"زيبرا", "notes":"غرفة نوم"}]'
-                  className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs font-mono outline-none"
-                />
+              <div className="flex flex-col gap-2 border border-[#3E2723]/10 p-3.5 rounded-xl bg-[#FAF8F5]/30">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[10px] font-bold text-[#3E2723]/70">جدول المقاسات</label>
+                  <button
+                    type="button"
+                    onClick={() => setDimensionsList(prev => [...prev, { width: 0, height: 0, type: 'رول', notes: '' }])}
+                    className="text-[10px] font-bold text-[#d4af37] hover:text-[#b8922a] flex items-center gap-1 border border-[#d4af37]/20 px-2 py-1 rounded-lg bg-[#d4af37]/5 transition-colors"
+                  >
+                    + إضافة مقاس
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto pr-1">
+                  {dimensionsList.map((dim, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-[#FAF8F5] p-2.5 rounded-xl border border-[#3E2723]/5">
+                      <div className="col-span-3 flex flex-col gap-0.5">
+                        <span className="text-[9px] text-[#3E2723]/50">نوع الستارة</span>
+                        <input
+                          type="text"
+                          value={dim.type}
+                          placeholder="رول"
+                          onChange={e => {
+                            const val = e.target.value;
+                            setDimensionsList(prev => prev.map((d, i) => i === idx ? { ...d, type: val } : d));
+                          }}
+                          className="w-full px-2 py-1 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-white"
+                        />
+                      </div>
+                      <div className="col-span-2 flex flex-col gap-0.5">
+                        <span className="text-[9px] text-[#3E2723]/50">العرض (م)</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={dim.width || ''}
+                          placeholder="0.0"
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setDimensionsList(prev => prev.map((d, i) => i === idx ? { ...d, width: val } : d));
+                          }}
+                          className="w-full px-2 py-1 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-white"
+                        />
+                      </div>
+                      <div className="col-span-2 flex flex-col gap-0.5">
+                        <span className="text-[9px] text-[#3E2723]/50">الارتفاع (م)</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={dim.height || ''}
+                          placeholder="0.0"
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setDimensionsList(prev => prev.map((d, i) => i === idx ? { ...d, height: val } : d));
+                          }}
+                          className="w-full px-2 py-1 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-white"
+                        />
+                      </div>
+                      <div className="col-span-4 flex flex-col gap-0.5">
+                        <span className="text-[9px] text-[#3E2723]/50">الملاحظات</span>
+                        <input
+                          type="text"
+                          value={dim.notes || ''}
+                          placeholder="ملاحظة"
+                          onChange={e => {
+                            const val = e.target.value;
+                            setDimensionsList(prev => prev.map((d, i) => i === idx ? { ...d, notes: val } : d));
+                          }}
+                          className="w-full px-2 py-1 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-white"
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-center pt-3">
+                        <button
+                          type="button"
+                          disabled={dimensionsList.length === 1}
+                          onClick={() => setDimensionsList(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-red-500 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="flex flex-col gap-1">

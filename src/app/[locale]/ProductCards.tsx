@@ -127,138 +127,195 @@ export default function ProductCards({ isAr, products, isBrief = false }: { isAr
 
       {/* Smart Living Info Box */}
       {!isBrief && activeCategory === "Smart" && (
-        <div className={`w-full max-w-7xl mb-16 relative group ${isAr ? "rtl text-right" : "ltr text-left"}`}>
-          {/* Animated Glow Behind */}
-          <div className="hidden md:block absolute -inset-1 bg-gradient-to-r from-[#d4af37]/40 via-[#3E2723] to-[#d4af37]/40 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+        <div className={`w-full max-w-7xl mb-16 space-y-20 ${isAr ? "rtl text-right" : "ltr text-left"} text-[#3E2723]`}>
           
-          <div className="relative bg-[#3E2723] bg-gradient-to-br from-[#3E2723] via-[#3E2723] to-[#110a05] text-white rounded-[2rem] p-5 sm:p-8 md:p-14 overflow-hidden border border-[#d4af37]/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            
-            {/* Dynamic Background Effects */}
-<div className="relative z-10 flex flex-col items-center mb-8 md:mb-12">
-              <div className="inline-flex items-center gap-2 px-5 md:px-6 py-2 md:py-2.5 rounded-full border border-[#d4af37]/30 bg-[#d4af37]/10 text-[#d4af37] shadow-[0_0_20px_rgba(212,175,55,0.2)] md:animate-pulse">
-                <span className="material-symbols-outlined text-[18px] md:text-[20px]">bolt</span>
-                <span className="font-bold tracking-widest uppercase text-[10px] md:text-xs text-center">
-                  {isAr ? "تكنولوجيا المنازل الذكية" : "Smart Home Technology"}
-                </span>
+          {/* Section 1: Brand Partnership */}
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="font-headline text-2xl md:text-3.5xl font-bold text-[#3E2723]">
+                {isAr ? "بالتعاون مع أفضل الشركات العالمية" : "In Cooperation with Top Global Brands"}
+              </h2>
+              <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-3" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Somfy Card */}
+              <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm flex flex-col md:flex-row gap-6 items-center hover:shadow-md transition-shadow">
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <span className="font-sans font-black text-2xl text-[#E05206]" style={{ fontFamily: 'system-ui, sans-serif' }}>somfy.</span>
+                    <span className="bg-[#E05206]/10 text-[#E05206] text-[10px] font-bold px-2 py-0.5 rounded">
+                      {isAr ? "فرنسية" : "French"}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-lg">{isAr ? "شركة SOMFY الفرنسية" : "French SOMFY Company"}</h3>
+                  <p className="text-xs md:text-sm text-gray-500 leading-relaxed font-light">
+                    {isAr 
+                      ? "رائدة عالمياً في حلول الأتمتة المنزلية والستائر الذكية بجودة فرنسية موثوقة منذ أكثر من 50 عاماً."
+                      : "A global leader in home automation and smart curtain solutions with reliable French quality for over 50 years."}
+                  </p>
+                  <a 
+                    href="https://wa.me/201100080609?text=%D9%85%D9%87%D8%AA%D9%85%20%D8%A8%D9%85%D8%B9%D8%B1%D9%81%D9%85%20%D8%A7%D9%84%D9%85%D8%B2%D9%8A%D8%AF%20%D8%B9%D9%86%20%D9%85%D8%AD%D8%B1%D9%83%D8%A7%D8%AA%20%D8%B3%D9%88%D9%85%D9%81%D9%8A%20Somfy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block border border-[#d4af37] text-[#d4af37] px-6 py-2 rounded-lg text-xs font-semibold hover:bg-[#d4af37] hover:text-white transition-colors"
+                  >
+                    {isAr ? "المزيد عن Somfy" : "More about Somfy"}
+                  </a>
+                </div>
+                <div className="w-28 h-28 rounded-full bg-gray-50 flex items-center justify-center p-4 border border-gray-100 shrink-0">
+                  <span className="material-symbols-outlined text-[#E05206] text-5xl">precision_manufacturing</span>
+                </div>
               </div>
-              <p className="mt-4 md:mt-6 text-white/60 text-xs sm:text-sm md:text-base max-w-2xl text-center leading-relaxed">
-                {isAr 
-                  ? "قم بترقية نمط حياتك مع أنظمة التحكم الذكية للستائر. اختر من بين أفضل المحركات العالمية وأنظمة التشغيل التي تناسب تأسيس منزلك لتجربة مريحة وفخمة."
-                  : "Upgrade your lifestyle with our smart blind control systems. Choose from world-class motors and operating systems tailored to your home's setup for a truly luxurious and convenient experience."}
+
+              {/* Azura Card */}
+              <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm flex flex-col md:flex-row gap-6 items-center hover:shadow-md transition-shadow">
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <span className="font-sans font-black text-2xl text-[#0066b2]" style={{ fontFamily: 'system-ui, sans-serif' }}>AZURA</span>
+                    <span className="bg-[#0066b2]/10 text-[#0066b2] text-[10px] font-bold px-2 py-0.5 rounded">
+                      {isAr ? "تركية" : "Turkish"}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-lg">{isAr ? "شركة AZURA التركية" : "Turkish AZURA Company"}</h3>
+                  <p className="text-xs md:text-sm text-gray-500 leading-relaxed font-light">
+                    {isAr 
+                      ? "تتميز في تقديم مواتير قوية وهادئة بتقنيات متقدمة وتصميم أنيق يناسب جميع المساحات."
+                      : "Distinguished in providing powerful and quiet motors with advanced technologies and elegant design for all spaces."}
+                  </p>
+                  <a 
+                    href="https://wa.me/201100080609?text=%D9%85%D9%87%D8%AA%D9%85%20%D8%A8%D9%85%D8%B9%D8%B1%D9%81%D9%85%20%D8%A7%D9%84%D9%85%D8%B2%D9%8A%D8%AF%20%D8%B9%D9%86%20%D9%85%D8%AD%D8%B1%D9%83%D8%A7%D8%AA%20%D8%A3%D8%B2%D9%88%D8%B1%D8%A7%20Azura"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block border border-[#d4af37] text-[#d4af37] px-6 py-2 rounded-lg text-xs font-semibold hover:bg-[#d4af37] hover:text-white transition-colors"
+                  >
+                    {isAr ? "المزيد عن Azura" : "More about Azura"}
+                  </a>
+                </div>
+                <div className="w-28 h-28 rounded-full bg-gray-50 flex items-center justify-center p-4 border border-gray-100 shrink-0">
+                  <span className="material-symbols-outlined text-[#0066b2] text-5xl">settings_input_component</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Features */}
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="font-headline text-2xl md:text-3.5xl font-bold text-[#3E2723]">
+                {isAr ? "مميزات ستائر الريموت كنترول" : "Remote Control Blinds Features"}
+              </h2>
+              <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-3" />
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {[
+                { icon: "diamond", titleAr: "تصميم عصري", titleEn: "Modern Design", descAr: "تناسب جميع الديكورات الحديثة والفاخرة", descEn: "Complements all modern & premium interior designs" },
+                { icon: "bolt", titleAr: "توفير الطاقة", titleEn: "Energy Saving", descAr: "تساعد في تقليل استهلاك الكهرباء والتكييف", descEn: "Helps reduce electricity & air conditioner usage" },
+                { icon: "verified_user", titleAr: "أمان وحماية", titleEn: "Safety & Security", descAr: "حماية من الحرارة والأشعة فوق البنفسجية", descEn: "Protection from UV rays and outside heat" },
+                { icon: "volume_mute", titleAr: "صوت هادئ", titleEn: "Quiet Motor", descAr: "مواتير قوية تعمل بأقل مستوى ضوضاء", descEn: "Powerful motors running with minimal noise" },
+                { icon: "smartphone", titleAr: "تحكم ذكي", titleEn: "Smart Control", descAr: "التحكم بالستائر عبر الهاتف أو الريموت", descEn: "Control blinds easily via smartphone or remote" }
+              ].map((feat, index) => (
+                <div key={index} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm text-center flex flex-col items-center gap-3 hover:-translate-y-1 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-full bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37]">
+                    <span className="material-symbols-outlined text-2xl">{feat.icon}</span>
+                  </div>
+                  <h4 className="font-bold text-sm">{isAr ? feat.titleAr : feat.titleEn}</h4>
+                  <p className="text-gray-400 text-[11px] leading-relaxed font-light">{isAr ? feat.descAr : feat.descEn}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 3: Journey */}
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="font-headline text-2xl md:text-3.5xl font-bold text-[#3E2723]">
+                {isAr ? "رحلة طلب ستائر بالريموت كنترول" : "Order Journey for Smart Blinds"}
+              </h2>
+              <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-3" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 relative">
+              {[
+                { step: "1", titleAr: "تواصل معنا", titleEn: "Contact Us", descAr: "أرسل طلبك أو احجز معاينة مجانية", descEn: "Submit your request or book a free visit" },
+                { step: "2", titleAr: "معاينة واستشارة", titleEn: "Visit & Consult", descAr: "نقوم بزيارة الموقع وقياس المساحة", descEn: "We visit the location and measure the spaces" },
+                { step: "3", titleAr: "اختيار النظام", titleEn: "System Choice", descAr: "نساعدك في اختيار الموتور المناسب", descEn: "We help you select the ideal motor system" },
+                { step: "4", titleAr: "توريد وتركيب", titleEn: "Delivery & Install", descAr: "تركيب احترافي وضبط وبرمجة النظام", descEn: "Professional setup & configuring the system" },
+                { step: "5", titleAr: "ضمان وصيانة", titleEn: "Warranty & Support", descAr: "ضمان حقيقي وخدمة صيانة دورية للمحركات", descEn: "Real warranty & continuous customer support" }
+              ].map((j, i) => (
+                <div key={i} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm relative flex flex-col items-center text-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-[#d4af37] text-white flex items-center justify-center text-xs font-bold font-mono">
+                    {j.step}
+                  </div>
+                  <h4 className="font-bold text-sm mt-1">{isAr ? j.titleAr : j.titleEn}</h4>
+                  <p className="text-gray-400 text-[11px] leading-relaxed font-light">{isAr ? j.descAr : j.descEn}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 4: Banner */}
+          <div className="relative bg-[#2B1B17] text-[#FFFDFA] rounded-[2rem] p-8 md:p-12 overflow-hidden border border-[#d4af37]/20 shadow-xl flex flex-col md:flex-row items-center gap-8 justify-between">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-[#d4af37]/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#3E2723]/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex items-center gap-4 shrink-0">
+              <span className="material-symbols-outlined text-[#d4af37] text-5xl md:text-6xl animate-bounce">settings_remote</span>
+            </div>
+
+            <div className="flex-1 text-center md:text-right space-y-3">
+              <h3 className="font-headline text-xl md:text-2xl font-bold">
+                {isAr ? "جرب الراحة... تحكم في ستائرك الآن" : "Try Comfort... Control Your Blinds Now"}
+              </h3>
+              <p className="text-white/60 text-xs md:text-sm font-light">
+                {isAr ? "احجز معاينة مجانية واكتشف حلول الستائر الذكية لمنزلك" : "Book a free measurement and discover smart curtain solutions for your home"}
               </p>
             </div>
-            
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-              
-              {/* Brands Column */}
-              <div className="flex flex-col gap-4 md:gap-6">
-                <div className="flex items-center gap-3 md:gap-4 mb-1 md:mb-2">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#b8922a] flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.4)] shrink-0">
-                    <span className="material-symbols-outlined text-white text-[20px] md:text-[24px]">verified</span>
-                  </div>
-                  <h3 className="font-headline text-xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                    {isAr ? 'الماركات والضمان' : 'Brands & Warranty'}
-                  </h3>
-                </div>
-                
-                <div className="group/card bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl p-5 md:p-6 hover:bg-white/[0.06] hover:border-[#d4af37]/50 transition-all duration-300 relative overflow-hidden">
 
-                  <div className="relative z-10">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-                      <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'ماركة سومفي (Somfy)' : 'Somfy Motors'}</h4>
-                      <span className="text-[9px] md:text-[10px] font-bold tracking-wider text-[#3E2723] bg-[#d4af37] px-3 py-1 rounded-full uppercase shadow-[0_0_10px_rgba(212,175,55,0.3)] w-fit whitespace-nowrap">
-                        {isAr ? '10 سنوات ضمان' : '10-Year Warranty'}
-                      </span>
-                    </div>
-                    <p className="text-white/60 text-xs md:text-sm leading-relaxed">
-                      {isAr ? 'الاختيار الأول للأداء الشاق، جودة فرنسية عالمية لتجربة استثنائية وعمر افتراضي طويل.' : 'The premium choice for heavy duty performance, world-class French quality for an exceptional experience.'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="group/card bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl p-5 md:p-6 hover:bg-white/[0.06] hover:border-white/30 transition-all duration-300 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-[50px] rounded-full group-hover/card:bg-white/10 transition-all"></div>
-                  <div className="relative z-10">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-                      <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'ماركة أزارو (Azzaro)' : 'Azzaro Motors'}</h4>
-                      <span className="text-[9px] md:text-[10px] font-bold tracking-wider text-white bg-white/10 border border-white/20 px-3 py-1 rounded-full uppercase w-fit whitespace-nowrap">
-                        {isAr ? '5 سنوات ضمان' : '5-Year Warranty'}
-                      </span>
-                    </div>
-                    <p className="text-white/60 text-xs md:text-sm leading-relaxed">
-                      {isAr ? 'جودة ممتازة وسعر منافس، عملية وتدوم طويلاً لأداء يومي سلس وموثوق.' : 'Excellent quality at a competitive price, reliable and long-lasting for smooth daily operation.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Operating Systems Column */}
-              <div className="flex flex-col gap-4 md:gap-6">
-                <div className="flex items-center gap-3 md:gap-4 mb-1 md:mb-2">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 flex items-center justify-center backdrop-blur-sm shrink-0">
-                    <span className="material-symbols-outlined text-[#d4af37] text-[20px] md:text-[24px]">settings_remote</span>
-                  </div>
-                  <h3 className="font-headline text-xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                    {isAr ? 'أنظمة التشغيل' : 'Operating Systems'}
-                  </h3>
-                </div>
-                
-                <div className="group/card bg-gradient-to-br from-[#d4af37]/10 to-transparent border border-[#d4af37]/30 rounded-xl md:rounded-2xl p-5 md:p-6 hover:border-[#d4af37]/60 transition-all duration-300 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="material-symbols-outlined text-[#d4af37]">smartphone</span>
-                      <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'تطبيق الموبايل' : 'Smart App'}</h4>
-                    </div>
-                    <p className="text-white/70 text-xs md:text-sm leading-relaxed">
-                      {isAr ? 'تحكم كامل من أي مكان عبر هاتفك الذكي وتكامل مع أنظمة المنزل الذكي.' : 'Complete control from anywhere via your smartphone, integrated with your smart home.'}
-                    </p>
-                    <div className="mt-4 flex items-start sm:items-center gap-2 bg-[#3E2723]/50 p-3 rounded-lg border border-white/5">
-                      <span className="material-symbols-outlined text-[#d4af37] text-[16px] shrink-0 mt-0.5 sm:mt-0">info</span>
-                      <p className="text-[#d4af37] text-[10px] sm:text-xs font-medium tracking-wide">
-                        {isAr ? 'يتطلب أن يكون المكان متأسساً كمنزل ذكي (Smart Home).' : 'Requires a pre-established Smart Home infrastructure.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group/card bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl p-5 md:p-6 hover:bg-white/[0.06] hover:border-white/30 transition-all duration-300 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="material-symbols-outlined text-white/70">router</span>
-                      <h4 className="font-bold text-lg md:text-xl text-white">{isAr ? 'ريموت كنترول' : 'Remote Control'}</h4>
-                    </div>
-                    <p className="text-white/60 text-xs md:text-sm leading-relaxed mb-4">
-                      {isAr ? 'تشغيل لاسلكي مريح ومباشر للمساحات العادية بدون تعقيدات إضافية.' : 'Convenient wireless control for standard spaces without extra complexity.'}
-                    </p>
-                    <div className="flex items-start sm:items-center gap-2 bg-white/5 p-3 rounded-lg border border-white/5">
-                      <span className="material-symbols-outlined text-white/50 text-[16px] shrink-0 mt-0.5 sm:mt-0">power</span>
-                      <p className="text-white/60 text-[10px] sm:text-xs tracking-wide">
-                        {isAr ? 'يتطلب فقط تأسيس طرفين سلك (أرضي وكهرباء) بجوار الستارة.' : 'Requires only a basic power setup (Live/Neutral) near the window.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0 z-10">
+              <a 
+                href="#reserve" 
+                className="bg-[#d4af37] hover:bg-[#b8922a] text-[#2B1B17] font-bold px-6 py-3 rounded-xl text-center text-xs uppercase tracking-wider transition-colors shadow-md shadow-[#d4af37]/20"
+              >
+                {isAr ? "احجز معاينة مجانية" : "Book Free Measurement"}
+              </a>
+              <a 
+                href="https://wa.me/201100080609" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="border border-[#FFFDFA]/20 hover:border-white hover:bg-white/5 text-white font-bold px-6 py-3 rounded-xl text-center text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">chat</span>
+                {isAr ? "تواصل واتساب" : "WhatsApp"}
+              </a>
             </div>
-            
-            {/* Call to Action Inside the Box */}
-            <div className="relative z-10 mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center bg-white/5">
-                   <span className="material-symbols-outlined text-white/50">support_agent</span>
-                 </div>
-                 <div>
-                   <p className="text-white font-bold text-sm md:text-base">{isAr ? 'تحتاج مساعدة في الاختيار؟' : 'Need help choosing?'}</p>
-                   <p className="text-white/50 text-xs">{isAr ? 'تواصل مع فريقنا الهندسي مجاناً' : 'Contact our engineering team for free'}</p>
-                 </div>
-              </div>
-              <Link href={`/${isAr ? 'ar' : 'en'}/contact`} className="bg-[#FFFDFA] text-[#3E2723] px-8 py-3 rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-[#d4af37] hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0">
-                {isAr ? 'استشارة مجانية' : 'Free Consultation'}
-              </Link>
-            </div>
-
           </div>
+
+          {/* Section 5: Bottom Features Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 border-t border-gray-100 pt-8 text-center text-xs text-gray-500 font-light">
+            <div className="flex flex-col items-center gap-2">
+              <span className="material-symbols-outlined text-[#d4af37] text-2xl">verified</span>
+              <span>{isAr ? "معاينة مجانية داخل القاهرة والجيزة" : "Free measurement inside Cairo & Giza"}</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="material-symbols-outlined text-[#d4af37] text-2xl">support_agent</span>
+              <span>{isAr ? "خدمة ما بعد البيع ودعم فني دائم" : "After-sales service & tech support"}</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="material-symbols-outlined text-[#d4af37] text-2xl">handyman</span>
+              <span>{isAr ? "تركيب احترافي بفريق متخصص" : "Professional install by expert team"}</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="material-symbols-outlined text-[#d4af37] text-2xl">hardware</span>
+              <span>{isAr ? "قطع غيار أصلية 100%" : "100% original spare parts"}</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="material-symbols-outlined text-[#d4af37] text-2xl">security</span>
+              <span>{isAr ? "ضمان حتى 10 سنوات على الموتور" : "Up to 10 years warranty on motor"}</span>
+            </div>
+          </div>
+
         </div>
       )}
 

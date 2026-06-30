@@ -271,7 +271,7 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
             <div className="flex justify-between items-start">
               <div className="flex flex-col text-right">
                 <span className="text-[10px] text-[#3E2723]/50">رقم أمر التركيب</span>
-                <span className="font-extrabold text-sm text-[#3E2723]">{order.id}</span>
+                <span className="font-extrabold text-sm text-[#3E2723]" dir="ltr">{order.id?.includes('-') ? order.id.split('-')[0] : order.id}</span>
               </div>
               <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${
                 order.status === 'completed' ? 'bg-green-500/10 text-green-700' :

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { type Product } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
 import PageHero from "../../PageHero";
+import { GOVERNORATES, getDeliveryFees, type Governorate } from "@/lib/deliveryFees";
 
 function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: boolean, locale: string }) {
   const searchParams = useSearchParams();
@@ -18,7 +19,13 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [governorates, setGovernorates] = useState<Governorate[]>(GOVERNORATES);
+  const [selectedGovId, setSelectedGovId] = useState(searchParams.get("gov") || "");
+  const [city, setCity] = useState("");
+  const [street, setStreet] = useState("");
+  const [buildingApartment, setBuildingApartment] = useState("");
+  const [isInstallationSelected, setInstallationSelected] = useState(searchParams.get("install") === "true");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -44,15 +51,24 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
     }
   };
 
+  useEffect(() => {
+    getDeliveryFees().then(data => setGovernorates(data));
+  }, []);
+
+  const selectedGov = governorates.find(g => g.id === selectedGovId);
+  const deliveryFee = selectedGov ? selectedGov.fee : 0;
+  const installationFee = isInstallationSelected ? 200 : 0;
+
   // Price calculation
   const widthVal = parseFloat(width);
   const heightVal = parseFloat(height);
   const area = widthVal > 0 && heightVal > 0 ? (widthVal / 100) * (heightVal / 100) : 1;
-  const totalPrice = Math.round(product.price * area * parseInt(pieces));
+  const itemTotal = Math.round(product.price * area * parseInt(pieces));
+  const finalTotal = itemTotal + deliveryFee + installationFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone || !address) {
+    if (!name || !phone || !selectedGovId || !city || !street || !buildingApartment) {
       alert(isAr ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields");
       return;
     }
@@ -69,17 +85,22 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
     }
 
     setIsSubmitting(true);
+    const govName = isAr ? (selectedGov?.nameAr || "") : (selectedGov?.nameEn || "");
+    const mergedAddress = isAr
+      ? `المحافظة: ${govName} | المدينة: ${city} | الشارع: ${street} | رقم المبنى والشقة: ${buildingApartment} | الخدمة: ${isInstallationSelected ? "توصيل وتركيب" : "توصيل فقط"}`
+      : `Governorate: ${govName} | City: ${city} | Street: ${street} | Building & Apartment: ${buildingApartment} | Service: ${isInstallationSelected ? "Delivery & Installation" : "Delivery Only"}`;
+
     const { error } = await supabase.from('orders').insert([{
       product_id: product.id,
       client_name: name,
       client_phone: phone,
-      client_address: address,
+      client_address: mergedAddress,
       width: widthVal,
       height: heightVal,
       color_id: parseInt(colorId),
       type_id: parseInt(typeId),
       pieces: parseInt(pieces),
-      total_price: totalPrice,
+      total_price: finalTotal,
       status: 'pending',
       payment_method: paymentMethod,
       whatsapp_number: paymentMethod === 'wallet_instapay' ? whatsappNumber : null,
@@ -153,12 +174,32 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
                 <span>{isAr ? "عدد القطع:" : "Pieces:"}</span>
                 <span>{pieces}</span>
               </div>
+              <div className="flex justify-between border-t border-[#3E2723]/5 pt-2">
+                <span>{isAr ? "المجموع الفرعي:" : "Subtotal:"}</span>
+                <span>{itemTotal.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{isAr ? "مصاريف الشحن:" : "Delivery Fee:"}</span>
+                <span>
+                  {selectedGovId 
+                    ? `${deliveryFee.toLocaleString(isAr ? 'ar-EG' : 'en-US')} ${isAr ? "ج.م" : "EGP"}`
+                    : (isAr ? "يحدد بعد اختيار المحافظة" : "Select governorate")}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>{isAr ? "مصاريف التركيب:" : "Installation Fee:"}</span>
+                <span>
+                  {isInstallationSelected 
+                    ? `${installationFee.toLocaleString(isAr ? 'ar-EG' : 'en-US')} ${isAr ? "ج.م" : "EGP"}`
+                    : (isAr ? "توصيل فقط" : "Delivery only")}
+                </span>
+              </div>
             </div>
 
             <div className="border-t border-[#3E2723]/10 pt-6">
               <div className="flex justify-between items-center text-xl font-bold text-[#3E2723]">
                 <span>{isAr ? "الإجمالي" : "Total"}</span>
-                <span>{totalPrice.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}</span>
+                <span>{finalTotal.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}</span>
               </div>
             </div>
 
@@ -205,15 +246,106 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "العنوان التفصيلي *" : "Detailed Address *"}</label>
-                <textarea
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors min-h-[120px] resize-none"
-                  placeholder={isAr ? "المحافظة، المدينة، الشارع، رقم المبنى والشقة" : "City, Street, Building & Apartment"}
-                  required
-                />
+              {/* Address Split (4 input boxes) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "المحافظة *" : "Governorate *"}</label>
+                  <select
+                    value={selectedGovId}
+                    onChange={(e) => setSelectedGovId(e.target.value)}
+                    className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
+                    required
+                  >
+                    <option value="" disabled>
+                      {isAr ? "-- اختر المحافظة --" : "-- Select Governorate --"}
+                    </option>
+                    {governorates.map((gov) => (
+                      <option key={gov.id} value={gov.id}>
+                        {isAr ? gov.nameAr : gov.nameEn}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "المدينة *" : "City *"}</label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
+                    placeholder={isAr ? "اسم المدينة / المنطقة" : "City / District"}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "اسم الشارع *" : "Street *"}</label>
+                  <input
+                    type="text"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
+                    placeholder={isAr ? "اسم الشارع" : "Street name"}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#3E2723] mb-2">{isAr ? "رقم المبنى والشقة *" : "Building & Apartment *"}</label>
+                  <input
+                    type="text"
+                    value={buildingApartment}
+                    onChange={(e) => setBuildingApartment(e.target.value)}
+                    className="w-full bg-[#FFFDFA] border border-[#3E2723]/20 rounded-lg px-4 py-3 focus:outline-none focus:border-[#d4af37] transition-colors"
+                    placeholder={isAr ? "رقم المبنى، الطابق، الشقة" : "Building no, Floor, Apartment"}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Service Type Option */}
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-[#3E2723]">{isAr ? "نوع الخدمة المطلوبة *" : "Required Service *"}</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setInstallationSelected(false)}
+                    className={`flex items-center gap-4 p-4 rounded-xl border text-right transition-all cursor-pointer ${!isInstallationSelected
+                        ? 'border-[#d4af37] bg-[#d4af37]/5 shadow-[0_4px_12px_rgba(212,175,55,0.08)]'
+                        : 'border-[#3E2723]/10 hover:border-[#3E2723]/25 bg-[#FFFDFA]'
+                      }`}
+                  >
+                    <span className={`material-symbols-outlined text-2xl ${!isInstallationSelected ? 'text-[#d4af37]' : 'text-[#3E2723]/60'}`}>local_shipping</span>
+                    <div className="text-right">
+                      <p className={`font-bold text-sm ${!isInstallationSelected ? 'text-[#3E2723]' : 'text-[#3E2723]/80'}`}>
+                        {isAr ? "توصيل فقط" : "Delivery Only"}
+                      </p>
+                      <p className="text-xs text-[#3E2723]/50 mt-0.5">
+                        {isAr ? "شحن الستائر إلى باب منزلك" : "Ship curtains directly to your door"}
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setInstallationSelected(true)}
+                    className={`flex items-center gap-4 p-4 rounded-xl border text-right transition-all cursor-pointer ${isInstallationSelected
+                        ? 'border-[#d4af37] bg-[#d4af37]/5 shadow-[0_4px_12px_rgba(212,175,55,0.08)]'
+                        : 'border-[#3E2723]/10 hover:border-[#3E2723]/25 bg-[#FFFDFA]'
+                      }`}
+                  >
+                    <span className={`material-symbols-outlined text-2xl ${isInstallationSelected ? 'text-[#d4af37]' : 'text-[#3E2723]/60'}`}>handyman</span>
+                    <div className="text-right">
+                      <p className={`font-bold text-sm ${isInstallationSelected ? 'text-[#3E2723]' : 'text-[#3E2723]/80'}`}>
+                        {isAr ? "توصيل وتركيب" : "Delivery & Installation"}
+                      </p>
+                      <p className="text-xs text-[#3E2723]/50 mt-0.5">
+                        {isAr ? "شحن وتركيب احترافي (+200 ج.م)" : "Professional shipping & install (+200 EGP)"}
+                      </p>
+                    </div>
+                  </button>
+                </div>
               </div>
 
               {/* Payment Method Selector */}

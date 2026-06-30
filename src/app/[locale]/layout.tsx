@@ -4,6 +4,8 @@ import "../globals.css";
 import SiteHeader from "./SiteHeader";
 import SplashScreen from "./SplashScreen";
 import Script from "next/script";
+import { CartProvider } from "@/context/CartContext";
+import CartSidebar from "@/components/CartSidebar";
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["latin", "arabic"],
@@ -158,6 +160,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-background text-on-background font-body min-h-full" suppressHydrationWarning>
+        <CartProvider>
         {/* Premium Splash Screen */}
         <SplashScreen />
 
@@ -237,6 +240,8 @@ export default async function RootLayout({
           </div>
         </footer>
 
+        <CartSidebar isAr={isAr} />
+        </CartProvider>
       </body>
 
     </html>

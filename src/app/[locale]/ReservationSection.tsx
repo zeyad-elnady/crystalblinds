@@ -139,7 +139,7 @@ export default function ReservationSection({ isAr }: Props) {
             {isAr ? 'احجز موعدك' : 'Book an Appointment'}
           </span>
           <h2 className="font-headline text-3xl md:text-5xl font-bold text-[#3E2723] leading-tight mb-4">
-            {isAr ? 'حدد وقتاً مناسباً لك' : 'Schedule a Visit'}
+            {isAr ? 'احجز المعاينه مجانا' : 'Book Free Measurement'}
           </h2>
           <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mb-6" />
           <p className="text-[#3E2723]/70 font-light text-sm mt-1 max-w-lg mx-auto">
@@ -162,9 +162,56 @@ export default function ReservationSection({ isAr }: Props) {
           ))}
         </div>
 
-        {/* Unified Booking Card Wrapper */}
-        <div className="max-w-4xl mx-auto w-full">
-          <div className="bg-white border-2 border-[#3E2723]/10 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_20px_50px_rgba(62,39,35,0.04)] hover:border-[#d4af37]/20 transition-all duration-300">
+        {/* Unified Booking Grid */}
+        <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          
+          {/* Visual Showcase Panel */}
+          <div className="lg:col-span-5 flex flex-col gap-6 h-full">
+            <div className="relative flex-1 min-h-[320px] rounded-[2rem] overflow-hidden shadow-lg border border-[#3E2723]/10 group">
+              <img 
+                src="/photos for crystal/moa.jpg.jpeg" 
+                alt={isAr ? "احجز المعاينه مجانا" : "Book Free Measurement"} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 absolute inset-0" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#2B1B17]/95 via-[#2B1B17]/40 to-transparent flex flex-col justify-end p-8 text-white z-10">
+                <span className="text-[#d4af37] uppercase tracking-widest text-[10px] font-bold mb-2">
+                  {isAr ? "دقة واحترافية" : "Precision & Care"}
+                </span>
+                <h3 className="font-headline text-2xl font-bold mb-2">
+                  {isAr ? "احجز المعاينه مجانا" : "Book Free Measurement"}
+                </h3>
+                <p className="text-white/80 font-light text-xs leading-relaxed">
+                  {isAr 
+                    ? "مهندسونا سيقومون برفع المقاسات وعرض كتالوجات الأقمشة مباشرة في مساحتك الخاصة لضمان نتيجة مثالية." 
+                    : "Our designers will measure your windows and showcase fabric catalogs in your space to guarantee a flawless fit."}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#2B1B17] rounded-[2rem] p-6 text-white border border-[#d4af37]/20 shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#d4af37]/5 rounded-full blur-xl pointer-events-none" />
+              <h4 className="font-bold text-xs text-[#d4af37] uppercase tracking-wider mb-3 border-b border-white/10 pb-2">
+                {isAr ? "ماذا تشمل المعاينة المجانية؟" : "What is included?"}
+              </h4>
+              <ul className="space-y-2.5 text-[11px] text-white/80">
+                <li className={`flex gap-3 items-start ${isAr ? 'flex-row-reverse text-right' : ''}`}>
+                  <span className="material-symbols-outlined text-[#d4af37] text-xs shrink-0">check_circle</span>
+                  <span>{isAr ? "رفع المقاسات بدقة متناهية لتجنب أي أخطاء" : "Precise measurements to avoid any custom-fit errors"}</span>
+                </li>
+                <li className={`flex gap-3 items-start ${isAr ? 'flex-row-reverse text-right' : ''}`}>
+                  <span className="material-symbols-outlined text-[#d4af37] text-xs shrink-0">check_circle</span>
+                  <span>{isAr ? "عرض عينات الأقمشة والكتالوجات لاختيار الألوان المناسبة" : "Browsing fabric swatches and dynamic catalogs on-site"}</span>
+                </li>
+                <li className={`flex gap-3 items-start ${isAr ? 'flex-row-reverse text-right' : ''}`}>
+                  <span className="material-symbols-outlined text-[#d4af37] text-xs shrink-0">check_circle</span>
+                  <span>{isAr ? "استشارة فنية متكاملة لتحديد الموديل الأنسب" : "Expert guidance to choose the ideal system style"}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Interactive Card */}
+          <div className="lg:col-span-7 bg-white border-2 border-[#3E2723]/10 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_20px_50px_rgba(62,39,35,0.04)] hover:border-[#d4af37]/20 transition-all duration-300 flex flex-col justify-between">
             
             {step === 1 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">

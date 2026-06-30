@@ -3,107 +3,83 @@ import React from "react";
 export default function AboutUs({ isAr }: { isAr: boolean }) {
   const items = [
     {
-      num: "01",
-      titleAr: "الأناقة والتصميم",
-      titleEn: "Elegance & Design",
-      descAr: "تصميمات عصرية تتناغم بسلاسة مع أي ديكور داخلي، لترتقي بجمال مساحتك.",
-      descEn: "Modern designs that seamlessly blend with any interior, elevating the aesthetic of your space.",
-      icon: "diamond",
-      image: "/photos for crystal/1.jpeg"
+      titleAr: "خامات أوروبية",
+      titleEn: "European Materials",
+      descAr: "أعلى جودة في الخامات من ماركات أوروبية معتمدة",
+      descEn: "Highest quality materials from certified European brands",
+      icon: "workspace_premium"
     },
     {
-      num: "02",
-      titleAr: "الخبرة الاحترافية",
-      titleEn: "Professional Expertise",
-      descAr: "تنفيذ دقيق وتركيب احترافي لضمان الجودة والمتانة.",
-      descEn: "Decades of experience ensuring flawless execution and installation by our dedicated team.",
-      icon: "workspace_premium",
-      image: "/photos for crystal/2.jpeg"
+      titleAr: "ضمان حقيقي",
+      titleEn: "Real Warranty",
+      descAr: "ضمان على الخامات والتركيب حتى 5 سنوات",
+      descEn: "Warranty on materials and installation up to 5 years",
+      icon: "menu_book"
     },
     {
-      num: "03",
-      titleAr: "الأمانة الفنية",
-      titleEn: "Technical Honesty",
-      descAr: "ننصحك بما يحتاجه المكان فعلاً، بأفضل الخامات والأسعار الممكنة.",
-      descEn: "We advise you on what the space truly needs, with the best materials and prices.",
-      icon: "verified_user",
-      image: "/photos for crystal/3.jpeg"
+      titleAr: "معاينة مجانية",
+      titleEn: "Free Inspection",
+      descAr: "نأتي إليك أينما كنت ونقدم استشارة مجانية",
+      descEn: "We come to you wherever you are and offer free consultation",
+      icon: "assignment"
     },
     {
-      num: "04",
-      titleAr: "خدمة ما بعد البيع",
-      titleEn: "After-Sales Service",
-      descAr: "ضمان ممتد ودعم فني لضمان عمل ستائرك بكفاءة لسنوات.",
-      descEn: "Extended warranty and technical support to ensure your blinds work flawlessly for years.",
-      icon: "support_agent",
-      image: "/photos for crystal/4.jpeg"
+      titleAr: "تركيب احترافي",
+      titleEn: "Professional Installation",
+      descAr: "فريق متخصص للتركيب احترافي وسريع",
+      descEn: "Specialist team for quick and professional installation",
+      icon: "track_changes"
     }
   ];
 
+  // We reverse the array for Arabic to render from right to left as shown in the screenshot:
+  // Rightmost is "تركيب احترافي", then "معاينة مجانية", then "ضمان حقيقي", then leftmost "خامات أوروبية".
+  const orderedItems = isAr ? [...items].reverse() : items;
+
   return (
-    <section id="about" className="py-24 md:py-32 px-6 md:px-12 bg-[#FFFDFA] relative overflow-hidden text-[#3E2723]">
+    <section id="about" className="py-16 md:py-24 px-6 md:px-12 bg-[#FFFDFA] relative overflow-hidden text-[#3E2723]">
       {/* Decorative Blur Background Element */}
       <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[#d4af37]/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-[#3E2723]/5 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className={`max-w-7xl mx-auto relative z-10 ${isAr ? "text-right rtl" : "text-left ltr"}`}>
+      <div className="max-w-6xl mx-auto relative z-10">
         
-        {/* Section Heading */}
-        <div className="mb-20 flex flex-col items-center text-center max-w-3xl mx-auto relative">
-          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-[10px] md:text-xs font-bold mb-3 block">
-            {isAr ? "لماذا تختارنا" : "WHY CHOOSE US"}
-          </span>
-          <h2 className="font-headline text-3xl md:text-5xl font-bold text-[#3E2723] leading-tight mb-4">
-            {isAr ? "الفرق مع كريستال للستائر" : "The Crystal Blinds Difference"}
-          </h2>
-          <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mb-6" />
-          <p className="text-[#3E2723]/70 font-light text-base md:text-lg leading-relaxed">
-            {isAr 
-              ? "انطلقت رحلتنا برؤية طموحة. نحن لا نقدم مجرد منتجات، بل نصنع تجربة متكاملة من الأناقة والاحترافية مصممة خصيصًا لتناسب ذوقك الرفيع."
-              : "Our journey started with an ambitious vision. We don't just offer products, we create a complete experience of elegance and professionalism tailored to your refined taste."}
-          </p>
-        </div>
+        {/* Title */}
+        <h2 className="text-center font-headline text-2xl md:text-3xl font-bold text-[#3E2723] mb-10">
+          {isAr ? "لماذا تختار كريستال؟" : "Why Choose Crystal?"}
+        </h2>
 
-        {/* Features / Differences Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-24">
-          {items.map((item, i) => (
-            <div 
-              key={i} 
-              className="group relative flex flex-col bg-white border border-[#3E2723]/10 rounded-2xl overflow-hidden shadow-[0_10px_30px_rgba(62,39,35,0.02)] hover:shadow-[0_20px_40px_rgba(62,39,35,0.06)] hover:border-[#d4af37]/30 transition-all duration-500"
-            >
-              {/* Photo Header */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
-                <img 
-                  src={item.image} 
-                  alt={isAr ? item.titleAr : item.titleEn} 
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
-                
-                {/* Oversized Stencil Number */}
-                <span className={`absolute top-4 ${isAr ? "left-4" : "right-4"} font-mono text-4xl font-extrabold text-white/30 tracking-tighter select-none transition-colors duration-300 group-hover:text-[#d4af37]/50`}>
-                  {item.num}
-                </span>
-              </div>
+        {/* Card Row */}
+        <div className="bg-white border border-[#d4af37]/20 rounded-3xl p-6 md:p-10 shadow-[0_10px_30px_rgba(62,39,35,0.02)] mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
+            {orderedItems.map((item, idx) => {
+              const borderStyle = isAr
+                ? (idx < orderedItems.length - 1 ? "md:border-l border-[#3E2723]/10" : "")
+                : (idx < orderedItems.length - 1 ? "md:border-r border-[#3E2723]/10" : "");
 
-              {/* Floating Badge (Centered at intersection of image and content) */}
-              <div className="relative">
-                <div className={`absolute -top-6 ${isAr ? "right-6" : "left-6"} w-12 h-12 rounded-full bg-gradient-to-br from-[#d4af37] to-[#aa841c] text-white flex items-center justify-center shadow-lg border-2 border-white z-10 transition-transform duration-500 group-hover:rotate-[360deg]`}>
-                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+              return (
+                <div 
+                  key={idx} 
+                  className={`flex flex-col items-center text-center p-4 ${borderStyle}`}
+                >
+                  {/* Gold Circle Icon */}
+                  <div className="w-12 h-12 rounded-full border border-[#d4af37]/40 flex items-center justify-center text-[#d4af37] bg-[#fdfbf7] shadow-sm mb-4">
+                    <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="font-bold text-sm md:text-base text-[#2B1B17] mb-2">
+                    {isAr ? item.titleAr : item.titleEn}
+                  </h3>
+
+                  {/* Subtitle */}
+                  <p className="text-xs text-[#3E2723]/70 font-light leading-relaxed max-w-[200px]">
+                    {isAr ? item.descAr : item.descEn}
+                  </p>
                 </div>
-              </div>
-
-              {/* Content Area */}
-              <div className={`flex flex-col flex-1 p-6 pt-8 ${isAr ? "items-start text-right" : "items-start text-left"}`}>
-                <h3 className="text-lg font-bold text-[#3E2723] mb-3 transition-colors duration-300 group-hover:text-[#d4af37]">
-                  {isAr ? item.titleAr : item.titleEn}
-                </h3>
-                <p className="text-[#3E2723]/70 text-xs md:text-sm leading-relaxed font-light">
-                  {isAr ? item.descAr : item.descEn}
-                </p>
-              </div>
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
 
         {/* Founder Section */}
@@ -117,10 +93,10 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#d4af37]/5 rounded-full blur-[80px] pointer-events-none mix-blend-screen" />
           <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#3E2723]/30 rounded-full blur-[80px] pointer-events-none mix-blend-screen" />
 
-          <div className="relative z-10 flex flex-col justify-between h-full">
+          <div className="relative z-10 flex flex-col justify-between h-full" style={{ direction: isAr ? "rtl" : "ltr" }}>
             <span className="material-symbols-outlined text-4xl text-[#d4af37] mb-6 block opacity-85">format_quote</span>
             
-            <blockquote className="text-lg md:text-2xl font-light leading-relaxed text-white/95 mb-8 max-w-4xl">
+            <blockquote className={`text-lg md:text-2xl font-light leading-relaxed text-white/95 mb-8 max-w-4xl ${isAr ? "text-right" : "text-left"}`}>
               {isAr 
                 ? "« في كريستال للستائر، نحن لا نغطي الشبابيك.. نحن نحمي خصوصيتك، ونرسم ملامح مكتبك. كل ستارة نركبها هي توقيع شخصي على جودة لا تقبل المساومة. »"
                 : "“ At Crystal Blinds, we don't just cover windows... we protect your privacy and outline the character of your space. Every blind we install is a personal signature of uncompromising quality. ”"}
@@ -132,7 +108,7 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
                   {isAr ? "م ع" : "MA"}
                 </div>
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col items-start">
                 <p className="font-bold text-base text-white tracking-wide">{isAr ? "محمود عباس" : "Mahmoud Abbas"}</p>
                 <p className="text-[#d4af37] text-xs uppercase tracking-wider font-semibold mt-0.5">{isAr ? "المؤسس" : "Founder"}</p>
               </div>

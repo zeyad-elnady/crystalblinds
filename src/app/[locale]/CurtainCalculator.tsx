@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Product } from "@/lib/products";
+import { useCart } from "@/context/CartContext";
 
 const DEFAULT_PRODUCTS: Product[] = [
   {
@@ -132,20 +133,17 @@ interface CurtainCalculatorProps {
 }
 
 export default function CurtainCalculator({ isAr, products = [] }: CurtainCalculatorProps) {
-  // Use DB products if available, fallback to default list
   const activeProducts = products && products.length > 0 ? products.filter(p => p.is_active) : DEFAULT_PRODUCTS;
 
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [width, setWidth] = useState<number>(200);
   const [height, setHeight] = useState<number>(250);
-  const [pieces, setPieces] = useState<number>(1);
   const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const { addToCart } = useCart();
 
-  // Sync selectedProductId with incoming products list
   useEffect(() => {
     if (activeProducts.length > 0) {
-      // If currently selected product is not in the list, set to first one
       if (!selectedProductId || !activeProducts.some(p => p.id === selectedProductId)) {
         setSelectedProductId(activeProducts[0].id);
       }
@@ -156,15 +154,12 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
 
   useEffect(() => {
     if (!activeProduct) return;
-
-    // Calculate area in square meters (minimum width and height usually 100cm/1m for calculation purposes)
     const calcWidth = Math.max(width, 100) / 100;
     const calcHeight = Math.max(height, 100) / 100;
     const area = calcWidth * calcHeight;
-    const price = Math.round(activeProduct.price * area * pieces);
-
+    const price = Math.round(activeProduct.price * area);
     setEstimatedPrice(price);
-  }, [activeProduct, width, height, pieces]);
+  }, [activeProduct, width, height]);
 
   const handleWidthChange = (val: number) => {
     setWidth(Math.max(0, val));
@@ -174,302 +169,212 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
     setHeight(Math.max(0, val));
   };
 
+  const handleAddToCart = () => {
+    if (!activeProduct) return;
+    addToCart({
+      id: `${activeProduct.id}_${width}_${height}_${Date.now()}`,
+      productId: activeProduct.id,
+      labelEn: activeProduct.labelEn,
+      labelAr: activeProduct.labelAr,
+      image: activeProduct.images[0] || "",
+      price: estimatedPrice,
+      quantity: 1,
+      width,
+      height,
+    });
+  };
+
   if (!activeProduct) return null;
 
   return (
-    <section id="calculator" className="py-24 px-6 md:px-12 bg-[#FFFDFA] text-[#3E2723] relative overflow-hidden">
-      {/* Decorative premium blurs */}
-      <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[#d4af37]/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-[#3E2723]/3 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* Section Heading */}
-        <div className="text-center mb-16">
-          <span className="text-[#d4af37] text-xs uppercase tracking-[0.3em] font-semibold">
-            {isAr ? "احسب تكلفتك" : "PRICING ESTIMATION"}
-          </span>
-          <h2 className="font-headline text-3xl md:text-5xl font-bold text-[#3E2723] mt-2">
-            {isAr ? "احسب السعر التقديري" : "Curtain Price Calculator"}
+    <section id="calculator" className="py-16 px-6 md:px-12 bg-[#FFFDFA] text-[#3E2723]">
+      <div className="max-w-6xl mx-auto">
+        
+        {/* Title */}
+        <div className="text-center mb-8" style={{ direction: isAr ? "rtl" : "ltr" }}>
+          <h2 className="font-headline text-2xl md:text-3xl font-bold text-[#3E2723]">
+            {isAr ? "احسب السعر التقديري" : "Estimate Price Calculator"}
           </h2>
-          <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-4" />
+          <p className="text-sm text-[#3E2723]/70 mt-2">
+            {isAr ? "احصل على سعر تقريبي لستائرك في ثوانِ" : "Get an approximate price for your blinds in seconds"}
+          </p>
         </div>
 
-        {/* Main Split Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          
-          {/* Left Column: Product Showcase Slide (col-span-5) */}
-          <div className="lg:col-span-5 relative rounded-[2.5rem] overflow-hidden min-h-[450px] lg:min-h-full flex flex-col justify-end p-8 sm:p-10 shadow-2xl border border-[#d4af37]/10 group">
-            
-            {/* Background Images Crossfade */}
-            {activeProducts.map((prod) => {
-              const isSelected = prod.id === selectedProductId;
-              return (
-                <div
-                  key={prod.id}
-                  className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-                    isSelected ? "opacity-100 scale-100" : "opacity-0 scale-105 pointer-events-none"
-                  }`}
-                >
-                  <img
-                    src={prod.images[0] || "/placeholder.jpg"}
-                    alt={isAr ? prod.labelAr : prod.labelEn}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              );
-            })}
-
-            {/* Dark elegant overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2E1C18] via-[#3E2723]/40 to-transparent z-10" />
-
-            {/* Showcase details overlay */}
-            <div className="relative z-20 text-white flex flex-col justify-end h-full mt-32">
-              <span className="inline-block bg-[#d4af37] text-[#3E2723] text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 self-start">
-                {activeProduct.category}
-              </span>
-              <h3 className="font-headline text-2xl sm:text-3xl font-bold text-white mb-2 transition-all duration-500">
-                {isAr ? activeProduct.labelAr : activeProduct.labelEn}
-              </h3>
-              <p className="text-[#FFFDFA]/80 text-sm font-light leading-relaxed mb-4 transition-all duration-500">
-                {isAr ? activeProduct.descAr : activeProduct.descEn}
-              </p>
-              
-              {activeProduct.detailsAr && (
-                <p className="text-white/60 text-xs font-light leading-relaxed border-t border-white/10 pt-4 mb-4 transition-all duration-500">
-                  {isAr ? activeProduct.detailsAr : activeProduct.detailsEn}
-                </p>
-              )}
-
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#d4af37] bg-[#3E2723]/30 backdrop-blur-sm self-start px-3 py-1.5 rounded-lg border border-[#d4af37]/20">
-                <span className="material-symbols-outlined text-base">sell</span>
-                <span>
-                  {isAr
-                    ? `يبدأ من ${activeProduct.price.toLocaleString("ar-EG")} ج.م للمتر المربع`
-                    : `Starts from ${activeProduct.price.toLocaleString("en-US")} EGP / m²`}
-                </span>
-              </div>
-            </div>
+        {/* Brown Container Box */}
+        <div className="bg-[#2B1B17] rounded-[2rem] p-6 md:p-10 shadow-lg relative">
+          {/* Background decorative circles wrapped to prevent clipping children */}
+          <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#d4af37]/5 rounded-full blur-2xl" />
+            <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
           </div>
 
-          {/* Right Column: Configurator Panel (col-span-7) */}
-          <div className="lg:col-span-7 bg-white border border-[#3E2723]/10 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_20px_50px_rgba(62,39,35,0.03)] flex flex-col justify-between gap-8">
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center" style={{ direction: isAr ? "rtl" : "ltr" }}>
             
-            {/* Header info */}
-            <div>
-              <h3 className="text-xl font-bold text-[#3E2723] font-headline mb-1">
-                {isAr ? "قم بتخصيص ستارتك" : "Customize Your Blind"}
-              </h3>
-              <p className="text-xs text-[#3E2723]/60">
-                {isAr ? "حدد المقاسات والكمية المطلوبة لحساب السعر التقديري" : "Specify dimensions and quantity to estimate the price"}
-              </p>
-            </div>
+            {/* Inputs Block (col-span-8) */}
+            <div className="lg:col-span-8 w-full">
+              <div className="bg-white rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between border border-white/10 shadow-md">
+                
+                {/* 1. Curtain Type Dropdown */}
+                <div className="w-full md:w-[40%] relative z-30">
+                  <label className="text-[11px] font-bold text-[#3E2723]/60 mb-1.5 block text-start">
+                    {isAr ? "نوع الستارة" : "Curtain Type"}
+                  </label>
+                  
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsOpen(!isOpen)}
+                      className="w-full flex items-center justify-between bg-[#FDFBF7] border border-[#3E2723]/15 rounded-xl px-3 py-2.5 text-xs font-bold text-[#3E2723] focus:outline-none focus:border-[#d4af37]"
+                    >
+                      <span>{isAr ? activeProduct.labelAr : activeProduct.labelEn}</span>
+                      <span className="material-symbols-outlined text-sm text-[#3E2723]/50">
+                        expand_more
+                      </span>
+                    </button>
 
-            {/* Premium Visual Selection Dropdown */}
-            <div className="flex flex-col gap-3 relative z-30">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#3E2723]/80">
-                {isAr ? "نوع الستارة *" : "Curtain Type *"}
-              </label>
-              
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(!isOpen)}
-                  className="w-full flex items-center justify-between bg-[#FFFDFA] border border-[#3E2723]/25 rounded-2xl px-4 py-3.5 focus:outline-none focus:border-[#d4af37] transition-all text-sm font-semibold text-[#3E2723]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-[#3E2723]/10 bg-white">
-                      <img src={activeProduct.images[0] || "/placeholder.jpg"} alt={isAr ? activeProduct.labelAr : activeProduct.labelEn} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex flex-col items-start text-start">
-                      <span className="text-[9px] uppercase tracking-wider text-[#d4af37] font-bold">
-                        {activeProduct.category}
-                      </span>
-                      <span className="text-xs font-extrabold text-[#3E2723] mt-0.5">
-                        {isAr ? activeProduct.labelAr : activeProduct.labelEn}
-                      </span>
-                    </div>
+                    {isOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+                        <div className="absolute left-0 right-0 mt-1 bg-white border border-[#3E2723]/15 rounded-xl shadow-lg z-50 max-h-[220px] overflow-y-auto py-1">
+                          {activeProducts.map((prod) => (
+                            <button
+                              key={prod.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedProductId(prod.id);
+                                setIsOpen(false);
+                              }}
+                              className={`w-full px-3 py-2 hover:bg-[#3E2723]/5 text-start text-xs font-semibold block ${
+                                prod.id === selectedProductId ? "text-[#d4af37] bg-[#3E2723]/5" : "text-[#3E2723]"
+                              }`}
+                            >
+                              {isAr ? prod.labelAr : prod.labelEn}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <span className="material-symbols-outlined text-[#3E2723]/60 transition-transform duration-300" style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }}>
-                    expand_more
+                </div>
+
+                {/* Vertical Divider on Desktop */}
+                <div className="hidden md:block w-[1px] h-10 bg-[#3E2723]/10" />
+
+                {/* 2. Width (cm) Stepper */}
+                <div className="w-full md:w-[30%]">
+                  <label className="text-[11px] font-bold text-[#3E2723]/60 mb-1.5 block text-start">
+                    {isAr ? "العرض (سم)" : "Width (cm)"}
+                  </label>
+                  <div className="flex items-center justify-between bg-[#FDFBF7] border border-[#3E2723]/15 rounded-xl p-1">
+                    <button
+                      type="button"
+                      onClick={() => handleWidthChange(width - 10)}
+                      className="w-8 h-8 rounded-lg text-sm bg-transparent hover:bg-[#3E2723]/5 text-[#3E2723] flex items-center justify-center font-bold"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={width}
+                      onChange={(e) => handleWidthChange(parseInt(e.target.value) || 0)}
+                      className="w-14 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleWidthChange(width + 10)}
+                      className="w-8 h-8 rounded-lg text-sm bg-transparent hover:bg-[#3E2723]/5 text-[#3E2723] flex items-center justify-center font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Vertical Divider on Desktop */}
+                <div className="hidden md:block w-[1px] h-10 bg-[#3E2723]/10" />
+
+                {/* 3. Height (cm) Stepper */}
+                <div className="w-full md:w-[30%]">
+                  <label className="text-[11px] font-bold text-[#3E2723]/60 mb-1.5 block text-start">
+                    {isAr ? "الارتفاع (سم)" : "Height (cm)"}
+                  </label>
+                  <div className="flex items-center justify-between bg-[#FDFBF7] border border-[#3E2723]/15 rounded-xl p-1">
+                    <button
+                      type="button"
+                      onClick={() => handleHeightChange(height - 10)}
+                      className="w-8 h-8 rounded-lg text-sm bg-transparent hover:bg-[#3E2723]/5 text-[#3E2723] flex items-center justify-center font-bold"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={height}
+                      onChange={(e) => handleHeightChange(parseInt(e.target.value) || 0)}
+                      className="w-14 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleHeightChange(height + 10)}
+                      className="w-8 h-8 rounded-lg text-sm bg-transparent hover:bg-[#3E2723]/5 text-[#3E2723] flex items-center justify-center font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Result Block (col-span-4) */}
+            <div className="lg:col-span-4 w-full flex flex-col items-center">
+              {/* Gold bordered card */}
+              <div className="w-full border border-[#d4af37]/45 rounded-2xl p-5 bg-[#201310]/40 flex items-center justify-between shadow-inner">
+                <div className="flex flex-col items-start text-start">
+                  <span className="text-[#d4af37]/80 text-[10px] uppercase font-bold tracking-wider mb-1">
+                    {isAr ? "السعر التقديري" : "Estimated Price"}
                   </span>
-                </button>
-
-                {isOpen && (
-                  <>
-                    {/* Backdrop */}
-                    <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                    
-                    {/* Dropdown panel */}
-                    <div className="absolute left-0 right-0 mt-2 bg-white border border-[#3E2723]/15 rounded-2xl shadow-xl z-50 max-h-[300px] overflow-y-auto py-2">
-                      {activeProducts.map((prod) => {
-                        const isSelected = prod.id === selectedProductId;
-                        return (
-                          <button
-                            key={prod.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedProductId(prod.id);
-                              setIsOpen(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#3E2723]/5 transition-colors text-start ${
-                              isSelected ? "bg-[#3E2723]/5 text-[#d4af37]" : "text-[#3E2723]"
-                            }`}
-                          >
-                            <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-[#3E2723]/10 bg-white">
-                              <img src={prod.images[0] || "/placeholder.jpg"} alt={isAr ? prod.labelAr : prod.labelEn} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex flex-col items-start text-start">
-                              <span className={`text-[9px] uppercase tracking-wider font-bold ${isSelected ? "text-[#d4af37]" : "text-[#3E2723]/50"}`}>
-                                {prod.category}
-                              </span>
-                              <span className="text-xs font-bold mt-0.5">
-                                {isAr ? prod.labelAr : prod.labelEn}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Dimension Inputs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              
-              {/* Width Input */}
-              <div className="flex flex-col gap-3 p-5 rounded-2xl border border-[#3E2723]/10 bg-[#FFFDFA]">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#3E2723]/80">
-                  {isAr ? "العرض (سم) *" : "Width (cm) *"}
-                </label>
-                <div className="flex items-center justify-between gap-4">
-                  <button
-                    type="button"
-                    onClick={() => handleWidthChange(width - 10)}
-                    className="w-10 h-10 rounded-xl bg-[#3E2723]/5 text-[#3E2723] hover:bg-[#d4af37] hover:text-[#3E2723] flex items-center justify-center transition-colors font-bold text-lg border border-[#3E2723]/10"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={width}
-                    onChange={(e) => handleWidthChange(parseInt(e.target.value) || 0)}
-                    className="w-20 bg-transparent text-center text-lg font-extrabold text-[#3E2723] focus:outline-none border-b-2 border-transparent focus:border-[#d4af37] transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleWidthChange(width + 10)}
-                    className="w-10 h-10 rounded-xl bg-[#3E2723]/5 text-[#3E2723] hover:bg-[#d4af37] hover:text-[#3E2723] flex items-center justify-center transition-colors font-bold text-lg border border-[#3E2723]/10"
-                  >
-                    +
-                  </button>
-                </div>
-                <span className="text-[10px] text-center text-[#3E2723]/40 font-light">
-                  {isAr ? "الحد الأدنى للحساب: 100 سم" : "Min calculation width: 100cm"}
-                </span>
-              </div>
-
-              {/* Height Input */}
-              <div className="flex flex-col gap-3 p-5 rounded-2xl border border-[#3E2723]/10 bg-[#FFFDFA]">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#3E2723]/80">
-                  {isAr ? "الارتفاع (سم) *" : "Height (cm) *"}
-                </label>
-                <div className="flex items-center justify-between gap-4">
-                  <button
-                    type="button"
-                    onClick={() => handleHeightChange(height - 10)}
-                    className="w-10 h-10 rounded-xl bg-[#3E2723]/5 text-[#3E2723] hover:bg-[#d4af37] hover:text-[#3E2723] flex items-center justify-center transition-colors font-bold text-lg border border-[#3E2723]/10"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={height}
-                    onChange={(e) => handleHeightChange(parseInt(e.target.value) || 0)}
-                    className="w-20 bg-transparent text-center text-lg font-extrabold text-[#3E2723] focus:outline-none border-b-2 border-transparent focus:border-[#d4af37] transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleHeightChange(height + 10)}
-                    className="w-10 h-10 rounded-xl bg-[#3E2723]/5 text-[#3E2723] hover:bg-[#d4af37] hover:text-[#3E2723] flex items-center justify-center transition-colors font-bold text-lg border border-[#3E2723]/10"
-                  >
-                    +
-                  </button>
-                </div>
-                <span className="text-[10px] text-center text-[#3E2723]/40 font-light">
-                  {isAr ? "الحد الأدنى للحساب: 100 سم" : "Min calculation height: 100cm"}
-                </span>
-              </div>
-            </div>
-
-            {/* Pieces Counter */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-t border-[#3E2723]/5 pt-6">
-              <div className="flex flex-col">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#3E2723]/80">
-                  {isAr ? "عدد القطع *" : "Number of Pieces *"}
-                </label>
-                <span className="text-[10px] text-[#3E2723]/50 font-light mt-0.5">
-                  {isAr ? "العدد الإجمالي للمقاس المحدد" : "Total pieces for this dimension"}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-center gap-4 bg-[#FFFDFA] border border-[#3E2723]/15 rounded-xl p-1.5 max-w-[200px]">
-                <button
-                  type="button"
-                  onClick={() => setPieces(Math.max(1, pieces - 1))}
-                  className="w-10 h-10 rounded-lg bg-[#3E2723]/5 text-[#3E2723] hover:bg-[#d4af37] hover:text-[#3E2723] flex items-center justify-center transition-colors font-bold text-lg border border-[#3E2723]/5"
-                >
-                  -
-                </button>
-                <span className="text-base font-extrabold w-12 text-center text-[#3E2723]">
-                  {pieces}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPieces(pieces + 1)}
-                  className="w-10 h-10 rounded-lg bg-[#3E2723]/5 text-[#3E2723] hover:bg-[#d4af37] hover:text-[#3E2723] flex items-center justify-center transition-colors font-bold text-lg border border-[#3E2723]/5"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Result Estimated Card */}
-            <div className="bg-[#3E2723] bg-gradient-to-r from-[#3E2723] to-[#2E1C18] border border-[#d4af37]/20 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#d4af37]/10 rounded-full blur-2xl pointer-events-none" />
-
-              <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                <span className="text-[#d4af37] text-[10px] font-bold uppercase tracking-wider mb-1 block">
-                  {isAr ? "السعر التقديري الإجمالي" : "ESTIMATED TOTAL PRICE"}
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-extrabold text-[#d4af37] tracking-tight">
+                  <span className="text-3xl font-extrabold text-[#d4af37] tracking-tight">
                     {estimatedPrice.toLocaleString(isAr ? "ar-EG" : "en-US")}
                   </span>
-                  <span className="text-sm font-light text-white/80 ml-1">
-                    {isAr ? "ج.م" : "EGP"}
+                  <span className="text-[#d4af37] text-[10px] font-bold mt-1">
+                    {isAr ? "جنيه مصري" : "EGP"}
                   </span>
                 </div>
-                <span className="text-[9px] text-white/40 font-light mt-2 max-w-[250px] leading-relaxed block">
-                  {isAr
-                    ? "* التسعير تقريبي، وقد يختلف بعد المعاينة الفعلية."
-                    : "* Estimate only. Final price details verified during inspection."}
-                </span>
+                {/* Gold Calculator Icon */}
+                <div className="w-12 h-12 rounded-xl bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37]">
+                  <span className="material-symbols-outlined text-2xl">calculate</span>
+                </div>
               </div>
 
-              <a
-                href="#reserve"
-                className="w-full md:w-auto px-6 py-4 bg-[#d4af37] text-[#3E2723] hover:bg-white hover:text-[#3E2723] rounded-2xl font-bold text-xs uppercase tracking-wider text-center transition-all duration-300 shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 whitespace-nowrap"
-              >
-                <span className="material-symbols-outlined text-sm font-bold">calendar_month</span>
-                {isAr ? "حجز موعد للمعاينة مجاناً" : "Book Free Measurement"}
-              </a>
+              {/* Disclaimer */}
+              <span className="text-[#d4af37]/80 text-[9px] font-light mt-3 block text-center">
+                {isAr
+                  ? "* السعر تقريبي وقد يختلف بعد المعاينة"
+                  : "* Price is estimate only and may vary after measurement"}
+              </span>
             </div>
 
           </div>
 
+          {/* CTA Buttons at the bottom */}
+          <div className="flex flex-col sm:flex-row justify-center mt-8 gap-4">
+            <button
+              onClick={handleAddToCart}
+              className="bg-[#2B1B17] hover:bg-[#d4af37] border border-[#d4af37] text-white px-8 py-3 rounded-xl text-xs font-bold transition-all duration-300 shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
+              {isAr ? "أضف إلى السلة" : "Add to Cart"}
+            </button>
+            <a
+              href="#reserve"
+              className="bg-[#d4af37] hover:bg-white text-[#2B1B17] px-8 py-3 rounded-xl text-xs font-bold transition-all duration-300 shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            >
+              {isAr ? "احجز موعد للمعاينة مجاناً" : "Book Free Measurement"}
+            </a>
+          </div>
+
         </div>
+
       </div>
     </section>
   );

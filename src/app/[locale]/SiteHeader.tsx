@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { useCart } from "@/context/CartContext";
+
 
 export default function SiteHeader({
   locale,
@@ -14,6 +16,7 @@ export default function SiteHeader({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { toggleCart, itemCount } = useCart();
 
   const getTogglePath = () => {
     if (!pathname) return isAr ? "/en" : "/ar";
@@ -87,7 +90,22 @@ export default function SiteHeader({
           </div>
 
           {/* ── Right: Actions ── */}
-          <div className={`flex items-center gap-4 ${isAr ? "order-1" : "order-3"}`}>
+          <div className={`flex items-center gap-2 md:gap-4 ${isAr ? "order-1" : "order-3"}`}>
+            {/* Cart Button */}
+            <button
+              id="cart-toggle-btn"
+              onClick={() => toggleCart(true)}
+              className="relative flex items-center justify-center text-[#FFFDFA]/80 hover:text-[#d4af37] transition-colors p-1 md:p-2"
+              aria-label="Open Cart"
+            >
+              <span className="material-symbols-outlined text-[22px] md:text-[26px]">shopping_bag</span>
+              {itemCount > 0 && (
+                <span className="absolute top-0 right-0 w-4 h-4 md:w-5 md:h-5 bg-[#d4af37] text-white text-[10px] md:text-xs font-bold flex items-center justify-center rounded-full translate-x-1 -translate-y-1">
+                  {itemCount}
+                </span>
+              )}
+            </button>
+
             {/* Language toggle */}
             <a
               href={getTogglePath()}

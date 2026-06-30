@@ -2,14 +2,29 @@
 
 import { useState, useEffect, useRef } from "react";
 
+const HERO_IMAGES = [
+  "/photos for crystal/hero1.jpeg",
+  "/photos for crystal/hero2.jpeg",
+  "/photos for crystal/hero3.jpeg"
+];
+
 export default function ModernHero({ isAr }: { isAr: boolean }) {
   const [mounted, setMounted] = useState(false);
   const [counts, setCounts] = useState({ clients: 0, meters: 0, years: 0, satisfaction: 0 });
+  const [bgIndex, setBgIndex] = useState(0);
   const statsRef = useRef<HTMLDivElement>(null);
   const hasAnimated = useRef(false);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Slideshow interval timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 6000);
+    return () => clearInterval(timer);
   }, []);
 
   // Animate counters when stats bar comes into view
@@ -46,14 +61,23 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
 
   return (
     <div className="relative w-full min-h-screen bg-[#1a0f0a] flex flex-col">
-      {/* ═══ BACKGROUND IMAGE ═══ */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/hero_bg.png"
-          alt=""
-          className="w-full h-full object-cover"
-          style={{ objectPosition: "center 30%" }}
-        />
+      {/* ═══ BACKGROUND IMAGES SLIDESHOW ═══ */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {HERO_IMAGES.map((img, index) => (
+          <div
+            key={img}
+            className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
+              index === bgIndex ? "opacity-100 scale-100" : "opacity-0 scale-105 pointer-events-none"
+            }`}
+          >
+            <img
+              src={img}
+              alt=""
+              className="w-full h-full object-cover"
+              style={{ objectPosition: "center 30%" }}
+            />
+          </div>
+        ))}
       </div>
 
       {/* ═══ OVERLAY GRADIENTS — dark on LEFT for Arabic, dark on RIGHT for English ═══ */}
@@ -96,13 +120,13 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
               className={`text-white font-extrabold leading-[1.15] mb-6 transition-all duration-1000 delay-300 ${
                 mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               }`}
-              style={{ fontSize: "clamp(2.2rem, 5vw, 3.8rem)" }}
+              style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)" }}
             >
               {isAr ? (
                 <>
-                  ستائر تعكس ذوقك
+                  كريستال للستائر
                   <br />
-                  وتكمل جمال مساحتك
+                  نسجنا الإبداع.. لتستمتع بالاطلالة
                 </>
               ) : (
                 <>
@@ -180,67 +204,67 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
             />
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-4">
               {/* Stat 1: Happy Customers */}
               <div
-                className={`flex flex-col items-center justify-center py-7 px-4 border-b lg:border-b-0 ${
-                  isAr ? "lg:border-l border-[#5a3a2e]/40" : "lg:border-r border-[#5a3a2e]/40"
+                className={`flex flex-col items-center justify-center py-3 sm:py-5 md:py-7 px-1 sm:px-2 md:px-4 ${
+                  isAr ? "border-l" : "border-r"
                 } border-[#5a3a2e]/40`}
               >
-                <span className="material-symbols-outlined text-[#d4af37] text-[26px] mb-2">
+                <span className="material-symbols-outlined text-[#d4af37] text-[18px] sm:text-[22px] md:text-[26px] mb-1 sm:mb-2">
                   groups
                 </span>
-                <span className="text-white text-[28px] md:text-[32px] font-extrabold tracking-tight leading-none">
+                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none">
                   +{counts.clients.toLocaleString()}
                 </span>
-                <span className="text-white/50 text-[12px] md:text-[13px] font-light mt-1.5">
+                <span className="text-white/50 text-[9px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-light mt-1 sm:mt-1.5 text-center">
                   {isAr ? "عميل سعيد" : "Happy Customers"}
                 </span>
               </div>
 
               {/* Stat 2: Meters Installed */}
               <div
-                className={`flex flex-col items-center justify-center py-7 px-4 border-b lg:border-b-0 ${
-                  isAr ? "lg:border-l border-[#5a3a2e]/40" : "lg:border-r border-[#5a3a2e]/40"
+                className={`flex flex-col items-center justify-center py-3 sm:py-5 md:py-7 px-1 sm:px-2 md:px-4 ${
+                  isAr ? "border-l" : "border-r"
                 } border-[#5a3a2e]/40`}
               >
-                <span className="material-symbols-outlined text-[#d4af37] text-[26px] mb-2">
+                <span className="material-symbols-outlined text-[#d4af37] text-[18px] sm:text-[22px] md:text-[26px] mb-1 sm:mb-2">
                   architecture
                 </span>
-                <span className="text-white text-[28px] md:text-[32px] font-extrabold tracking-tight leading-none">
+                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none">
                   +{counts.meters.toLocaleString()}
                 </span>
-                <span className="text-white/50 text-[12px] md:text-[13px] font-light mt-1.5">
+                <span className="text-white/50 text-[9px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-light mt-1 sm:mt-1.5 text-center">
                   {isAr ? "متر ستائر منفذة" : "Meters Installed"}
                 </span>
               </div>
 
               {/* Stat 3: Years Experience */}
               <div
-                className={`flex flex-col items-center justify-center py-7 px-4 ${
-                  isAr ? "lg:border-l border-[#5a3a2e]/40" : "lg:border-r border-[#5a3a2e]/40"
+                className={`flex flex-col items-center justify-center py-3 sm:py-5 md:py-7 px-1 sm:px-2 md:px-4 ${
+                  isAr ? "border-l" : "border-r"
                 } border-[#5a3a2e]/40`}
               >
-                <span className="material-symbols-outlined text-[#d4af37] text-[26px] mb-2">
+                <span className="material-symbols-outlined text-[#d4af37] text-[18px] sm:text-[22px] md:text-[26px] mb-1 sm:mb-2">
                   workspace_premium
                 </span>
-                <span className="text-white text-[28px] md:text-[32px] font-extrabold tracking-tight leading-none">
+                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none">
                   +{counts.years}
                 </span>
-                <span className="text-white/50 text-[12px] md:text-[13px] font-light mt-1.5">
+                <span className="text-white/50 text-[9px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-light mt-1 sm:mt-1.5 text-center">
                   {isAr ? "سنوات خبرة" : "Years Experience"}
                 </span>
               </div>
 
               {/* Stat 4: Satisfaction */}
-              <div className="flex flex-col items-center justify-center py-7 px-4">
-                <span className="material-symbols-outlined text-[#d4af37] text-[26px] mb-2">
+              <div className="flex flex-col items-center justify-center py-3 sm:py-5 md:py-7 px-1 sm:px-2 md:px-4">
+                <span className="material-symbols-outlined text-[#d4af37] text-[18px] sm:text-[22px] md:text-[26px] mb-1 sm:mb-2">
                   thumb_up
                 </span>
-                <span className="text-white text-[28px] md:text-[32px] font-extrabold tracking-tight leading-none">
+                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none">
                   {counts.satisfaction}%
                 </span>
-                <span className="text-white/50 text-[12px] md:text-[13px] font-light mt-1.5">
+                <span className="text-white/50 text-[9px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-light mt-1 sm:mt-1.5 text-center">
                   {isAr ? "رضا العملاء" : "Customer Satisfaction"}
                 </span>
               </div>
