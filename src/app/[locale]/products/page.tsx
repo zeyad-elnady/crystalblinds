@@ -1,5 +1,5 @@
 import ProductCards from "../ProductCards";
-import { getProducts } from "@/lib/products";
+import { getProducts, getCategories } from "@/lib/products";
 import PageHero from "../PageHero";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -14,6 +14,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
   const { locale } = await params;
   const isAr = locale === 'ar';
   const products = await getProducts();
+  const categories = await getCategories();
 
   return (
     <>
@@ -38,7 +39,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
           </p>
         </div>
         <div className="relative z-10 w-full">
-          <ProductCards isAr={isAr} products={products} />
+          <ProductCards isAr={isAr} products={products} categories={categories} />
         </div>
       </section>
 

@@ -77,11 +77,11 @@ export default function BeforeAfterSlider({ isAr }: { isAr: boolean }) {
           onTouchStart={() => setIsDragging(true)}
         >
           {/* Before Image (Background) */}
-          <div className="absolute inset-0 w-full h-full">
+          <div className="absolute inset-0 w-full h-full bg-black/5">
             <img
               src="/photos for crystal/before.jpg.jpeg"
               alt="Before"
-              className="w-full h-full object-cover pointer-events-none"
+              className="w-full h-full object-contain pointer-events-none"
             />
             {/* Label */}
             <span className={`absolute top-4 ${isAr ? "right-4" : "left-4"} z-20 bg-black/60 text-white px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider backdrop-blur-sm`}>
@@ -91,13 +91,13 @@ export default function BeforeAfterSlider({ isAr }: { isAr: boolean }) {
 
           {/* After Image (Foreground, clipped) */}
           <div
-            className="absolute inset-0 w-full h-full z-10 overflow-hidden"
+            className="absolute inset-0 w-full h-full z-10 overflow-hidden bg-black/5"
             style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }}
           >
             <img
               src="/photos for crystal/after.jpg.jpeg"
               alt="After"
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               style={{ width: containerRef.current?.getBoundingClientRect().width }}
             />
             {/* Label */}

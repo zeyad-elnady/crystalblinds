@@ -12,54 +12,76 @@ interface BlindType {
   icon: string;
 }
 
-export default function BlindTypes({ isAr, locale }: { isAr: boolean; locale: string }) {
-  const blindTypes: BlindType[] = [
-    {
-      labelAr: "ستائر زيبرا",
-      labelEn: "Zebra Blinds",
-      subAr: "تحكم ذكي بالضوء والخصوصية",
-      subEn: "Smart light & privacy control",
-      image: "/photos for crystal/ستائر زيبرا.jpeg",
-      link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123404`,
-      icon: "window",
-    },
-    {
-      labelAr: "ستائر رول",
-      labelEn: "Roller Blinds",
-      subAr: "بساطة وعصرية تناسب كل الغرف",
-      subEn: "Simple & modern for all rooms",
-      image: "/photos for crystal/printed_roller.png",
-      link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123407`,
-      icon: "layers",
-    },
-    {
-      labelAr: "ستائر بلاك أوت",
-      labelEn: "Blackout Blinds",
-      subAr: "عزل كامل للضوء والحرارة بنسبة 100%",
-      subEn: "100% complete light & heat isolation",
-      image: "/photos for crystal/ستائر رول بلاك أوت.jpeg",
-      link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123401`,
-      icon: "dark_mode",
-    },
-    {
-      labelAr: "ستائر صن سكرين",
-      labelEn: "Sun Screen Blinds",
-      subAr: "حماية من الشمس مع الحفاظ على الرؤية",
-      subEn: "Sun protection while keeping the view",
-      image: "/photos for crystal/ستائر رول صن سكرين.jpeg",
-      link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123402`,
-      icon: "sunny",
-    },
-    {
-      labelAr: "ستائر موتورايزد",
-      labelEn: "Motorized Blinds",
-      subAr: "تحكم تلقائي ذكي بالريموت والموبايل",
-      subEn: "Automatic smart remote & app control",
-      image: "/photos for crystal/ستائر دبل سيستم.jpeg",
-      link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123406`,
-      icon: "settings_remote",
-    },
-  ];
+import { Product } from "@/lib/products";
+
+export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; locale: string; products?: Product[] }) {
+  const getIconForProduct = (productId: string, category: string) => {
+    const lowerCat = category.toLowerCase();
+    if (productId === 'b301c238-1234-4567-8901-abcdef123404' || lowerCat.includes('zebra') || lowerCat.includes('زيبرا')) return 'window';
+    if (productId === 'b301c238-1234-4567-8901-abcdef123407' || lowerCat.includes('roller') || lowerCat.includes('رول')) return 'layers';
+    if (productId === 'b301c238-1234-4567-8901-abcdef123401' || lowerCat.includes('blackout') || lowerCat.includes('بلاك')) return 'dark_mode';
+    if (productId === 'b301c238-1234-4567-8901-abcdef123402' || lowerCat.includes('sunscreen') || lowerCat.includes('صن')) return 'sunny';
+    if (productId === 'b301c238-1234-4567-8901-abcdef123406' || lowerCat.includes('motor') || lowerCat.includes('موتور')) return 'settings_remote';
+    return 'filter_frames';
+  };
+
+  const blindTypes: BlindType[] = products && products.length > 0 
+    ? products.map(p => ({
+        labelAr: p.labelAr,
+        labelEn: p.labelEn,
+        subAr: p.descAr,
+        subEn: p.descEn,
+        image: p.images[0] || "/placeholder.jpg",
+        link: `/${locale}/products/${p.id}`,
+        icon: getIconForProduct(p.id, p.category)
+      }))
+    : [
+        {
+          labelAr: "ستائر زيبرا",
+          labelEn: "Zebra Blinds",
+          subAr: "تحكم ذكي بالضوء والخصوصية",
+          subEn: "Smart light & privacy control",
+          image: "/photos for crystal/ستائر زيبرا.jpeg",
+          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123404`,
+          icon: "window",
+        },
+        {
+          labelAr: "ستائر رول",
+          labelEn: "Roller Blinds",
+          subAr: "بساطة وعصرية تناسب كل الغرف",
+          subEn: "Simple & modern for all rooms",
+          image: "/photos for crystal/printed_roller.png",
+          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123407`,
+          icon: "layers",
+        },
+        {
+          labelAr: "ستائر بلاك أوت",
+          labelEn: "Blackout Blinds",
+          subAr: "عزل كامل للضوء والحرارة بنسبة 100%",
+          subEn: "100% complete light & heat isolation",
+          image: "/photos for crystal/ستائر رول بلاك أوت.jpeg",
+          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123401`,
+          icon: "dark_mode",
+        },
+        {
+          labelAr: "ستائر صن سكرين",
+          labelEn: "Sun Screen Blinds",
+          subAr: "حماية من الشمس مع الحفاظ على الرؤية",
+          subEn: "Sun protection while keeping the view",
+          image: "/photos for crystal/ستائر رول صن سكرين.jpeg",
+          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123402`,
+          icon: "sunny",
+        },
+        {
+          labelAr: "ستائر موتورايزد",
+          labelEn: "Motorized Blinds",
+          subAr: "تحكم تلقائي ذكي بالريموت والموبايل",
+          subEn: "Automatic smart remote & app control",
+          image: "/photos for crystal/ستائر دبل سيستم.jpeg",
+          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123406`,
+          icon: "settings_remote",
+        },
+      ];
 
   return (
     <section id="blind-types" className="pt-40 lg:pt-32 pb-24 px-6 md:px-12 bg-[#FFFDFA] text-[#3E2723]">

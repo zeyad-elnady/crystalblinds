@@ -13,10 +13,17 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
   const [orders, setOrders] = useState<InspectionOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Techs list for assignment
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [dimensionsList, setDimensionsList] = useState<{ width: number; height: number; type: string; notes?: string }[]>([]);
+
+  // Technicians manager state
+  const [showTechManagerModal, setShowTechManagerModal] = useState(false);
+  const [newTechName, setNewTechName] = useState('');
+  const [editingTechId, setEditingTechId] = useState<string | null>(null);
+  const [editingTechName, setEditingTechName] = useState('');
+  const [techSaving, setTechSaving] = useState(false);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,7 +32,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
   // Modals state
   const [showModal, setShowModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<InspectionOrder | null>(null);
-  
+
   // Form State
   const [formData, setFormData] = useState({
     client_name: '',
@@ -48,12 +55,124 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
   }, []);
 
   const fetchTechnicians = async () => {
+    let list: any[] = [];
+
+    try {
+      const saved = localStorage.getItem('crystal_blinds_technicians');
+      if (saved) {
+        list = JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     try {
       const { data } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
-      setTechnicians(data && data.length > 0 ? data : [{ id: 't1', name: 'م. أحمد خالد' }, { id: 't2', name: 'م. شريف مصطفى' }]);
-    } catch {
-      setTechnicians([{ id: 't1', name: 'م. أحمد خالد' }, { id: 't2', name: 'م. شريف مصطفى' }]);
+      if (data && data.length > 0) {
+        const merged = [...list];
+        data.forEach(dbTech => {
+          if (!merged.some(t => t.name === dbTech.name || t.id === dbTech.id)) {
+            merged.push(dbTech);
+          }
+        });
+        list = merged;
+      }
+    } catch (e) {
+      console.error(e);
     }
+
+    if (!list || list.length === 0) {
+      list = [
+        { id: 't1', name: 'م. أحمد خالد' },
+        { id: 't2', name: 'م. شريف مصطفى' }
+      ];
+    }
+
+    setTechnicians(list);
+    try {
+      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(list));
+    } catch (e) { }
+  };
+
+  const handleAddTechnician = async () => {
+    if (!newTechName.trim()) return;
+    setTechSaving(true);
+    const techName = newTechName.trim();
+    const newId = 'tech_' + Date.now();
+    const newTech = { id: newId, name: techName };
+
+    try {
+      await supabase.from('profiles').insert([{ id: newId, name: techName, role: 'technician' }]);
+    } catch (e) {
+      console.error(e);
+    }
+
+    const updated = [...technicians, newTech];
+    setTechnicians(updated);
+    try {
+      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(updated));
+    } catch (e) { }
+
+    setFormData(prev => ({ ...prev, technician_name: techName }));
+    setNewTechName('');
+    setTechSaving(false);
+  };
+
+  const handleEditTechnician = async (id: string) => {
+    if (!editingTechName.trim()) return;
+    setTechSaving(true);
+    const updatedName = editingTechName.trim();
+
+    try {
+      await supabase.from('profiles').update({ name: updatedName }).eq('id', id);
+    } catch (e) {
+      console.error(e);
+    }
+
+    const updated = technicians.map(t => {
+      if (t.id === id) {
+        if (formData.technician_name === t.name) {
+          setFormData(prev => ({ ...prev, technician_name: updatedName }));
+        }
+        return { ...t, name: updatedName };
+      }
+      return t;
+    });
+
+    setTechnicians(updated);
+    try {
+      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(updated));
+    } catch (e) { }
+
+    setEditingTechId(null);
+    setEditingTechName('');
+    setTechSaving(false);
+  };
+
+  const handleDeleteTechnician = async (id: string, name: string) => {
+    if (technicians.length <= 1) {
+      alert('يجب أن تظل القائمة تحتوي على فني واحد على الأقل.');
+      return;
+    }
+    if (!confirm(`هل تريد حذف الفني "${name}" من القائمة؟`)) return;
+
+    setTechSaving(true);
+    try {
+      await supabase.from('profiles').delete().eq('id', id);
+    } catch (e) {
+      console.error(e);
+    }
+
+    const updated = technicians.filter(t => t.id !== id);
+    setTechnicians(updated);
+    try {
+      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(updated));
+    } catch (e) { }
+
+    if (formData.technician_name === name) {
+      setFormData(prev => ({ ...prev, technician_name: updated[0]?.name || '' }));
+    }
+    setTechSaving(false);
   };
 
   const fetchInspections = async () => {
@@ -64,9 +183,9 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
         .select('*')
         .eq('appointment_type', 'inspection')
         .order('appointment_date', { ascending: false });
-        
+
       if (error) throw error;
-      
+
       // Map schema columns and parse mocks for extra details (images, dimensions)
       const mapped: InspectionOrder[] = (data || []).map((item: any) => {
         let dimensions = [];
@@ -102,15 +221,15 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
       console.error('Error fetching inspections:', err);
       // Mock fallback
       setOrders([
-        { 
-          id: 'INSP-1002', 
-          created_at: '', 
-          client_name: 'أحمد مصطفى', 
-          client_phone: '01099887766', 
-          client_address: 'التجمع الخامس - ش التسعين', 
-          appointment_type: 'inspection', 
-          appointment_date: new Date().toISOString().split('T')[0], 
-          appointment_time: '12:00', 
+        {
+          id: 'INSP-1002',
+          created_at: '',
+          client_name: 'أحمد مصطفى',
+          client_phone: '01099887766',
+          client_address: 'التجمع الخامس - ش التسعين',
+          appointment_type: 'inspection',
+          appointment_date: new Date().toISOString().split('T')[0],
+          appointment_time: '12:00',
           status: 'confirmed',
           technician_name: 'م. أحمد خالد',
           dimensions: [
@@ -121,15 +240,15 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
           curtain_type: 'Zebra Blinds',
           notes: ''
         },
-        { 
-          id: 'INSP-1003', 
-          created_at: '', 
-          client_name: 'رانيا السباعي', 
-          client_phone: '01122334455', 
-          client_address: 'مصر الجديدة - ش النزهة', 
-          appointment_type: 'inspection', 
-          appointment_date: new Date().toISOString().split('T')[0], 
-          appointment_time: '14:30', 
+        {
+          id: 'INSP-1003',
+          created_at: '',
+          client_name: 'رانيا السباعي',
+          client_phone: '01122334455',
+          client_address: 'مصر الجديدة - ش النزهة',
+          appointment_type: 'inspection',
+          appointment_date: new Date().toISOString().split('T')[0],
+          appointment_time: '14:30',
           status: 'pending',
           technician_name: 'م. شريف مصطفى',
           dimensions: [],
@@ -192,7 +311,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
   const handlePrint = (order: InspectionOrder) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-    
+
     const dimensionsHtml = order.dimensions?.map((d, index) => `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${index + 1}</td>
@@ -282,7 +401,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    
+
     // Package technician and extra variables inside notes JSON string for simplicity
     const packedNotes = JSON.stringify({
       tech: formData.technician_name,
@@ -341,16 +460,16 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
       const matchStatus = filterStatus === 'all' || o.status === filterStatus;
-      const matchSearch = o.client_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          o.client_phone.includes(searchQuery) || 
-                          o.technician_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = o.client_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.client_phone.includes(searchQuery) ||
+        o.technician_name?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchStatus && matchSearch;
     });
   }, [orders, filterStatus, searchQuery]);
 
   return (
     <div className="flex flex-col gap-6 text-[#3E2723]" style={{ direction: 'rtl' }}>
-      
+
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#3E2723]/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
         <div>
@@ -358,13 +477,22 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
           <p className="text-xs text-[#3E2723]/60">إجمالي طلبات المعاينة الجارية: {orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length}</p>
         </div>
         {userRole !== 'technician' && (
-          <button 
-            onClick={handleOpenAdd}
-            className="flex items-center gap-2 bg-[#d4af37] text-[#2B1B17] font-bold px-4 py-2 rounded-xl text-xs hover:bg-[#b8922a] transition-all shadow-[0_2px_8px_rgba(212,175,55,0.25)]"
-          >
-            <span className="material-symbols-outlined text-base">assignment_add</span>
-            <span>إنشاء أمر معاينة</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowTechManagerModal(true)}
+              className="flex items-center gap-1.5 bg-[#FAF8F5] border border-[#3E2723]/20 text-[#3E2723] font-bold px-3.5 py-2 rounded-xl text-xs hover:bg-[#d4af37]/10 hover:border-[#d4af37] transition-all"
+            >
+              <span className="material-symbols-outlined text-base text-[#b8922a]">engineering</span>
+              <span>إدارة قائمة الفنيين</span>
+            </button>
+            <button
+              onClick={handleOpenAdd}
+              className="flex items-center gap-2 bg-[#d4af37] text-[#2B1B17] font-bold px-4 py-2 rounded-xl text-xs hover:bg-[#b8922a] transition-all shadow-[0_2px_8px_rgba(212,175,55,0.25)]"
+            >
+              <span className="material-symbols-outlined text-base">assignment_add</span>
+              <span>إنشاء أمر معاينة</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -375,16 +503,15 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                filterStatus === status 
-                  ? 'bg-[#3E2723] text-white border-[#3E2723]' 
-                  : 'bg-white text-[#3E2723]/70 border-[#3E2723]/10 hover:border-[#3E2723]/30'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${filterStatus === status
+                ? 'bg-[#3E2723] text-white border-[#3E2723]'
+                : 'bg-white text-[#3E2723]/70 border-[#3E2723]/10 hover:border-[#3E2723]/30'
+                }`}
             >
-              {status === 'all' ? 'الكل' : 
-               status === 'pending' ? 'جديد / قيد الانتظار' :
-               status === 'confirmed' ? 'مؤكد' : 
-               status === 'completed' ? 'مكتمل' : 'ملغي'}
+              {status === 'all' ? 'الكل' :
+                status === 'pending' ? 'جديد / قيد الانتظار' :
+                  status === 'confirmed' ? 'مؤكد' :
+                    status === 'completed' ? 'مكتمل' : 'ملغي'}
             </button>
           ))}
         </div>
@@ -415,18 +542,17 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredOrders.map(order => (
             <div key={order.id} className="bg-white p-5 rounded-2xl border border-[#3E2723]/10 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-md transition-shadow flex flex-col justify-between gap-4">
-              
+
               <div className="flex justify-between items-start">
                 <div className="flex flex-col text-right">
                   <span className="text-[10px] text-[#3E2723]/50">رقم المعاينة</span>
                   <span className="font-extrabold text-sm text-[#3E2723]" dir="ltr">{order.id?.includes('-') ? order.id.split('-')[0] : order.id}</span>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                  order.status === 'completed' ? 'bg-green-500/10 text-green-700' :
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${order.status === 'completed' ? 'bg-green-500/10 text-green-700' :
                   order.status === 'confirmed' ? 'bg-blue-500/10 text-blue-700' :
-                  order.status === 'cancelled' ? 'bg-red-500/10 text-red-700' :
-                  'bg-yellow-500/10 text-yellow-700'
-                }`}>
+                    order.status === 'cancelled' ? 'bg-red-500/10 text-red-700' :
+                      'bg-yellow-500/10 text-yellow-700'
+                  }`}>
                   {order.status === 'completed' ? 'مكتمل' : order.status === 'confirmed' ? 'مؤكد' : order.status === 'cancelled' ? 'ملغي' : 'قيد الانتظار'}
                 </span>
               </div>
@@ -453,14 +579,14 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
 
               <div className="flex items-center justify-between pt-3 border-t border-[#3E2723]/5 mt-2">
                 <div className="flex gap-1.5">
-                  <button 
+                  <button
                     onClick={() => handlePrint(order)}
                     className="flex items-center gap-1 bg-white border border-[#3E2723]/15 text-[#3E2723] hover:border-[#d4af37] px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all"
                   >
                     <span className="material-symbols-outlined text-[13px]">print</span>
                     <span>طباعة</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => handlePrint(order)}
                     className="flex items-center gap-1 bg-white border border-[#3E2723]/15 text-[#3E2723] hover:border-[#d4af37] px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all"
                   >
@@ -468,16 +594,16 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
                     <span>PDF</span>
                   </button>
                 </div>
-                
+
                 {userRole !== 'technician' && (
                   <div className="flex gap-1.5">
-                    <button 
+                    <button
                       onClick={() => handleOpenEdit(order)}
                       className="w-7 h-7 rounded-xl flex items-center justify-center border border-[#3E2723]/10 hover:border-[#d4af37] hover:text-[#d4af37]"
                     >
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(order.id)}
                       className="w-7 h-7 rounded-xl flex items-center justify-center border border-[#3E2723]/10 hover:border-red-500 hover:text-red-500"
                     >
@@ -500,7 +626,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
               <h3 className="font-bold text-sm">{editingOrder ? 'تعديل أمر المعاينة' : 'إنشاء أمر معاينة جديد'}</h3>
               <button onClick={() => setShowModal(false)} className="text-white/60 hover:text-white">✕</button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
@@ -560,10 +686,10 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
                   <select
                     value={formData.technician_name}
                     onChange={e => setFormData(prev => ({ ...prev, technician_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none"
+                    className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
                   >
                     {technicians.map(t => (
-                      <option key={t.id} value={t.name}>{t.name}</option>
+                      <option key={t.id || t.name} value={t.name}>{t.name}</option>
                     ))}
                   </select>
                 </div>
@@ -691,6 +817,126 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Technician Management */}
+      {showTechManagerModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#FFFDFA] border border-white/60 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#3E2723]/10">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#d4af37]">engineering</span>
+                <h3 className="font-bold text-[#3E2723] text-sm">إدارة قائمة الفنيين</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTechManagerModal(false)}
+                className="text-[#3E2723]/40 hover:text-[#3E2723] text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Add New Technician */}
+            <div className="flex gap-2 mb-5">
+              <input
+                type="text"
+                value={newTechName}
+                onChange={e => setNewTechName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddTechnician(); } }}
+                placeholder="اسم الفني الجديد (مثال: م. محمود علي)"
+                className="flex-1 px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
+              />
+              <button
+                type="button"
+                onClick={handleAddTechnician}
+                disabled={techSaving || !newTechName.trim()}
+                className="px-3 py-2 bg-[#d4af37] hover:bg-[#b8922a] text-[#2B1B17] font-bold rounded-xl text-xs flex items-center gap-1 shrink-0 disabled:opacity-50 transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>
+                <span>إضافة</span>
+              </button>
+            </div>
+
+            {/* Current Technicians List */}
+            <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
+              {technicians.length === 0 ? (
+                <p className="text-center text-xs text-[#3E2723]/50 py-4">لا يوجد فنيين في القائمة</p>
+              ) : (
+                technicians.map((t) => (
+                  <div
+                    key={t.id || t.name}
+                    className="flex items-center justify-between p-2.5 bg-[#FAF8F5] border border-[#3E2723]/10 rounded-xl hover:border-[#3E2723]/20 transition-all"
+                  >
+                    {editingTechId === t.id ? (
+                      <div className="flex items-center gap-2 flex-1 ml-2">
+                        <input
+                          type="text"
+                          value={editingTechName}
+                          onChange={e => setEditingTechName(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleEditTechnician(t.id); } }}
+                          className="flex-1 px-2.5 py-1 border border-[#d4af37] rounded-lg text-xs outline-none bg-white font-bold text-[#3E2723]"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleEditTechnician(t.id)}
+                          className="p-1 text-emerald-600 hover:text-emerald-700 font-bold"
+                          title="حفظ التعديل"
+                        >
+                          <span className="material-symbols-outlined text-base">check</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingTechId(null)}
+                          className="p-1 text-gray-400 hover:text-gray-600"
+                          title="إلغاء"
+                        >
+                          <span className="material-symbols-outlined text-base">close</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base text-[#b8922a]">person</span>
+                          <span className="text-xs font-bold text-[#3E2723]">{t.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => { setEditingTechId(t.id); setEditingTechName(t.name); }}
+                            className="p-1.5 text-[#3E2723]/60 hover:text-[#b8922a] rounded-lg hover:bg-[#3E2723]/5 transition-colors"
+                            title="تعديل الاسم"
+                          >
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTechnician(t.id, t.name)}
+                            className="p-1.5 text-red-500/70 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                            title="حذف الفني"
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-[#3E2723]/10 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowTechManagerModal(false)}
+                className="px-5 py-2 bg-[#3E2723] text-white font-bold text-xs rounded-xl hover:bg-[#2B1B17] transition-colors"
+              >
+                تم
+              </button>
+            </div>
           </div>
         </div>
       )}

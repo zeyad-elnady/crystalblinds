@@ -108,6 +108,7 @@ export default async function RootLayout({
     ? [
         { label: "الرئيسية", href: `/${locale}` },
         { label: "من نحن", href: `/${locale}/about` },
+        { label: "الستائر الذكية", href: `/${locale}/smart-curtains` },
         { label: "مشاريعنا", href: `/${locale}/projects` },
         { label: "المنتجات", href: `/${locale}/products` },
         { label: "اتصل بنا",  href: `/${locale}/contact` },
@@ -115,6 +116,7 @@ export default async function RootLayout({
     : [
         { label: "Home", href: `/${locale}` },
         { label: "About Us", href: `/${locale}/about` },
+        { label: "Smart Curtains", href: `/${locale}/smart-curtains` },
         { label: "Projects", href: `/${locale}/projects` },
         { label: "Products", href: `/${locale}/products` },
         { label: "Contact", href: `/${locale}/contact` },

@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { AppointmentType } from '@/lib/supabase';
+import { getBookingSettings, formatTime12h, DEFAULT_BOOKING_SETTINGS, type BookingSettings } from '@/lib/bookingSettings';
 
 interface Props { isAr: boolean; }
-
-const TIMES = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -34,30 +33,49 @@ export default function ReservationSection({ isAr }: Props) {
   const [error, setError] = useState('');
   const [products, setProducts] = useState<{ id: string; labelEn: string; labelAr: string }[]>([]);
 
+  const [bookingSettings, setBookingSettings] = useState<BookingSettings>(DEFAULT_BOOKING_SETTINGS);
+
   // Fetch existing appointments for availability and active products
   useEffect(() => {
-    supabase.from('appointments')
-      .select('appointment_date, appointment_time')
-      .in('status', ['pending', 'confirmed'])
-      .then(({ data }) => {
-        if (data) setBookedSlots(data.map(d => ({ date: d.appointment_date, time: d.appointment_time?.slice(0,5) })));
-      });
+    setBookingSettings(getBookingSettings());
 
-    supabase.from('products')
-      .select('id, label_en, label_ar')
-      .eq('is_active', true)
-      .then(({ data }) => {
-        if (data) {
-          setProducts(data.map(d => ({
-            id: d.id,
-            labelEn: d.label_en || '',
-            labelAr: d.label_ar || ''
-          })));
-        }
-      });
+    const handleSettingsUpdate = () => {
+      setBookingSettings(getBookingSettings());
+    };
+    window.addEventListener('booking_settings_updated', handleSettingsUpdate);
+
+    const fetchData = async () => {
+      const { data: apptData } = await supabase
+        .from('appointments')
+        .select('appointment_date, appointment_time')
+        .in('status', ['pending', 'confirmed']);
+
+      if (apptData) {
+        setBookedSlots(apptData.map(d => ({ date: d.appointment_date, time: d.appointment_time?.slice(0, 5) })));
+      }
+
+      const { data: prodData } = await supabase
+        .from('products')
+        .select('id, label_en, label_ar')
+        .eq('is_active', true);
+
+      if (prodData) {
+        setProducts(prodData.map(d => ({
+          id: d.id,
+          labelEn: d.label_en || '',
+          labelAr: d.label_ar || ''
+        })));
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      window.removeEventListener('booking_settings_updated', handleSettingsUpdate);
+    };
   }, []);
 
-  const daysInMonth  = getDaysInMonth(year, month);
+  const daysInMonth = getDaysInMonth(year, month);
   const firstDay     = getFirstDayOfMonth(year, month);
   const todayStr     = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
@@ -267,25 +285,31 @@ export default function ReservationSection({ isAr }: Props) {
                       const d = i + 1;
                       const dateStr = makeDate(d);
                       const isPast  = dateStr < todayStr;
+                      const dayOfWeek = new Date(dateStr + 'T12:00').getDay();
+                      const isOffDay  = !bookingSettings.availableDays.includes(dayOfWeek);
                       const booked  = countBooked(dateStr);
                       const isSel   = dateStr === selectedDate;
                       const isToday = dateStr === todayStr;
-                      const full    = booked >= TIMES.length;
+                      const activeTimes = bookingSettings.availableTimes.length > 0 ? bookingSettings.availableTimes : DEFAULT_BOOKING_SETTINGS.availableTimes;
+                      const full    = booked >= activeTimes.length;
+                      const isDisabled = isPast || full || isOffDay;
+
                       return (
                         <button 
                           key={d} 
                           type="button"
-                          disabled={isPast || full}
+                          disabled={isDisabled}
                           onClick={() => { setSelectedDate(dateStr); setSelectedTime(''); }}
                           className={`relative aspect-square rounded-xl text-xs sm:text-sm font-semibold flex flex-col items-center justify-center transition-all duration-200
                             ${isSel ? 'bg-[#3E2723] text-white shadow-md scale-105' : ''}
-                            ${!isSel && isToday ? 'border border-[#d4af37] text-[#3E2723] font-bold' : ''}
-                            ${!isSel && !isToday && !isPast && !full ? 'hover:bg-[#d4af37]/10 text-[#3E2723]' : ''}
-                            ${isPast || full ? 'text-[#3E2723]/25 cursor-not-allowed opacity-40' : ''}
+                            ${!isSel && isToday && !isOffDay ? 'border border-[#d4af37] text-[#3E2723] font-bold' : ''}
+                            ${!isSel && !isToday && !isDisabled ? 'hover:bg-[#d4af37]/10 text-[#3E2723]' : ''}
+                            ${isDisabled ? 'text-[#3E2723]/25 cursor-not-allowed opacity-40 bg-gray-50' : ''}
                           `}
+                          title={isOffDay ? (isAr ? 'عطلة - غير متاح للحجز' : 'Closed') : undefined}
                         >
                           <span>{d}</span>
-                          {booked > 0 && !isSel && !isPast && (
+                          {booked > 0 && !isSel && !isPast && !isOffDay && (
                             <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${full ? 'bg-red-400' : 'bg-[#d4af37]'}`} />
                           )}
                         </button>
@@ -317,7 +341,7 @@ export default function ReservationSection({ isAr }: Props) {
                     
                     {selectedDate ? (
                       <div className="grid grid-cols-3 gap-2">
-                        {TIMES.map(t => {
+                        {(bookingSettings.availableTimes.length > 0 ? bookingSettings.availableTimes : DEFAULT_BOOKING_SETTINGS.availableTimes).map(t => {
                           const booked = isTimeBooked(t);
                           const isSel  = t === selectedTime;
                           return (
@@ -332,7 +356,7 @@ export default function ReservationSection({ isAr }: Props) {
                                 ${booked ? 'bg-[#3E2723]/5 text-[#3E2723]/25 border-transparent cursor-not-allowed line-through' : ''}
                               `}
                             >
-                              {t}
+                              {formatTime12h(t, isAr)}
                             </button>
                           );
                         })}
@@ -351,7 +375,7 @@ export default function ReservationSection({ isAr }: Props) {
                       <div className={`bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 text-xs sm:text-sm text-[#3E2723] ${isAr ? 'text-right' : 'text-left'}`}>
                         <p className="font-bold mb-1">{isAr ? 'ملخص الاختيار' : 'Selection Summary'}</p>
                         <p className="text-[#3E2723]/70 font-light">
-                          {isAr ? (apptType === 'inspection' ? 'معاينة' : 'تركيب') : (apptType === 'inspection' ? 'Inspection' : 'Installation')} · {selectedDate} · {selectedTime}
+                          {isAr ? (apptType === 'inspection' ? 'معاينة' : 'تركيب') : (apptType === 'inspection' ? 'Inspection' : 'Installation')} · {selectedDate} · {formatTime12h(selectedTime, isAr)}
                         </p>
                       </div>
                     )}

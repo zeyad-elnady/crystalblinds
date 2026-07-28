@@ -7,7 +7,7 @@ import AboutUs from "./AboutUs";
 import CurtainCalculator from "./CurtainCalculator";
 import Testimonials from "./Testimonials";
 import ClientsMarquee from "./ClientsMarquee";
-import { getProducts } from "@/lib/products";
+import { getProducts, getFeaturedProducts } from "@/lib/products";
 import { getPartners } from "@/lib/partners";
 
 export default async function HomePage({
@@ -18,6 +18,7 @@ export default async function HomePage({
   const { locale } = await params;
   const isAr = locale === "ar";
   const products = await getProducts();
+  const featuredProducts = await getFeaturedProducts();
   const partners = await getPartners();
 
   return (
@@ -29,7 +30,7 @@ export default async function HomePage({
 
       {/* ── Discover Blind Types Section ── */}
       <section className="relative z-20">
-        <BlindTypes isAr={isAr} locale={locale} />
+        <BlindTypes isAr={isAr} locale={locale} products={featuredProducts} />
       </section>
 
       {/* ── Executed Projects Portfolio Section ── */}

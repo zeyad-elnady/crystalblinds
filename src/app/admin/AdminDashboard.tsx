@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, Appointment, AppointmentStatus, AppointmentType, Bill, BillItem, CalcType } from '@/lib/supabase';
 import { WebsiteAsset } from '@/lib/images';
 import { Product } from '@/lib/products';
@@ -16,6 +16,12 @@ import MaintenanceView from './views/MaintenanceView';
 import ExpensesView from './views/ExpensesView';
 import EmployeesView from './views/EmployeesView';
 import ReportsView from './views/ReportsView';
+import MotorProductsView from './views/MotorProductsView';
+import ProductCategoriesView from './views/ProductCategoriesView';
+import TestimonialsView from './views/TestimonialsView';
+import CatalogsView from './views/CatalogsView';
+import { ProductCategory, getCategories } from '@/lib/products';
+import { getBookingSettings, saveBookingSettings, formatTime12h, ALL_POSSIBLE_TIMES, DAYS_NAMES } from '@/lib/bookingSettings';
 
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -51,9 +57,9 @@ type FilterStatus = 'all' | AppointmentStatus;
 type FilterType = 'all' | AppointmentType;
 
 const ROLE_TABS: Record<string, string[]> = {
-  admin: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'expenses', 'employees', 'reports', 'messages', 'website_edit', 'users'],
+  admin: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'product_categories', 'expenses', 'employees', 'reports', 'messages', 'website_edit', 'users', 'motor_products', 'testimonials', 'catalogs'],
   customer_service: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'messages'],
-  sales: ['dashboard', 'clients', 'orders', 'products', 'bills', 'installations', 'maintenance'],
+  sales: ['dashboard', 'clients', 'orders', 'products', 'bills', 'installations', 'maintenance', 'motor_products'],
   accountant: ['dashboard', 'bills', 'expenses', 'reports'],
   technician: ['inspections', 'installations', 'maintenance'],
   employee: ['dashboard', 'appointments', 'messages'],
@@ -88,8 +94,9 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false);
 
   // New states for active tab
-  const [activeTab, setActiveTab] = useState<'appointments' | 'website_edit' | 'products' | 'orders' | 'bills' | 'messages' | 'users' | 'dashboard' | 'clients' | 'inspections' | 'installations' | 'maintenance' | 'expenses' | 'employees' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'website_edit' | 'products' | 'product_categories' | 'orders' | 'bills' | 'messages' | 'users' | 'dashboard' | 'clients' | 'inspections' | 'installations' | 'maintenance' | 'expenses' | 'employees' | 'reports' | 'motor_products' | 'testimonials' | 'catalogs'>('dashboard');
   const [websiteAssets, setWebsiteAssets] = useState<WebsiteAsset[]>([]);
+  const [dbCategories, setDbCategories] = useState<ProductCategory[]>([]);
 
   // Role & checking states
   const [userRole, setUserRole] = useState<'admin' | 'customer_service' | 'sales' | 'accountant' | 'technician' | 'employee' | null>(null);
@@ -105,7 +112,23 @@ export default function AdminDashboard() {
   const [uploadingAsset, setUploadingAsset] = useState<string | null>(null);
 
   // Website Edit sub tab
-  const [websiteEditSubTab, setWebsiteEditSubTab] = useState<'images' | 'partners' | 'delivery_fees'>('images');
+  const [websiteEditSubTab, setWebsiteEditSubTab] = useState<'images' | 'partners' | 'delivery_fees' | 'curtains'>('images');
+  const [selectedCurtainIds, setSelectedCurtainIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const curtainsAsset = websiteAssets.find(a => a.key === 'homepage_curtains');
+    if (curtainsAsset && curtainsAsset.url) {
+      setSelectedCurtainIds(curtainsAsset.url.split(',').filter(Boolean));
+    } else {
+      setSelectedCurtainIds([
+        'b301c238-1234-4567-8901-abcdef123404',
+        'b301c238-1234-4567-8901-abcdef123407',
+        'b301c238-1234-4567-8901-abcdef123401',
+        'b301c238-1234-4567-8901-abcdef123402',
+        'b301c238-1234-4567-8901-abcdef123406'
+      ]);
+    }
+  }, [websiteAssets]);
 
   // Delivery Fees state
   const [deliveryFees, setDeliveryFees] = useState<Governorate[]>([]);
@@ -160,6 +183,16 @@ export default function AdminDashboard() {
   // Settings state
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [bookingDays, setBookingDays] = useState<number[]>([0, 1, 2, 3, 4, 6]);
+  const [bookingTimes, setBookingTimes] = useState<string[]>(['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']);
+
+  useEffect(() => {
+    if (showSettings) {
+      const curr = getBookingSettings();
+      setBookingDays(curr.availableDays);
+      setBookingTimes(curr.availableTimes);
+    }
+  }, [showSettings]);
 
   const hasAccess = (tab: string) => {
     return ROLE_TABS[userRole || 'employee']?.includes(tab) || false;
@@ -505,8 +538,66 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleImportOrder = (orderId: string) => {
-    if (!orderId) {
+  // Group orders strictly by Order Number / Order Code
+  const groupedBillOrders = useMemo(() => {
+    const map = new Map<string, {
+      groupId: string;
+      client_name: string;
+      client_phone: string;
+      client_address: string;
+      items: BillItem[];
+      ordersList: any[];
+      total_price: number;
+      total_pieces: number;
+      order_number: string;
+    }>();
+
+    orders.forEach(o => {
+      const match = o.client_address?.match(/كود الطلب:\s*(C-\d+)/) || o.client_address?.match(/Order Code:\s*(C-\d+)/);
+      const codeKey = match ? match[1] : (o.order_number || `${(o.client_name || '').trim()}_${(o.client_phone || '').trim()}_${new Date(o.created_at).toISOString().substring(0, 16)}`);
+
+      const itemQty = Number(o.pieces) || 1;
+      const itemTotal = Number(o.total_price) || 0;
+      const itemPrice = itemQty > 0 ? itemTotal / itemQty : itemTotal;
+
+      const importedItem: BillItem = {
+        name: `${o.products?.label_ar || 'ستارة'} (${o.width || 0} × ${o.height || 0} سم)`,
+        calcType: 'unit',
+        width: Number(o.width || 0) / 100,
+        height: Number(o.height || 0) / 100,
+        quantity: itemQty,
+        price: itemPrice,
+        total: itemTotal,
+      };
+
+      const displayOrderNum = match ? match[1] : (o.order_number || String(o.id).slice(0, 8).toUpperCase());
+
+      if (!map.has(codeKey)) {
+        map.set(codeKey, {
+          groupId: `group_${codeKey}`,
+          client_name: o.client_name || '',
+          client_phone: o.client_phone || '',
+          client_address: o.client_address || '',
+          order_number: displayOrderNum,
+          items: [importedItem],
+          ordersList: [o],
+          total_price: itemTotal,
+          total_pieces: itemQty,
+        });
+      } else {
+        const existing = map.get(codeKey)!;
+        existing.items.push(importedItem);
+        existing.ordersList.push(o);
+        existing.total_price += itemTotal;
+        existing.total_pieces += itemQty;
+      }
+    });
+
+    return Array.from(map.values());
+  }, [orders]);
+
+  const handleImportOrder = (selectedValue: string) => {
+    if (!selectedValue) {
       setSelectedBill(prev => prev ? {
         ...prev,
         client_name: '',
@@ -521,43 +612,60 @@ export default function AdminDashboard() {
       } : null);
       return;
     }
-    const order = orders.find(o => String(o.id) === orderId);
-    if (!order) return;
 
-    const importedItem: BillItem = {
-      name: `${order.products?.label_ar || 'ستارة'} (${order.width} × ${order.height} سم)`,
-      calcType: 'unit',
-      width: Number(order.width) / 100,
-      height: Number(order.height) / 100,
-      quantity: Number(order.pieces) || 1,
-      price: Number(order.total_price) / (Number(order.pieces) || 1),
-      total: Number(order.total_price)
-    };
+    const group = groupedBillOrders.find(g => g.groupId === selectedValue);
+    let client_name = '';
+    let client_phone = '';
+    let client_address = '';
+    let order_number = '';
+    let importedItems: BillItem[] = [];
+    let totalItemsPrice = 0;
+
+    if (group) {
+      client_name = group.client_name;
+      client_phone = group.client_phone;
+      client_address = group.client_address;
+      order_number = group.order_number;
+      importedItems = group.items;
+      totalItemsPrice = group.total_price;
+    } else {
+      const singleOrder = orders.find(o => String(o.id) === selectedValue);
+      if (!singleOrder) return;
+      client_name = singleOrder.client_name || '';
+      client_phone = singleOrder.client_phone || '';
+      client_address = singleOrder.client_address || '';
+      order_number = String(singleOrder.id).slice(0, 8).toUpperCase();
+      importedItems = [{
+        name: `${singleOrder.products?.label_ar || 'ستارة'} (${singleOrder.width} × ${singleOrder.height} سم)`,
+        calcType: 'unit',
+        width: Number(singleOrder.width) / 100,
+        height: Number(singleOrder.height) / 100,
+        quantity: Number(singleOrder.pieces) || 1,
+        price: Number(singleOrder.total_price) / (Number(singleOrder.pieces) || 1),
+        total: Number(singleOrder.total_price)
+      }];
+      totalItemsPrice = Number(singleOrder.total_price);
+    }
 
     setSelectedBill(prev => {
       if (!prev) return null;
-      const updated = {
-        ...prev,
-        client_name: order.client_name || '',
-        client_phone: order.client_phone || '',
-        client_address: order.client_address || '',
-        order_number: String(order.id).slice(0, 8).toUpperCase(),
-        items: [importedItem]
-      };
-
-      const totalItemsPrice = Number(order.total_price);
-      const discount = Number(updated.discount) || 0;
-      const installation = Number(updated.installation_cost) || 0;
-      const transport = Number(updated.transport_cost) || 0;
-      const deposit = Number(updated.deposit) || 0;
+      const discount = Number(prev.discount) || 0;
+      const installation = Number(prev.installation_cost) || 0;
+      const transport = Number(prev.transport_cost) || 0;
+      const deposit = Number(prev.deposit) || 0;
 
       const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
       const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
 
       return {
-        ...updated,
+        ...prev,
+        client_name,
+        client_phone,
+        client_address,
+        order_number,
+        items: importedItems,
         total_items_price: totalItemsPrice,
-        deposit: deposit,
+        deposit,
         remaining_amount: remainingAmount,
         final_total: finalTotal
       };
@@ -725,12 +833,14 @@ export default function AdminDashboard() {
       fetchProducts();
       fetchMessages();
       fetchExpenses();
+      getCategories().then(setDbCategories);
     }
     if (activeTab === 'appointments') fetchAppointments();
     if (activeTab === 'website_edit') {
       fetchWebsiteAssets();
       fetchPartners();
       fetchDeliveryFees();
+      fetchProducts();
     }
     if (activeTab === 'products') fetchProducts();
     if (activeTab === 'orders') fetchOrders();
@@ -763,6 +873,43 @@ export default function AdminDashboard() {
     return true;
   });
 
+  const groupedOrders = useMemo(() => {
+    const groups: { [key: string]: any } = {};
+    orders.forEach(o => {
+      if (ordersSearch) {
+        const q = ordersSearch.toLowerCase();
+        const nameMatch = o.client_name?.toLowerCase().includes(q);
+        const phoneMatch = o.client_phone?.includes(q);
+        const prodArMatch = o.products?.label_ar?.toLowerCase().includes(q);
+        const prodEnMatch = o.products?.label_en?.toLowerCase().includes(q);
+        if (!nameMatch && !phoneMatch && !prodArMatch && !prodEnMatch) return;
+      }
+      if (ordersStatusFilter !== 'all' && o.status !== ordersStatusFilter) return;
+      if (ordersDateFilter) {
+        const orderDateStr = new Date(o.created_at).toISOString().split('T')[0];
+        if (orderDateStr !== ordersDateFilter) return;
+      }
+
+      const match = o.client_address?.match(/كود الطلب:\s*(C-\d+)/) || o.client_address?.match(/Order Code:\s*(C-\d+)/);
+      const groupId = match ? match[1] : `${o.client_phone}-${new Date(o.created_at).toISOString().substring(0, 16)}`;
+
+      if (!groups[groupId]) {
+        groups[groupId] = {
+          ...o,
+          id: match ? match[1] : String(o.id),
+          actual_ids: [o.id],
+          total_price: Number(o.total_price),
+          items: [o]
+        };
+      } else {
+        groups[groupId].actual_ids.push(o.id);
+        groups[groupId].total_price += Number(o.total_price);
+        groups[groupId].items.push(o);
+      }
+    });
+    return Object.values(groups).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [orders, ordersSearch, ordersStatusFilter, ordersDateFilter]);
+
   const counts = {
     all: appointments.length,
     pending: appointments.filter(a => a.status === 'pending').length,
@@ -783,22 +930,26 @@ export default function AdminDashboard() {
     setSaving(false);
   };
 
-  const updateOrderStatus = async (id: string, status: string) => {
+  const updateOrderStatus = async (id: string | string[], status: string) => {
     setSaving(true);
-    const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+    const idsArray = Array.isArray(id) ? id : [id];
+    const { error } = await supabase.from('orders').update({ status }).in('id', idsArray);
     if (!error) {
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-      if (selectedOrder?.id === id) setSelectedOrder((prev: any) => prev ? { ...prev, status } : null);
+      setOrders(prev => prev.map(o => idsArray.includes(o.id) ? { ...o, status } : o));
+      if (selectedOrder && (selectedOrder.actual_ids ? selectedOrder.actual_ids.includes(selectedOrder.id) : idsArray.includes(selectedOrder.id))) {
+        setSelectedOrder((prev: any) => prev ? { ...prev, status } : null);
+      }
     }
     setSaving(false);
   };
 
-  const updateOrderPaymentStatus = async (id: string, paymentStatus: string) => {
+  const updateOrderPaymentStatus = async (id: string | string[], paymentStatus: string) => {
     setSaving(true);
-    const { error } = await supabase.from('orders').update({ payment_status: paymentStatus }).eq('id', id);
+    const idsArray = Array.isArray(id) ? id : [id];
+    const { error } = await supabase.from('orders').update({ payment_status: paymentStatus }).in('id', idsArray);
     if (!error) {
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, payment_status: paymentStatus } : o));
-      if (selectedOrder?.id === id) {
+      setOrders(prev => prev.map(o => idsArray.includes(o.id) ? { ...o, payment_status: paymentStatus } : o));
+      if (selectedOrder && (selectedOrder.actual_ids ? selectedOrder.actual_ids.includes(selectedOrder.id) : idsArray.includes(selectedOrder.id))) {
         setSelectedOrder((prev: any) => prev ? { ...prev, payment_status: paymentStatus } : null);
       }
     } else {
@@ -1004,6 +1155,26 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSaveHomepageCurtains = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('website_assets').upsert({
+        key: 'homepage_curtains',
+        url: selectedCurtainIds.join(','),
+        description: 'معرفات الستائر المعروضة في الصفحة الرئيسية'
+      }, { onConflict: 'key' });
+
+      if (error) throw error;
+
+      alert('تم حفظ الستائر المعروضة بالصفحة الرئيسية بنجاح');
+      fetchWebsiteAssets();
+    } catch (err: any) {
+      alert('حدث خطأ أثناء حفظ الستائر: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const markMessageAsRead = async (id: string, isRead: boolean) => {
     const { error } = await supabase
       .from('contact_messages')
@@ -1119,11 +1290,15 @@ export default function AdminDashboard() {
     { tab: 'orders', label: 'الطلبات', icon: 'shopping_cart', access: 'orders' },
     { tab: 'bills', label: 'الفواتير', icon: 'description', access: 'bills' },
     { tab: 'products', label: 'المنتجات', icon: 'inventory', access: 'products' },
+    { tab: 'product_categories', label: 'أقسام المنتجات', icon: 'category', access: 'product_categories' },
     { tab: 'expenses', label: 'المصروفات', icon: 'payments', access: 'expenses' },
     { tab: 'employees', label: 'الموظفون', icon: 'badge', access: 'employees' },
     { tab: 'reports', label: 'التقارير', icon: 'assessment', access: 'reports' },
     { tab: 'messages', label: 'رسائل التواصل', icon: 'mail', access: 'messages', showUnread: true },
     { tab: 'website_edit', label: 'تعديل الموقع', icon: 'edit_document', access: 'website_edit' },
+    { tab: 'motor_products', label: 'منتجات المحركات', icon: 'precision_manufacturing', access: 'motor_products' },
+    { tab: 'testimonials', label: 'آراء العملاء', icon: 'rate_review', access: 'testimonials' },
+    { tab: 'catalogs', label: 'الكتالوجات', icon: 'menu_book', access: 'catalogs' },
     { tab: 'users', label: 'إدارة المستخدمين', icon: 'group', access: 'users' },
   ];
 
@@ -1179,8 +1354,8 @@ export default function AdminDashboard() {
                 <div
                   key={link.tab}
                   className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${isActive
-                      ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm'
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                    ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
                     }`}
                   onClick={() => { setActiveTab(link.tab as any); setMobileMenuOpen(false); }}
                   title={!showFullMenu ? link.label : undefined}
@@ -1273,6 +1448,10 @@ export default function AdminDashboard() {
               setShowSettings={setShowSettings}
               handleSignOut={handleSignOut}
             />
+          ) : activeTab === 'testimonials' ? (
+            <TestimonialsView />
+          ) : activeTab === 'catalogs' ? (
+            <CatalogsView />
           ) : activeTab === 'appointments' ? (
             <>
               {/* Header */}
@@ -1332,6 +1511,13 @@ export default function AdminDashboard() {
                   )}
                 </div>
                 <button className={styles.refreshBtn} onClick={fetchAppointments}>تحديث</button>
+                <button
+                  className={styles.refreshBtn}
+                  style={{ background: '#3E2723', borderColor: '#3E2723', color: '#fff' }}
+                  onClick={() => setShowSettings(true)}
+                >
+                  ⚙️ الأيام والساعات المتاحة
+                </button>
               </div>
 
               {/* Table */}
@@ -1408,6 +1594,13 @@ export default function AdminDashboard() {
                 >
                   إدارة مصاريف الشحن
                 </button>
+                <button
+                  type="button"
+                  className={`${styles.subTab} ${websiteEditSubTab === 'curtains' ? styles.subTabActive : ''}`}
+                  onClick={() => setWebsiteEditSubTab('curtains')}
+                >
+                  الستائر المعروضة بالرئيسية
+                </button>
               </div>
 
               {websiteEditSubTab === 'images' ? (
@@ -1415,7 +1608,7 @@ export default function AdminDashboard() {
                   <div className={styles.loadingBox}><span className={styles.spinner} />جاري تحميل الصور...</div>
                 ) : (
                   <div className={styles.assetsGrid}>
-                    {websiteAssets.map(asset => (
+                    {websiteAssets.filter(asset => asset.key !== 'homepage_curtains').map(asset => (
                       <div key={asset.key} className={styles.assetCard}>
                         <div className={styles.assetImageWrapper}>
                           <img src={asset.url} alt={asset.description || asset.key} className={styles.assetImage} />
@@ -1512,7 +1705,7 @@ export default function AdminDashboard() {
                     </div>
                   </>
                 )
-              ) : (
+              ) : websiteEditSubTab === 'delivery_fees' ? (
                 loadingFees ? (
                   <div className={styles.loadingBox}><span className={styles.spinner} />جاري تحميل مصاريف الشحن...</div>
                 ) : (
@@ -1566,7 +1759,82 @@ export default function AdminDashboard() {
                     </div>
                   </>
                 )
-              )}
+              ) : websiteEditSubTab === 'curtains' ? (
+                <div className={styles.tableWrapper} style={{ marginTop: '1rem' }}>
+                  <div className={styles.filtersRow} style={{ justifyContent: 'space-between', width: '100%', marginBottom: '1rem', backgroundColor: '#fdfbf7', padding: '15px', borderRadius: '8px', border: '1px solid #e5e5e5' }}>
+                    <strong style={{ color: '#3E2723' }}>الستائر المعروضة بالرئيسية</strong>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>* سيتم عرض الستائر في الصفحة الرئيسية بنفس ترتيب تحديدها أدناه.</span>
+                  </div>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>تحديد</th>
+                        <th>الترتيب</th>
+                        <th>صورة</th>
+                        <th>المنتج (عربي)</th>
+                        <th>المنتج (إنجليزي)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {products.map(product => {
+                        const isSelected = selectedCurtainIds.includes(product.id);
+                        const orderNum = selectedCurtainIds.indexOf(product.id) + 1;
+                        return (
+                          <tr
+                            key={product.id}
+                            className={styles.tableRow}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedCurtainIds(prev => prev.filter(id => id !== product.id));
+                              } else {
+                                setSelectedCurtainIds(prev => [...prev, product.id]);
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => { }}
+                                style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#d4af37' }}
+                              />
+                            </td>
+                            <td>
+                              {isSelected ? (
+                                <span style={{ background: '#d4af37', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                  {orderNum}
+                                </span>
+                              ) : (
+                                <span style={{ color: '#ccc' }}>-</span>
+                              )}
+                            </td>
+                            <td>
+                              <img
+                                src={product.images[0] || '/placeholder.jpg'}
+                                alt={product.labelAr}
+                                style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: '8px' }}
+                              />
+                            </td>
+                            <td style={{ fontWeight: 'bold', color: '#3E2723' }}>{product.labelAr}</td>
+                            <td dir="ltr" style={{ textAlign: 'right' }}>{product.labelEn}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <div style={{ padding: '1rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #f0f2f5' }}>
+                    <button
+                      type="button"
+                      className={styles.addBtn}
+                      onClick={handleSaveHomepageCurtains}
+                      disabled={saving}
+                    >
+                      {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
           ) : activeTab === 'products' ? (
@@ -1688,29 +1956,12 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.filter(o => {
-                        if (ordersSearch) {
-                          const q = ordersSearch.toLowerCase();
-                          const nameMatch = o.client_name?.toLowerCase().includes(q);
-                          const phoneMatch = o.client_phone?.includes(q);
-                          const prodArMatch = o.products?.label_ar?.toLowerCase().includes(q);
-                          const prodEnMatch = o.products?.label_en?.toLowerCase().includes(q);
-                          if (!nameMatch && !phoneMatch && !prodArMatch && !prodEnMatch) return false;
-                        }
-                        if (ordersStatusFilter !== 'all') {
-                          if (o.status !== ordersStatusFilter) return false;
-                        }
-                        if (ordersDateFilter) {
-                          const orderDateStr = new Date(o.created_at).toISOString().split('T')[0];
-                          if (orderDateStr !== ordersDateFilter) return false;
-                        }
-                        return true;
-                      }).map(o => (
+                      {groupedOrders.map(o => (
                         <tr key={o.id} className={styles.tableRow} onClick={() => { setSelectedOrder(o); setShowOrderModal(true); }}>
-                          <td dir="ltr" style={{ fontSize: '12px' }}>{o.id.split('-')[0]}</td>
+                          <td dir="ltr" style={{ fontSize: '12px' }}>{String(o.id).split('-')[0]}</td>
                           <td>{o.client_name}<br /><span style={{ fontSize: '12px', color: '#666' }} dir="ltr">{o.client_phone}</span></td>
-                          <td>{o.products?.label_ar || 'منتج محذوف'}</td>
-                          <td dir="ltr">{o.width}x{o.height} cm</td>
+                          <td>{o.items && o.items.length > 1 ? `${o.items.length} منتجات` : o.products?.label_ar || 'منتج محذوف'}</td>
+                          <td dir="ltr">{o.items && o.items.length > 1 ? 'متعدد' : `${o.width}x${o.height} cm`}</td>
                           <td>{o.total_price} ج.م</td>
                           <td>
                             <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
@@ -1722,9 +1973,9 @@ export default function AdminDashboard() {
                           </td>
                           <td>
                             <span className={`${styles.badge} ${o.status === 'delivered' ? styles.statusCompleted :
-                                o.status === 'shipped' ? styles.statusConfirmed :
-                                  o.status === 'cancelled' ? styles.statusCancelled :
-                                    styles.statusPending
+                              o.status === 'shipped' ? styles.statusConfirmed :
+                                o.status === 'cancelled' ? styles.statusCancelled :
+                                  styles.statusPending
                               }`}>
                               {o.status === 'pending' ? 'قيد الانتظار' : o.status === 'shipped' ? 'جاري التوصيل' : o.status === 'delivered' ? 'تم التوصيل' : 'ملغي'}
                             </span>
@@ -1734,24 +1985,7 @@ export default function AdminDashboard() {
                           </td>
                         </tr>
                       ))}
-                      {orders.filter(o => {
-                        if (ordersSearch) {
-                          const q = ordersSearch.toLowerCase();
-                          const nameMatch = o.client_name?.toLowerCase().includes(q);
-                          const phoneMatch = o.client_phone?.includes(q);
-                          const prodArMatch = o.products?.label_ar?.toLowerCase().includes(q);
-                          const prodEnMatch = o.products?.label_en?.toLowerCase().includes(q);
-                          if (!nameMatch && !phoneMatch && !prodArMatch && !prodEnMatch) return false;
-                        }
-                        if (ordersStatusFilter !== 'all') {
-                          if (o.status !== ordersStatusFilter) return false;
-                        }
-                        if (ordersDateFilter) {
-                          const orderDateStr = new Date(o.created_at).toISOString().split('T')[0];
-                          if (orderDateStr !== ordersDateFilter) return false;
-                        }
-                        return true;
-                      }).length === 0 && (
+                      {groupedOrders.length === 0 && (
                         <tr><td colSpan={8} style={{ textAlign: 'center', padding: '20px' }}>لا توجد طلبات تطابق معايير البحث.</td></tr>
                       )}
                     </tbody>
@@ -1978,6 +2212,10 @@ export default function AdminDashboard() {
             <EmployeesView />
           ) : activeTab === 'reports' ? (
             <ReportsView />
+          ) : activeTab === 'product_categories' ? (
+            <ProductCategoriesView />
+          ) : activeTab === 'motor_products' ? (
+            <MotorProductsView userRole={userRole} />
           ) : null}
         </main>
 
@@ -2003,7 +2241,17 @@ export default function AdminDashboard() {
 
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>القسم</label>
-                    <input className={styles.formInput} dir="ltr" value={selectedProduct.category || ''} onChange={e => setSelectedProduct({ ...selectedProduct, category: e.target.value })} placeholder="مثال: Roller, Smart, Classic" />
+                    <select
+                      className={styles.formInput}
+                      dir="ltr"
+                      value={selectedProduct.category || ''}
+                      onChange={e => setSelectedProduct({ ...selectedProduct, category: e.target.value })}
+                    >
+                      <option value="">اختر القسم...</option>
+                      {dbCategories.map(cat => (
+                        <option key={cat.id} value={cat.slug}>{cat.slug} / {cat.nameAr}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>السعر</label>
@@ -2153,13 +2401,26 @@ export default function AdminDashboard() {
               <div className={styles.modalBody}>
                 <div className={styles.detailGrid}>
                   <div className={styles.detailItem}><span className={styles.detailLabel}>رقم الطلب</span><span dir="ltr">{selectedOrder.id}</span></div>
-                  <div className={styles.detailItem}><span className={styles.detailLabel}>المنتج</span><span>{selectedOrder.products?.label_ar || 'غير متاح'}</span></div>
                   <div className={styles.detailItem}><span className={styles.detailLabel}>اسم العميل</span><span>{selectedOrder.client_name}</span></div>
                   <div className={styles.detailItem}><span className={styles.detailLabel}>الهاتف</span><span dir="ltr">{selectedOrder.client_phone}</span></div>
                   <div className={`${styles.detailItem} ${styles.detailFull}`}><span className={styles.detailLabel}>العنوان</span><span>{selectedOrder.client_address}</span></div>
-                  <div className={styles.detailItem}><span className={styles.detailLabel}>المقاس (عرض × طول)</span><span dir="ltr">{selectedOrder.width} × {selectedOrder.height} سم</span></div>
-                  <div className={styles.detailItem}><span className={styles.detailLabel}>عدد القطع</span><span>{selectedOrder.pieces}</span></div>
-                  <div className={styles.detailItem}><span className={styles.detailLabel}>لون / نوع</span><span>كود اللون: {selectedOrder.color_id} | كود النوع: {selectedOrder.type_id}</span></div>
+
+                  <div className={`${styles.detailItem} ${styles.detailFull}`}>
+                    <span className={styles.detailLabel}>المنتجات</span>
+                    <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {(selectedOrder.items || [selectedOrder]).map((item: any, idx: number) => (
+                        <div key={idx} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{item.products?.label_ar || 'غير متاح'}</div>
+                          <div style={{ display: 'flex', gap: '15px', fontSize: '0.9rem', color: '#4b5563' }}>
+                            <span dir="ltr">{item.width} × {item.height} سم</span>
+                            <span>القطع: {item.pieces}</span>
+                            <span>السعر: {item.total_price} ج.م</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className={styles.detailItem}><span className={styles.detailLabel}>الإجمالي</span><span style={{ color: '#b45309', fontWeight: 'bold' }}>{selectedOrder.total_price} ج.م</span></div>
                   <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>طريقة الدفع</span>
@@ -2172,7 +2433,7 @@ export default function AdminDashboard() {
                   <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>الحالة</span>
                     <select className={styles.modalSelect} value={selectedOrder.status}
-                      onChange={e => updateOrderStatus(selectedOrder.id, e.target.value)} disabled={saving}>
+                      onChange={e => updateOrderStatus(selectedOrder.actual_ids || selectedOrder.id, e.target.value)} disabled={saving}>
                       <option value="pending">قيد الانتظار</option>
                       <option value="shipped">جاري التوصيل</option>
                       <option value="delivered">تم التوصيل</option>
@@ -2201,8 +2462,8 @@ export default function AdminDashboard() {
                       <div className={styles.detailItem}>
                         <span className={styles.detailLabel}>حالة الدفع</span>
                         <span className={`${styles.badge} ${selectedOrder.payment_status === 'success' ? styles.statusCompleted :
-                            selectedOrder.payment_status === 'failed' ? styles.statusCancelled :
-                              styles.statusPending
+                          selectedOrder.payment_status === 'failed' ? styles.statusCancelled :
+                            styles.statusPending
                           }`}>
                           {selectedOrder.payment_status === 'success' ? 'مقبول (تم تأكيد الدفع)' :
                             selectedOrder.payment_status === 'failed' ? 'مرفوض' :
@@ -2474,10 +2735,10 @@ export default function AdminDashboard() {
                       defaultValue=""
                       style={{ border: '1.5px solid #d4af37', background: '#fffbeb' }}
                     >
-                      <option value="">-- اختر طلب العميل --</option>
-                      {orders.map(o => (
-                        <option key={o.id} value={o.id}>
-                          {o.client_name} - {o.products?.label_ar || 'منتج'} (عرض {o.width} × طول {o.height} سم) - الإجمالي: {o.total_price} ج.م
+                      <option value="">-- اختر الطلب برقم الطلب لاستيراد الفاتورة --</option>
+                      {groupedBillOrders.map(g => (
+                        <option key={g.groupId} value={g.groupId}>
+                          طلب رقم: {g.order_number} - العميل: {g.client_name} ({g.items.length} قطع) - الإجمالي: {g.total_price.toLocaleString('ar-EG')} ج.م
                         </option>
                       ))}
                     </select>
@@ -2896,94 +3157,239 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Settings Modal (Available Days & Working Hours) ── */}
+        {showSettings && (
+          <div className={styles.overlay} onClick={() => setShowSettings(false)}>
+            <div className={styles.modal} style={{ maxWidth: '720px' }} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>إعدادات المواعيد: الأيام والساعات المتاحة للحجز</h2>
+                <button className={styles.closeBtn} onClick={() => setShowSettings(false)}>✕</button>
+              </div>
+              <div className={styles.modalBody}>
+                {/* Available Days Section */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#3E2723', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    📅 الأيام المتاحة للحجز (أيام العمل)
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '12px' }}>
+                    اختر الأيام التي يتاح للعملاء حجز معاينة أو تركيب فيها عبر الموقع:
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                    {DAYS_NAMES.map(d => {
+                      const isChecked = bookingDays.includes(d.id);
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => {
+                            if (isChecked) {
+                              setBookingDays(bookingDays.filter(day => day !== d.id));
+                            } else {
+                              setBookingDays([...bookingDays, d.id].sort());
+                            }
+                          }}
+                          style={{
+                            padding: '10px',
+                            borderRadius: '10px',
+                            border: isChecked ? '2px solid #3E2723' : '1px solid #e5e7eb',
+                            background: isChecked ? '#3E2723' : '#fff',
+                            color: isChecked ? '#fff' : '#374151',
+                            fontWeight: 'bold',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {d.ar} {isChecked ? '✓' : ''}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Available Hours Section */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#3E2723', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      ⏰ الساعات المتاحة (نظام 12 ساعة AM / PM)
+                    </h3>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setBookingTimes([...ALL_POSSIBLE_TIMES])}
+                        style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '6px', border: '1px solid #3E2723', background: '#faf7f3', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        تحديد الكل
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBookingTimes([])}
+                        style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '6px', border: '1px solid #ef4444', color: '#ef4444', background: '#fff', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        إلغاء الكل
+                      </button>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '12px' }}>
+                    انقر على الساعات المطلوبة لتفعيلها أو إيقافها:
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                    {ALL_POSSIBLE_TIMES.map(t => {
+                      const isChecked = bookingTimes.includes(t);
+                      const label12h = formatTime12h(t, true);
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => {
+                            if (isChecked) {
+                              setBookingTimes(bookingTimes.filter(time => time !== t));
+                            } else {
+                              setBookingTimes([...bookingTimes, t].sort());
+                            }
+                          }}
+                          style={{
+                            padding: '10px 4px',
+                            borderRadius: '10px',
+                            border: isChecked ? '2px solid #d4af37' : '1px solid #e5e7eb',
+                            background: isChecked ? '#3E2723' : '#f9fafb',
+                            color: isChecked ? '#fff' : '#6b7280',
+                            fontWeight: 'bold',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <div>{label12h}</div>
+                          <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>({t})</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className={styles.modalFooter}>
+                <button
+                  className={styles.saveBtn}
+                  onClick={() => {
+                    saveBookingSettings({ availableDays: bookingDays, availableTimes: bookingTimes });
+                    alert('تم حفظ إعدادات الأيام والساعات المتاحة بنجاح!');
+                    setShowSettings(false);
+                  }}
+                >
+                  حفظ التغييرات
+                </button>
+                <button className={styles.cancelBtn} onClick={() => setShowSettings(false)}>إلغاء</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
 
 
-      {/* ── Print Area (Outside .shell for print formatting) ── */}
+      {/* ── Fancy Print Invoice Area (Outside .shell for print formatting) ── */}
       {selectedBillForPrint && (
         <div className={styles.printInvoiceArea} dir="rtl">
-          {/* Top Header Section */}
+          {/* Top Header Section with Luxury Styling */}
           <div className={styles.invoiceHeaderNew}>
-            {/* Logo on top left */}
+            {/* Right: Company details from Contact Page */}
+            <div className={styles.companyInfoBlock} dir="rtl">
+              <h2 className={styles.companyNameAr}>كريستال بليندز مصر للستائر</h2>
+              <p className={styles.companySubNameEn}>CRYSTAL BLINDS EGYPT</p>
+              <div className={styles.contactDetailsList}>
+                <p className={styles.companyAddressEn}>
+                  <b>العنوان:</b> شبرآ الخيمة، 74 شارع 15 مايو، أمام مجمع الصوالحة الإسلامي
+                </p>
+                <p className={styles.companyPhoneEn} dir="ltr">
+                  <b>Tel:</b> 01100080609 &nbsp;|&nbsp; 01020909498 &nbsp;|&nbsp; <b>WhatsApp:</b> +20 1100080609
+                </p>
+                <p className={styles.companyEmailEn} dir="ltr">
+                  <b>Email:</b> sales@crystalblinds.com &nbsp;|&nbsp; <b>Web:</b> www.crystalblinds-eg.com
+                </p>
+              </div>
+            </div>
+
+            {/* Left: Brand Logo */}
             <div className={styles.logoBlock}>
               <div className={styles.logoWrapper}>
                 <img src="/logo.png" className={styles.brandLogoNew} alt="Crystal Blinds Logo" />
               </div>
             </div>
-
-            {/* Company details on top right */}
-            <div className={styles.companyInfoBlock} dir="ltr">
-              <h2 className={styles.companyNameEn}>Crystal Blinds</h2>
-              <p className={styles.companyAddressEn}>2 shebeen st. salah el dien square</p>
-              <p className={styles.companyAddressEn}>heliopolis, Cairo</p>
-              <p className={styles.companyAddressEn}>Egypt</p>
-              <p className={styles.companyPhoneEn}>Tel: 01100080609 / 01020909498</p>
-            </div>
           </div>
 
-          {/* Decorative Wave/Line */}
+          {/* Decorative Gold & Brown Divider */}
           <div className={styles.headerDecorativeWave} />
 
           {/* Title Block */}
           <div className={styles.titleContainer}>
-            <div className={styles.titleLeftAr}>معرض كريستال للستائر</div>
+            <div className={styles.titleLeftAr}>
+              <span>فاتورة أمر توريد وتركيب ستائر</span>
+            </div>
             <div className={styles.titleRightEn}>
-              <span className={styles.titleProforma}>PROFORMA Invoice</span>{' '}
-              <span className={styles.titleInvoiceNum}>{selectedBillForPrint.invoice_number}</span>
+              <span className={styles.titleProforma}>PROFORMA INVOICE</span>{' '}
+              <span className={styles.titleInvoiceNum}>#{selectedBillForPrint.invoice_number}</span>
             </div>
           </div>
 
           {/* Metadata Pill Box */}
           <div className={styles.metaPillBox}>
             <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>Invoice Date</span>
+              <span className={styles.metaLabel}>تاريخ الفاتورة</span>
               <span className={styles.metaVal}>
-                {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('en-GB')}
+                {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('ar-EG')}
               </span>
             </div>
             <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>Due Date</span>
+              <span className={styles.metaLabel}>تاريخ التسليم المتوقع</span>
               <span className={styles.metaVal}>
                 {selectedBillForPrint.delivery_date
-                  ? new Date(selectedBillForPrint.delivery_date).toLocaleDateString('en-GB')
-                  : new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('en-GB')}
+                  ? new Date(selectedBillForPrint.delivery_date).toLocaleDateString('ar-EG')
+                  : new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('ar-EG')}
               </span>
             </div>
             <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>Source</span>
+              <span className={styles.metaLabel}>رقم الموعد / الطلب</span>
               <span className={styles.metaVal}>{selectedBillForPrint.order_number || 'S03978'}</span>
             </div>
             <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>Total Count</span>
+              <span className={styles.metaLabel}>عدد الستائر</span>
               <span className={styles.metaVal}>
-                {selectedBillForPrint.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
+                {selectedBillForPrint.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)} ستائر
               </span>
             </div>
             <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>Total Quantity</span>
+              <span className={styles.metaLabel}>إجمالي المساحة (م²)</span>
               <span className={styles.metaVal}>
                 {selectedBillForPrint.items.reduce((sum, item) => {
                   const itemQty = item.calcType === 'unit'
                     ? Number(item.quantity)
                     : (Number(item.width || 0) * Number(item.height || 0) * Number(item.quantity || 1));
                   return sum + itemQty;
-                }, 0).toFixed(2)}
+                }, 0).toFixed(2)} م²
               </span>
             </div>
           </div>
 
           {/* Client details Card */}
           <div className={styles.clientDetailsCard}>
-            <div className={styles.clientDetailsHeader}>بيانات العميل المستلم</div>
+            <div className={styles.clientDetailsHeader}>
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>person</span>
+              بيانات العميل المستلم
+            </div>
             <div className={styles.clientDetailsBody}>
-              <div><b>الاسم:</b> {selectedBillForPrint.client_name}</div>
+              <div><b>اسم العميل:</b> {selectedBillForPrint.client_name}</div>
               <div><b>رقم الهاتف:</b> {selectedBillForPrint.client_phone || '—'}</div>
-              <div><b>العنوان بالتفصيل:</b> {selectedBillForPrint.client_address ||
-                orders.find((o: any) => o.client_name === selectedBillForPrint.client_name || (o.client_phone && o.client_phone === selectedBillForPrint.client_phone))?.client_address ||
-                appointments.find((a: any) => a.client_name === selectedBillForPrint.client_name || (a.client_phone && a.client_phone === selectedBillForPrint.client_phone))?.client_address ||
-                '—'}</div>
-              {selectedBillForPrint.notes && <div><b>ملاحظات إضافية:</b> {selectedBillForPrint.notes}</div>}
+              <div>
+                <b>العنوان بالتفصيل:</b> {selectedBillForPrint.client_address ||
+                  orders.find((o: any) => o.client_name === selectedBillForPrint.client_name || (o.client_phone && o.client_phone === selectedBillForPrint.client_phone))?.client_address ||
+                  appointments.find((a: any) => a.client_name === selectedBillForPrint.client_name || (a.client_phone && a.client_phone === selectedBillForPrint.client_phone))?.client_address ||
+                  '—'}
+              </div>
+              {selectedBillForPrint.notes && <div><b>ملاحظات الفاتورة:</b> {selectedBillForPrint.notes}</div>}
             </div>
           </div>
 
@@ -2991,17 +3397,16 @@ export default function AdminDashboard() {
           <table className={styles.premiumInvoiceTable}>
             <thead>
               <tr>
-                <th>NOTE</th>
-                <th>DESCRIPTION</th>
-                <th>COLOR</th>
-                <th>COUNT</th>
-                <th>WIDTH</th>
-                <th>HEIGHT</th>
-                <th>QUANTITY</th>
-                <th>UNIT PRICE</th>
-                <th>DISC.%</th>
-                <th>TAXES</th>
-                <th>AMOUNT</th>
+                <th style={{ width: '4%' }}>#</th>
+                <th style={{ width: '22%' }}>بيان المنتج / الستارة</th>
+                <th style={{ width: '10%' }}>اللون / الكود</th>
+                <th style={{ width: '6%' }}>العدد</th>
+                <th style={{ width: '9%' }}>العرض (سم)</th>
+                <th style={{ width: '9%' }}>الارتفاع (سم)</th>
+                <th style={{ width: '10%' }}>الكمية (م²)</th>
+                <th style={{ width: '10%' }}>سعر المتر</th>
+                <th style={{ width: '8%' }}>الخصم</th>
+                <th style={{ width: '12%' }}>الإجمالي (ج.م)</th>
               </tr>
             </thead>
             <tbody>
@@ -3015,17 +3420,18 @@ export default function AdminDashboard() {
 
                 return (
                   <tr key={idx}>
-                    <td>{selectedBillForPrint.notes || '—'}</td>
-                    <td>{item.name}</td>
-                    <td>L3-502</td>
+                    <td>{idx + 1}</td>
+                    <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{item.name}</td>
+                    <td>{selectedBillForPrint.notes ? selectedBillForPrint.notes.slice(0, 15) : 'قياسي'}</td>
                     <td>{item.quantity}</td>
-                    <td>{item.calcType === 'unit' || item.calcType === 'linear_height' ? '—' : Number(item.width || 0).toFixed(2)}</td>
-                    <td>{item.calcType === 'unit' || item.calcType === 'linear_width' ? '—' : Number(item.height || 0).toFixed(2)}</td>
-                    <td>{qty.toFixed(2)} Units</td>
-                    <td>{Number(item.price || 0).toFixed(2)}</td>
+                    <td>{item.calcType === 'unit' || item.calcType === 'linear_height' ? '—' : Number(item.width || 0).toFixed(0)}</td>
+                    <td>{item.calcType === 'unit' || item.calcType === 'linear_width' ? '—' : Number(item.height || 0).toFixed(0)}</td>
+                    <td>{qty.toFixed(2)} م²</td>
+                    <td>{Number(item.price || 0).toLocaleString('ar-EG')} ج.م</td>
                     <td>{discountPct > 0 ? `${discountPct}%` : '0%'}</td>
-                    <td>Untaxed</td>
-                    <td>{Number(item.total || 0).toFixed(2)} LE</td>
+                    <td style={{ fontWeight: 'bold', color: '#3E2723' }}>
+                      {Number(item.total || 0).toLocaleString('ar-EG')} ج.م
+                    </td>
                   </tr>
                 );
               })}
@@ -3037,30 +3443,23 @@ export default function AdminDashboard() {
             {/* Terms & Conditions (Left) */}
             <div className={styles.premiumTermsBox}>
               <div className={styles.paymentComm}>
-                <b>Payment Communication:</b> {selectedBillForPrint.invoice_number}
+                <b>رقم المرجعية والتأكيد:</b> {selectedBillForPrint.invoice_number}
               </div>
 
               <div className={styles.termsSection}>
-                <span className={styles.termsSectionTitle}>الاحكام والشروط :</span>
+                <span className={styles.termsSectionTitle}>الشروط والأحكام العامة:</span>
                 <ul className={styles.termsSectionList}>
-                  <li>جميع الاسعار بالجنيه المصرى وغير شامله ضريبه القيمه المضافه.</li>
-                  <li>شروط الدفع: 80% دفعه مقدمه 20% قبل التركيب.</li>
-                  <li>الستاره التى تقل مساحتها عن 2م مربع تحسب 2م مربع.</li>
-                  <li>مده التوريد والتركيب 7 ايام عمل من تاريخ امر التوريد.</li>
+                  <li>جميع الأسعار بالجنيه المصري (EGP) وغير شاملة ضريبة القيمة المضافة.</li>
+                  <li>شروط الدفع: 80% دفعة مقدمة عند التعاقد و 20% قبل التركيب.</li>
+                  <li>الستارة التي تقل مساحتها الإجمالية عن 2 متر مربع تحسب 2 متر مربع.</li>
+                  <li>مدة التوريد والتركيب 7 - 14 يوم عمل من تاريخ اعتماد أمر التوريد.</li>
                 </ul>
               </div>
 
               <div className={styles.termsSection}>
-                <span className={styles.termsSectionTitle}>سياسه مابعد البيع والضمان :</span>
+                <span className={styles.termsSectionTitle}>شهادة الضمان المعتمدة (3 سنوات):</span>
                 <p className={styles.termsSectionText}>
-                  ان هدف كريستال للستائر الاساسى كشركه تعمل فى مجال الستائر بأنواعها المتعدده ارضاء عملائنا الكرام بتقديم افضل منتج مع التركيز على خدمه ما بعد البيع.
-                </p>
-              </div>
-
-              <div className={styles.termsSection}>
-                <span className={styles.termsSectionTitle}>الشروط العامة لخدمه ما بعد البيع :</span>
-                <p className={styles.termsSectionText}>
-                  تقدم كريستال للستائر لعملائها الكرام شهاده ضمان ساريه لمده ثلاث سنوات من تاريخ التركيب ضد عيوب الصناعه تشمل الستاره ومحتواها. تتضمن خدمه مابعد البيع الاصلاح والصيانه مجانا وبدون اى رسوم.
+                  تقدم كريستال بليندز لعملائها الكرام شهادة ضمان سارية لمدة <b>ثلاث سنوات كاملة</b> من تاريخ التركيب ضد عيوب الصناعة تشمل الستارة، الموتور، والمحتويات. تتضمن خدمة ما بعد البيع الإصلاح والصيانة الفورية مجاناً.
                 </p>
               </div>
             </div>
@@ -3070,53 +3469,64 @@ export default function AdminDashboard() {
               <table className={styles.premiumTotalsTable}>
                 <tbody>
                   <tr>
-                    <td>Untaxed Amount</td>
-                    <td>{Number(selectedBillForPrint.total_items_price || 0).toFixed(2)} LE</td>
+                    <td>إجمالي المنتجات (قبل الخصم)</td>
+                    <td>{Number(selectedBillForPrint.total_items_price || 0).toLocaleString('ar-EG')} ج.م</td>
                   </tr>
                   {Number(selectedBillForPrint.discount || 0) > 0 && (
                     <tr>
-                      <td>Discount</td>
-                      <td>{Number(selectedBillForPrint.discount || 0).toFixed(2)} LE</td>
+                      <td>قيمة الخصم</td>
+                      <td style={{ color: '#b91c1c', fontWeight: 'bold' }}>
+                        - {Number(selectedBillForPrint.discount || 0).toLocaleString('ar-EG')} ج.م
+                      </td>
                     </tr>
                   )}
                   {Number(selectedBillForPrint.installation_cost || 0) > 0 && (
                     <tr>
-                      <td>Installation Cost</td>
-                      <td>{Number(selectedBillForPrint.installation_cost || 0).toFixed(2)} LE</td>
+                      <td>تكلفة التركيب</td>
+                      <td>{Number(selectedBillForPrint.installation_cost || 0).toLocaleString('ar-EG')} ج.م</td>
                     </tr>
                   )}
                   {Number(selectedBillForPrint.transport_cost || 0) > 0 && (
                     <tr>
-                      <td>Transport Cost</td>
-                      <td>{Number(selectedBillForPrint.transport_cost || 0).toFixed(2)} LE</td>
+                      <td>مصاريف الشحن والنقل</td>
+                      <td>{Number(selectedBillForPrint.transport_cost || 0).toLocaleString('ar-EG')} ج.م</td>
                     </tr>
                   )}
                   <tr className={styles.premiumFinalRow}>
-                    <td>Total</td>
-                    <td>{Number(selectedBillForPrint.final_total || 0).toFixed(2)} LE</td>
+                    <td>الإجمالي النهائي (Total)</td>
+                    <td>{Number(selectedBillForPrint.final_total || 0).toLocaleString('ar-EG')} ج.م</td>
                   </tr>
                   {Number(selectedBillForPrint.deposit || 0) > 0 && (
                     <tr>
-                      <td>Deposit / المدفوع</td>
-                      <td>{Number(selectedBillForPrint.deposit || 0).toFixed(2)} LE</td>
+                      <td>الدفعة المقدمة / العربون</td>
+                      <td style={{ color: '#15803d', fontWeight: 'bold' }}>
+                        {Number(selectedBillForPrint.deposit || 0).toLocaleString('ar-EG')} ج.م
+                      </td>
                     </tr>
                   )}
                   <tr className={styles.premiumRemainingRow}>
-                    <td>Remaining / المتبقي</td>
-                    <td>{Number(selectedBillForPrint.remaining_amount || 0).toFixed(2)} LE</td>
+                    <td>المبلغ المتبقي للدفع</td>
+                    <td>{Number(selectedBillForPrint.remaining_amount || 0).toLocaleString('ar-EG')} ج.م</td>
                   </tr>
                 </tbody>
               </table>
 
               <div className={styles.signatureBlockNew}>
-                <div className={styles.signatureTitleNew}>توقيع العميل بالاستلام والاعتماد</div>
+                <div className={styles.signatureTitleNew}>توقيع العميل بالاعتماد والاطلاع</div>
                 <div className={styles.signatureLineNew}>____________________________________</div>
               </div>
             </div>
           </div>
 
+          {/* Footer Contact Bar */}
+          <div className={styles.printContactFooter}>
+            <span>العنوان: شبرا الخيمة، 74 شارع 15 مايو، أمام مجمع الصوالحة الإسلامي</span>
+            <span>الهاتف: 01100080609 | 01020909498</span>
+            <span>الموقع: www.crystalblinds-eg.com</span>
+          </div>
+
           <div className={styles.thankYouNew}>
-            شكراً لاختياركم معرض كريستال للستائر - نتمنى لكم تجربة تسوق مميزة
+            شكراً لاختياركم كريستال بليندز مصر — يسعدنا خدمتكم دائماً
           </div>
         </div>
       )}

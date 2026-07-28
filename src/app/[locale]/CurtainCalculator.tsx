@@ -136,8 +136,8 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
   const activeProducts = products && products.length > 0 ? products.filter(p => p.is_active) : DEFAULT_PRODUCTS;
 
   const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [width, setWidth] = useState<number>(200);
-  const [height, setHeight] = useState<number>(250);
+  const [width, setWidth] = useState<string>("");
+  const [height, setHeight] = useState<string>("");
   const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const { addToCart } = useCart();
@@ -154,33 +154,67 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
 
   useEffect(() => {
     if (!activeProduct) return;
-    const calcWidth = Math.max(width, 100) / 100;
-    const calcHeight = Math.max(height, 100) / 100;
-    const area = calcWidth * calcHeight;
-    const price = Math.round(activeProduct.price * area);
-    setEstimatedPrice(price);
+    const wNum = parseFloat(width) || 0;
+    const hNum = parseFloat(height) || 0;
+    if (wNum > 0 && hNum > 0) {
+      const area = wNum * hNum;
+      const price = Math.round(activeProduct.price * area);
+      setEstimatedPrice(price);
+    } else {
+      setEstimatedPrice(0);
+    }
   }, [activeProduct, width, height]);
 
-  const handleWidthChange = (val: number) => {
-    setWidth(Math.max(0, val));
+  const handleWidthChange = (val: string) => {
+    const cleaned = val.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    if (parts.length > 2) {
+      setWidth(parts[0] + "." + parts.slice(1).join(""));
+    } else {
+      setWidth(cleaned);
+    }
   };
 
-  const handleHeightChange = (val: number) => {
-    setHeight(Math.max(0, val));
+  const handleHeightChange = (val: string) => {
+    const cleaned = val.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    if (parts.length > 2) {
+      setHeight(parts[0] + "." + parts.slice(1).join(""));
+    } else {
+      setHeight(cleaned);
+    }
+  };
+
+  const adjustWidth = (delta: number) => {
+    const current = parseFloat(width) || 0;
+    const next = Math.max(0, current + delta);
+    setWidth(next === 0 ? "" : next.toFixed(2));
+  };
+
+  const adjustHeight = (delta: number) => {
+    const current = parseFloat(height) || 0;
+    const next = Math.max(0, current + delta);
+    setHeight(next === 0 ? "" : next.toFixed(2));
   };
 
   const handleAddToCart = () => {
     if (!activeProduct) return;
+    const wNum = parseFloat(width) || 0;
+    const hNum = parseFloat(height) || 0;
+    if (wNum <= 0 || hNum <= 0) {
+      alert(isAr ? "يرجى إدخال المقاسات أولاً" : "Please enter dimensions first");
+      return;
+    }
     addToCart({
-      id: `${activeProduct.id}_${width}_${height}_${Date.now()}`,
+      id: `${activeProduct.id}_${Math.round(wNum * 100)}_${Math.round(hNum * 100)}_${Date.now()}`,
       productId: activeProduct.id,
       labelEn: activeProduct.labelEn,
       labelAr: activeProduct.labelAr,
       image: activeProduct.images[0] || "",
       price: estimatedPrice,
       quantity: 1,
-      width,
-      height,
+      width: Math.round(wNum * 100),
+      height: Math.round(hNum * 100),
     });
   };
 
@@ -189,7 +223,7 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
   return (
     <section id="calculator" className="py-16 px-6 md:px-12 bg-[#FFFDFA] text-[#3E2723]">
       <div className="max-w-6xl mx-auto">
-        
+
         {/* Title */}
         <div className="text-center mb-8" style={{ direction: isAr ? "rtl" : "ltr" }}>
           <h2 className="font-headline text-2xl md:text-3xl font-bold text-[#3E2723]">
@@ -210,17 +244,17 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
 
           {/* Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center" style={{ direction: isAr ? "rtl" : "ltr" }}>
-            
+
             {/* Inputs Block (col-span-8) */}
             <div className="lg:col-span-8 w-full">
               <div className="bg-white rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between border border-white/10 shadow-md">
-                
+
                 {/* 1. Curtain Type Dropdown */}
                 <div className="w-full md:w-[40%] relative z-30">
                   <label className="text-[11px] font-bold text-[#3E2723]/60 mb-1.5 block text-start">
                     {isAr ? "نوع الستارة" : "Curtain Type"}
                   </label>
-                  
+
                   <div className="relative">
                     <button
                       type="button"
@@ -245,9 +279,8 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
                                 setSelectedProductId(prod.id);
                                 setIsOpen(false);
                               }}
-                              className={`w-full px-3 py-2 hover:bg-[#3E2723]/5 text-start text-xs font-semibold block ${
-                                prod.id === selectedProductId ? "text-[#d4af37] bg-[#3E2723]/5" : "text-[#3E2723]"
-                              }`}
+                              className={`w-full px-3 py-2 hover:bg-[#3E2723]/5 text-start text-xs font-semibold block ${prod.id === selectedProductId ? "text-[#d4af37] bg-[#3E2723]/5" : "text-[#3E2723]"
+                                }`}
                             >
                               {isAr ? prod.labelAr : prod.labelEn}
                             </button>
@@ -261,28 +294,30 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
                 {/* Vertical Divider on Desktop */}
                 <div className="hidden md:block w-[1px] h-10 bg-[#3E2723]/10" />
 
-                {/* 2. Width (cm) Stepper */}
+                {/* 2. Width (m) Stepper */}
                 <div className="w-full md:w-[30%]">
                   <label className="text-[11px] font-bold text-[#3E2723]/60 mb-1.5 block text-start">
-                    {isAr ? "العرض (سم)" : "Width (cm)"}
+                    {isAr ? "العرض (متر)" : "Width (m)"}
                   </label>
                   <div className="flex items-center justify-between bg-[#FDFBF7] border border-[#3E2723]/15 rounded-xl p-1">
                     <button
                       type="button"
-                      onClick={() => handleWidthChange(width - 10)}
+                      onClick={() => adjustWidth(-0.1)}
                       className="w-8 h-8 rounded-lg text-sm bg-transparent hover:bg-[#3E2723]/5 text-[#3E2723] flex items-center justify-center font-bold"
                     >
                       -
                     </button>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder=""
                       value={width}
-                      onChange={(e) => handleWidthChange(parseInt(e.target.value) || 0)}
-                      className="w-14 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none"
+                      onChange={(e) => handleWidthChange(e.target.value)}
+                      className="w-20 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none"
                     />
                     <button
                       type="button"
-                      onClick={() => handleWidthChange(width + 10)}
+                      onClick={() => adjustWidth(0.1)}
                       className="w-8 h-8 rounded-lg text-sm bg-transparent hover:bg-[#3E2723]/5 text-[#3E2723] flex items-center justify-center font-bold"
                     >
                       +
@@ -293,28 +328,30 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
                 {/* Vertical Divider on Desktop */}
                 <div className="hidden md:block w-[1px] h-10 bg-[#3E2723]/10" />
 
-                {/* 3. Height (cm) Stepper */}
+                {/* 3. Height (m) Stepper */}
                 <div className="w-full md:w-[30%]">
                   <label className="text-[11px] font-bold text-[#3E2723]/60 mb-1.5 block text-start">
-                    {isAr ? "الارتفاع (سم)" : "Height (cm)"}
+                    {isAr ? "الارتفاع (متر)" : "Height (m)"}
                   </label>
                   <div className="flex items-center justify-between bg-[#FDFBF7] border border-[#3E2723]/15 rounded-xl p-1">
                     <button
                       type="button"
-                      onClick={() => handleHeightChange(height - 10)}
+                      onClick={() => adjustHeight(-0.1)}
                       className="w-8 h-8 rounded-lg text-sm bg-transparent hover:bg-[#3E2723]/5 text-[#3E2723] flex items-center justify-center font-bold"
                     >
                       -
                     </button>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder=""
                       value={height}
-                      onChange={(e) => handleHeightChange(parseInt(e.target.value) || 0)}
-                      className="w-14 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none"
+                      onChange={(e) => handleHeightChange(e.target.value)}
+                      className="w-20 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none"
                     />
                     <button
                       type="button"
-                      onClick={() => handleHeightChange(height + 10)}
+                      onClick={() => adjustHeight(0.1)}
                       className="w-8 h-8 rounded-lg text-sm bg-transparent hover:bg-[#3E2723]/5 text-[#3E2723] flex items-center justify-center font-bold"
                     >
                       +
@@ -334,7 +371,7 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
                     {isAr ? "السعر التقديري" : "Estimated Price"}
                   </span>
                   <span className="text-3xl font-extrabold text-[#d4af37] tracking-tight">
-                    {estimatedPrice.toLocaleString(isAr ? "ar-EG" : "en-US")}
+                    {estimatedPrice > 0 ? estimatedPrice.toLocaleString(isAr ? "ar-EG" : "en-US") : "—"}
                   </span>
                   <span className="text-[#d4af37] text-[10px] font-bold mt-1">
                     {isAr ? "جنيه مصري" : "EGP"}

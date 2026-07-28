@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { type Product } from "@/lib/products";
 import PageHero from "../../PageHero";
+import { useCart } from "@/context/CartContext";
 
 const STANDARD_SIZES = [
   { width: "100", height: "100", labelAr: "١٠٠ × ١٠٠ سم", labelEn: "100 x 100 cm" },
@@ -24,6 +25,7 @@ export default function ProductDetailsClient({
   isAr: boolean;
   locale: string;
 }) {
+  const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [colorPreviewImage, setColorPreviewImage] = useState<string | null>(null);
   const [width, setWidth] = useState("");
@@ -36,6 +38,29 @@ export default function ProductDetailsClient({
   const heightVal = parseFloat(height) || 0;
   const area = widthVal > 0 && heightVal > 0 ? (widthVal / 100) * (heightVal / 100) : 1;
   const totalPrice = Math.round(product.price * area);
+
+  const handleAddToCart = () => {
+    if (!widthVal || !heightVal) {
+      alert(isAr ? "يرجى إدخال المقاسات أولاً" : "Please enter dimensions first");
+      return;
+    }
+    
+    const colorObj = colors.find(c => c.id === selectedColor);
+    const colorName = colorObj ? (isAr ? colorObj.nameAr : colorObj.nameEn) : "";
+    const colorSuffix = colorName ? ` (${colorName})` : "";
+    
+    addToCart({
+      id: `${product.id}_${widthVal}_${heightVal}_${selectedColor || ""}_${Date.now()}`,
+      productId: product.id,
+      labelEn: product.labelEn + colorSuffix,
+      labelAr: product.labelAr + colorSuffix,
+      image: colorPreviewImage || product.images[0] || "",
+      price: totalPrice,
+      quantity: 1,
+      width: widthVal,
+      height: heightVal,
+    });
+  };
 
   return (
     <div className={`min-h-screen bg-[#FFFDFA] text-[#3E2723] pb-24 ${isAr ? "rtl" : "ltr"}`}>
@@ -300,48 +325,95 @@ export default function ProductDetailsClient({
 
             </div>
 
-            {/* Price Box */}
-            <div className={`flex flex-col sm:flex-row gap-6 items-center justify-between p-6 md:p-8 bg-[#FFFDFA] border border-[#3E2723]/10 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.03)] ${isAr ? "flex-row-reverse" : ""}`}>
-              <div className={`flex flex-col gap-1 ${isAr ? "text-right" : "text-left"}`}>
-                <span className="text-[#3E2723] font-bold text-2xl">
-                  {totalPrice.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
-                </span>
-                <span className="text-xs text-[#3E2723]/60 font-medium mt-1" dir="rtl">
-                  {isAr ? 
-                    `المساحة ${area.toFixed(2)} م² × سعر المتر ${product.price} ج.م` : 
-                    `Area ${area.toFixed(2)} m² × Meter price ${product.price} EGP`}
-                </span>
+            {/* Price & Action Section — Premium Redesign */}
+            <div className={`mt-2 rounded-2xl overflow-hidden border border-[#d4af37]/20 shadow-[0_8px_40px_rgba(62,39,35,0.08)] ${isAr ? 'text-right' : 'text-left'}`}>
+              {/* Price header band */}
+              <div className="bg-gradient-to-br from-[#2B1B17] to-[#3E2723] px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
+                <div className={`flex flex-col gap-1 ${isAr ? 'items-end' : 'items-start'}`}>
+                  <span className="text-[#d4af37]/60 text-[10px] font-semibold tracking-widest uppercase">
+                    {isAr ? 'السعر الإجمالي' : 'Total Price'}
+                  </span>
+                  <div className={`flex items-baseline gap-2 ${isAr ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-[#d4af37] font-extrabold text-3xl md:text-4xl leading-none" dir="ltr">
+                      {totalPrice.toLocaleString(isAr ? 'ar-EG' : 'en-US')}
+                    </span>
+                    <span className="text-[#d4af37]/80 font-bold text-base">{isAr ? 'ج.م' : 'EGP'}</span>
+                  </div>
+                  <div className={`flex items-center gap-1.5 mt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
+                    <span className="material-symbols-outlined text-[#d4af37]/40 text-sm">straighten</span>
+                    <span className="text-[10px] text-white/40" dir="rtl">
+                      {isAr ?
+                        `${area.toFixed(2)} م² × ${product.price.toLocaleString('ar-EG')} ج.م / م²` :
+                        `${area.toFixed(2)} m² × ${product.price.toLocaleString('en-US')} EGP / m²`
+                      }
+                    </span>
+                  </div>
+                </div>
+                {/* Quick trust pills */}
+                <div className={`flex flex-col gap-2 ${isAr ? 'items-end' : 'items-start'}`}>
+                  <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-3 py-1">
+                    <span className="material-symbols-outlined text-[#d4af37] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
+                    <span className="text-[10px] text-white/70 font-medium">{isAr ? 'ضمان 3 سنوات' : '3-Year Warranty'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-3 py-1">
+                    <span className="material-symbols-outlined text-emerald-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                    <span className="text-[10px] text-white/70 font-medium">{isAr ? 'منتج أصلي مضمون' : 'Authentic Product'}</span>
+                  </div>
+                </div>
               </div>
-              
-              <div className="flex gap-4 w-full sm:w-auto">
-                <Link 
-                  href={`/${locale}/#reserve`}
-                  className="flex-1 sm:flex-none bg-[#FFFDFA] text-[#d4af37] border-2 border-[#d4af37] px-8 py-3.5 rounded-lg font-bold shadow-sm hover:bg-[#FFFDFA] hover:-translate-y-0.5 transition-all text-center whitespace-nowrap"
-                >
-                  {isAr ? "احجز معاينة" : "Book Visit"}
-                </Link>
+
+              {/* Action buttons */}
+              <div className="bg-[#FFFDFA] px-6 py-5 flex flex-col gap-3">
+                {/* Primary: Buy Now */}
                 {product.is_active === false ? (
-                  <button 
+                  <button
                     disabled
-                    className="flex-1 sm:flex-none bg-gray-400 text-white px-8 py-3.5 rounded-lg font-bold shadow-sm text-center whitespace-nowrap cursor-not-allowed"
+                    className="w-full bg-gray-200 text-gray-400 py-4 rounded-xl font-bold text-sm cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {isAr ? "نفذت الكمية" : "Sold Out"}
+                    <span className="material-symbols-outlined text-lg">remove_shopping_cart</span>
+                    {isAr ? 'نفذت الكمية' : 'Sold Out'}
                   </button>
                 ) : (
-                  <Link 
+                  <Link
                     href={`/${locale}/checkout/${product.id}?width=${width}&height=${height}&color=${selectedColor}&pieces=1`}
-                    className="flex-1 sm:flex-none bg-gradient-to-r from-[#d4af37] to-[#b8922a] text-white px-8 py-3.5 rounded-lg font-bold shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.4)] hover:-translate-y-0.5 transition-all text-center whitespace-nowrap"
+                    className="w-full bg-gradient-to-r from-[#d4af37] to-[#b8922a] text-white py-4 rounded-xl font-extrabold text-sm shadow-[0_4px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_6px_28px_rgba(212,175,55,0.5)] hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-2"
                   >
-                    {isAr ? "اشتري الآن" : "Buy Now"}
+                    <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+                    {isAr ? 'اشتري الآن' : 'Buy Now'}
                   </Link>
                 )}
-              </div>
-            </div>
 
-            {/* Shipping Info */}
-            <div className={`flex items-center justify-between p-4 bg-[#f2ece4]/30 border border-[#3E2723]/5 rounded-lg text-[10px] sm:text-xs text-[#3E2723]/70 ${isAr ? "flex-row-reverse" : ""}`}>
-              <span className="font-bold text-[#3E2723]">{isAr ? "شحن عادي" : "Standard shipping"}</span>
-              <span>{isAr ? "متوقع التسليم خلال أسبوعين" : "Estimated shipping in 2 weeks"}</span>
+                {/* Secondary row */}
+                <div className="grid grid-cols-2 gap-3">
+                  {product.is_active !== false && (
+                    <button
+                      onClick={handleAddToCart}
+                      className="flex items-center justify-center gap-2 bg-white border-2 border-[#3E2723]/15 hover:border-[#d4af37] text-[#3E2723] hover:text-[#b8922a] py-3 rounded-xl font-bold text-xs transition-all hover:-translate-y-0.5"
+                    >
+                      <span className="material-symbols-outlined text-base">add_shopping_cart</span>
+                      {isAr ? 'أضف للسلة' : 'Add to Cart'}
+                    </button>
+                  )}
+                  <Link
+                    href={`/${locale}/#reserve`}
+                    className={`flex items-center justify-center gap-2 bg-[#3E2723]/5 border-2 border-[#3E2723]/10 hover:border-[#3E2723]/30 text-[#3E2723] py-3 rounded-xl font-bold text-xs transition-all hover:-translate-y-0.5 ${product.is_active === false ? 'col-span-2' : ''}`}
+                  >
+                    <span className="material-symbols-outlined text-base">calendar_month</span>
+                    {isAr ? 'احجز معاينة' : 'Book Visit'}
+                  </Link>
+                </div>
+
+                {/* Shipping strip */}
+                <div className={`flex items-center justify-between mt-1 pt-4 border-t border-[#3E2723]/8 text-[11px] text-[#3E2723]/60 ${isAr ? 'flex-row-reverse' : ''}`}>
+                  <div className={`flex items-center gap-1.5 ${isAr ? 'flex-row-reverse' : ''}`}>
+                    <span className="material-symbols-outlined text-[#3E2723]/40 text-sm">local_shipping</span>
+                    <span>{isAr ? 'شحن قياسي' : 'Standard Shipping'}</span>
+                  </div>
+                  <span className="font-semibold text-[#3E2723]/80">
+                    {isAr ? 'التسليم خلال أسبوعين' : '~2 weeks delivery'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Trust Info */}

@@ -6,10 +6,13 @@ import { type Product } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
 import PageHero from "../../PageHero";
 import { GOVERNORATES, getDeliveryFees, type Governorate } from "@/lib/deliveryFees";
+import { useCart } from "@/context/CartContext";
 
-function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: boolean, locale: string }) {
+function CheckoutContent({ product, isAr, locale }: { product: Product | null, isAr: boolean, locale: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const cart = useCart();
+  const isCartCheckout = !product;
 
   const width = searchParams.get("width") || "0";
   const height = searchParams.get("height") || "0";
@@ -20,11 +23,20 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [governorates, setGovernorates] = useState<Governorate[]>(GOVERNORATES);
-  const [selectedGovId, setSelectedGovId] = useState(searchParams.get("gov") || "");
+  
+  const [selectedGovId, setSelectedGovId] = useState(() => {
+    return searchParams.get("gov") || (isCartCheckout ? (cart.selectedGovernorateId || "") : "");
+  });
+  
   const [city, setCity] = useState("");
   const [street, setStreet] = useState("");
   const [buildingApartment, setBuildingApartment] = useState("");
-  const [isInstallationSelected, setInstallationSelected] = useState(searchParams.get("install") === "true");
+  
+  const [isInstallationSelected, setInstallationSelected] = useState(() => {
+    const p = searchParams.get("install");
+    if (p !== null) return p === "true";
+    return isCartCheckout ? cart.isInstallationSelected : false;
+  });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -33,6 +45,24 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [transactionImageUrl, setTransactionImageUrl] = useState("");
   const [uploadingFile, setUploadingFile] = useState(false);
+
+  useEffect(() => {
+    if (isCartCheckout && cart.items.length === 0 && !success) {
+      router.push(`/${locale}/products`);
+    }
+  }, [cart.items.length, isCartCheckout, success, router, locale]);
+
+  useEffect(() => {
+    if (isCartCheckout && selectedGovId) {
+      cart.setGovernorate(selectedGovId);
+    }
+  }, [selectedGovId, isCartCheckout]);
+
+  useEffect(() => {
+    if (isCartCheckout) {
+      cart.setInstallationSelected(isInstallationSelected);
+    }
+  }, [isInstallationSelected, isCartCheckout]);
 
   const handleFileUpload = async (file: File) => {
     setUploadingFile(true);
@@ -63,7 +93,9 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
   const widthVal = parseFloat(width);
   const heightVal = parseFloat(height);
   const area = widthVal > 0 && heightVal > 0 ? (widthVal / 100) * (heightVal / 100) : 1;
-  const itemTotal = Math.round(product.price * area * parseInt(pieces));
+  const itemTotal = isCartCheckout
+    ? cart.cartTotal
+    : (product ? Math.round(product.price * area * parseInt(pieces)) : 0);
   const finalTotal = itemTotal + deliveryFee + installationFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,27 +118,66 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
 
     setIsSubmitting(true);
     const govName = isAr ? (selectedGov?.nameAr || "") : (selectedGov?.nameEn || "");
-    const mergedAddress = isAr
-      ? `المحافظة: ${govName} | المدينة: ${city} | الشارع: ${street} | رقم المبنى والشقة: ${buildingApartment} | الخدمة: ${isInstallationSelected ? "توصيل وتركيب" : "توصيل فقط"}`
-      : `Governorate: ${govName} | City: ${city} | Street: ${street} | Building & Apartment: ${buildingApartment} | Service: ${isInstallationSelected ? "Delivery & Installation" : "Delivery Only"}`;
 
-    const { error } = await supabase.from('orders').insert([{
-      product_id: product.id,
-      client_name: name,
-      client_phone: phone,
-      client_address: mergedAddress,
-      width: widthVal,
-      height: heightVal,
-      color_id: parseInt(colorId),
-      type_id: parseInt(typeId),
-      pieces: parseInt(pieces),
-      total_price: finalTotal,
-      status: 'pending',
-      payment_method: paymentMethod,
-      whatsapp_number: paymentMethod === 'wallet_instapay' ? whatsappNumber : null,
-      transaction_image_url: paymentMethod === 'wallet_instapay' ? transactionImageUrl : null,
-      payment_status: paymentMethod === 'wallet_instapay' ? 'pending' : 'cod'
-    }]);
+    let error = null;
+
+    if (isCartCheckout) {
+      const groupOrderId = 'C-' + Math.floor(1000 + Math.random() * 9000);
+      const mergedAddress = isAr
+        ? `المحافظة: ${govName} | المدينة: ${city} | الشارع: ${street} | رقم المبنى والشقة: ${buildingApartment} | الخدمة: ${isInstallationSelected ? "توصيل وتركيب" : "توصيل فقط"} | كود الطلب: ${groupOrderId} | إجمالي الشحن والتركيب: ${deliveryFee + installationFee} ج.م`
+        : `Governorate: ${govName} | City: ${city} | Street: ${street} | Building & Apartment: ${buildingApartment} | Service: ${isInstallationSelected ? "Delivery & Installation" : "Delivery Only"} | Order Code: ${groupOrderId} | Delivery & Install Total: ${deliveryFee + installationFee} EGP`;
+
+      const payloads = cart.items.map((item, idx) => {
+        const itemPriceTotal = item.price * item.quantity;
+        const finalItemPrice = idx === 0 ? (itemPriceTotal + deliveryFee + installationFee) : itemPriceTotal;
+        return {
+          product_id: item.productId,
+          client_name: name,
+          client_phone: phone,
+          client_address: mergedAddress,
+          width: item.width || 0,
+          height: item.height || 0,
+          color_id: null,
+          type_id: null,
+          pieces: item.quantity,
+          total_price: finalItemPrice,
+          status: 'pending',
+          payment_method: paymentMethod,
+          whatsapp_number: paymentMethod === 'wallet_instapay' ? whatsappNumber : null,
+          transaction_image_url: paymentMethod === 'wallet_instapay' ? transactionImageUrl : null,
+          payment_status: paymentMethod === 'wallet_instapay' ? 'pending' : 'cod'
+        };
+      });
+
+      const { error: insertError } = await supabase.from('orders').insert(payloads);
+      error = insertError;
+      if (!error) {
+        cart.clearCart();
+      }
+    } else if (product) {
+      const mergedAddress = isAr
+        ? `المحافظة: ${govName} | المدينة: ${city} | الشارع: ${street} | رقم المبنى والشقة: ${buildingApartment} | الخدمة: ${isInstallationSelected ? "توصيل وتركيب" : "توصيل فقط"}`
+        : `Governorate: ${govName} | City: ${city} | Street: ${street} | Building & Apartment: ${buildingApartment} | Service: ${isInstallationSelected ? "Delivery & Installation" : "Delivery Only"}`;
+
+      const { error: insertError } = await supabase.from('orders').insert([{
+        product_id: product.id,
+        client_name: name,
+        client_phone: phone,
+        client_address: mergedAddress,
+        width: widthVal,
+        height: heightVal,
+        color_id: parseInt(colorId),
+        type_id: parseInt(typeId),
+        pieces: parseInt(pieces),
+        total_price: finalTotal,
+        status: 'pending',
+        payment_method: paymentMethod,
+        whatsapp_number: paymentMethod === 'wallet_instapay' ? whatsappNumber : null,
+        transaction_image_url: paymentMethod === 'wallet_instapay' ? transactionImageUrl : null,
+        payment_status: paymentMethod === 'wallet_instapay' ? 'pending' : 'cod'
+      }]);
+      error = insertError;
+    }
 
     setIsSubmitting(false);
 
@@ -143,7 +214,7 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
         breadcrumbs={[
           { label: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
           { label: isAr ? "المنتجات" : "Products", href: `/${locale}/products` },
-          { label: isAr ? product.labelAr : product.labelEn, href: `/${locale}/products/${product.id}` },
+          ...(product ? [{ label: isAr ? product.labelAr : product.labelEn, href: `/${locale}/products/${product.id}` }] : []),
           { label: isAr ? "إتمام الطلب" : "Checkout" },
         ]}
       />
@@ -155,25 +226,53 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
           <div className="lg:col-span-5 bg-[#FFFDFA] p-8 rounded-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] border border-[#3E2723]/10 sticky top-32">
             <h2 className="text-xl font-bold mb-6 border-b border-[#3E2723]/10 pb-4">{isAr ? "ملخص الطلب" : "Order Summary"}</h2>
 
-            <div className="flex gap-4 mb-6">
-              <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 border border-[#3E2723]/10">
-                <img src={product.images[0]} alt={product.alt} className="w-full h-full object-cover" />
+            {isCartCheckout ? (
+              <div className="space-y-4 max-h-[300px] overflow-y-auto mb-6 pr-2">
+                {cart.items.map((item) => (
+                  <div key={item.id} className="flex gap-3 border-b border-[#3E2723]/5 pb-3 last:border-0 last:pb-0">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-[#3E2723]/10 bg-gray-100">
+                      <img src={item.image} alt={isAr ? item.labelAr : item.labelEn} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-xs text-[#3E2723] truncate">{isAr ? item.labelAr : item.labelEn}</h4>
+                      {item.width && item.height ? (
+                        <p className="text-[10px] text-[#3E2723]/60 mt-0.5" dir="ltr">
+                          {item.width} x {item.height} cm
+                        </p>
+                      ) : null}
+                      <div className="flex justify-between items-center mt-1 text-[11px]">
+                        <span className="text-[#3E2723]/70">{isAr ? "الكمية:" : "Qty:"} {item.quantity}</span>
+                        <span className="font-bold text-[#d4af37]">{(item.price * item.quantity).toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <h3 className="font-bold text-[#3E2723] text-lg">{isAr ? product.labelAr : product.labelEn}</h3>
-                <p className="text-sm text-[#3E2723]/60 mt-1">{isAr ? product.category : product.category}</p>
+            ) : product ? (
+              <div className="flex gap-4 mb-6">
+                <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 border border-[#3E2723]/10">
+                  <img src={product.images[0]} alt={product.alt} className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#3E2723] text-lg">{isAr ? product.labelAr : product.labelEn}</h3>
+                  <p className="text-sm text-[#3E2723]/60 mt-1">{isAr ? product.category : product.category}</p>
+                </div>
               </div>
-            </div>
+            ) : null}
 
             <div className="space-y-3 text-sm text-[#3E2723]/80 mb-6 bg-[#FFFDFA] p-4 rounded-lg">
-              <div className="flex justify-between">
-                <span>{isAr ? "الأبعاد:" : "Dimensions:"}</span>
-                <span dir="ltr">{width} x {height} cm</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{isAr ? "عدد القطع:" : "Pieces:"}</span>
-                <span>{pieces}</span>
-              </div>
+              {!isCartCheckout && (
+                <>
+                  <div className="flex justify-between">
+                    <span>{isAr ? "الأبعاد:" : "Dimensions:"}</span>
+                    <span dir="ltr">{width} x {height} cm</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{isAr ? "عدد القطع:" : "Pieces:"}</span>
+                    <span>{pieces}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between border-t border-[#3E2723]/5 pt-2">
                 <span>{isAr ? "المجموع الفرعي:" : "Subtotal:"}</span>
                 <span>{itemTotal.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}</span>
@@ -479,7 +578,7 @@ function CheckoutContent({ product, isAr, locale }: { product: Product, isAr: bo
   );
 }
 
-export default function CheckoutClient({ product, isAr, locale }: { product: Product, isAr: boolean, locale: string }) {
+export default function CheckoutClient({ product, isAr, locale }: { product: Product | null, isAr: boolean, locale: string }) {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin"></div></div>}>
       <CheckoutContent product={product} isAr={isAr} locale={locale} />

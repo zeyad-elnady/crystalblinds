@@ -57,9 +57,38 @@ export default function MaintenanceView({ userRole }: { userRole: string | null 
     status: 'new' as any,
   });
 
+  const [technicians, setTechnicians] = useState<any[]>([]);
+
   useEffect(() => {
     fetchMaintenance();
+    fetchTechnicians();
   }, []);
+
+  const fetchTechnicians = async () => {
+    let list: any[] = [];
+    try {
+      const saved = localStorage.getItem('crystal_blinds_technicians');
+      if (saved) list = JSON.parse(saved);
+    } catch (e) {}
+
+    try {
+      const { data } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
+      if (data && data.length > 0) {
+        const merged = [...list];
+        data.forEach(dbTech => {
+          if (!merged.some(t => t.name === dbTech.name || t.id === dbTech.id)) {
+            merged.push(dbTech);
+          }
+        });
+        list = merged;
+      }
+    } catch (e) {}
+
+    if (!list || list.length === 0) {
+      list = [{ id: 't1', name: 'م. أحمد خالد' }, { id: 't2', name: 'م. شريف مصطفى' }];
+    }
+    setTechnicians(list);
+  };
 
   const fetchMaintenance = async () => {
     setLoading(true);
@@ -381,12 +410,15 @@ export default function MaintenanceView({ userRole }: { userRole: string | null 
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold text-[#3E2723]/70">الفني المكلف</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.technician_name}
                     onChange={e => setFormData(prev => ({ ...prev, technician_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none"
-                  />
+                    className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
+                  >
+                    {technicians.map(t => (
+                      <option key={t.id || t.name} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold text-[#3E2723]/70">تكلفة الصيانة (ج.م)</label>
