@@ -131,8 +131,8 @@ export default function ReservationSection({ isAr }: Props) {
   if (done) return (
     <section id="reserve" className={`py-24 px-6 md:px-12 bg-[#FFFDFA] ${isAr ? 'rtl text-right' : ''}`}>
       <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-6">
-        <div className="w-20 h-20 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center">
-          <span className="material-symbols-outlined text-[#d4af37] text-4xl">check_circle</span>
+        <div className="w-20 h-20 rounded-full bg-[#3E2723]/5 border border-[#3E2723]/15 flex items-center justify-center">
+          <span className="material-symbols-outlined text-[#3E2723] text-4xl">check_circle</span>
         </div>
         <h3 className="font-headline text-3xl text-[#3E2723] font-bold">{isAr ? 'تم الحجز بنجاح!' : 'Booking Confirmed!'}</h3>
         <p className="text-[#3E2723]/70 font-light">{isAr ? 'سنتواصل معك قريباً لتأكيد الموعد.' : 'We will contact you shortly to confirm your appointment.'}</p>
@@ -147,19 +147,19 @@ export default function ReservationSection({ isAr }: Props) {
   return (
     <section id="reserve" className={`py-24 px-6 md:px-12 bg-[#FFFDFA] relative overflow-hidden ${isAr ? 'rtl' : ''}`}>
       {/* Ambient backgrounds */}
-      <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[#d4af37]/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-white/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-[#3E2723]/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Heading */}
         <div className="mb-14 flex flex-col items-center text-center max-w-3xl mx-auto relative">
-          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-xs font-semibold mb-3 block">
+          <span className="text-[#3E2723]/60 uppercase tracking-[0.3em] text-xs font-semibold mb-3 block">
             {isAr ? 'احجز موعدك' : 'Book an Appointment'}
           </span>
           <h2 className="font-headline text-3xl md:text-5xl font-bold text-[#3E2723] leading-tight mb-4">
             {isAr ? 'احجز المعاينه مجانا' : 'Book Free Measurement'}
           </h2>
-          <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mb-6" />
+          <div className="w-16 h-[2px] bg-[#3E2723]/15 mx-auto mb-6" />
           <p className="text-[#3E2723]/70 font-light text-sm mt-1 max-w-lg mx-auto">
             {isAr ? 'اختر نوع الخدمة والتاريخ والوقت المناسب، وسيتواصل معك فريقنا لتأكيد الموعد.' : 'Choose a service type, date, and time. Our team will contact you to confirm.'}
           </p>
@@ -175,7 +175,7 @@ export default function ReservationSection({ isAr }: Props) {
               <span className={`text-sm font-semibold transition-all duration-300 ${step >= s ? 'text-[#3E2723]' : 'text-[#3E2723]/40'}`}>
                 {s === 1 ? (isAr ? 'اختر الموعد' : 'Pick a Slot') : (isAr ? 'بياناتك' : 'Your Details')}
               </span>
-              {s < 2 && <div className={`w-12 h-px mx-2 ${step > s ? 'bg-[#d4af37]' : 'bg-[#3E2723]/15'}`} />}
+              {s < 2 && <div className={`w-12 h-px mx-2 ${step > s ? 'bg-[#3E2723]' : 'bg-[#3E2723]/15'}`} />}
             </div>
           ))}
         </div>
@@ -192,7 +192,7 @@ export default function ReservationSection({ isAr }: Props) {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 absolute inset-0" 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#2B1B17]/95 via-[#2B1B17]/40 to-transparent flex flex-col justify-end p-8 text-white z-10">
-                <span className="text-[#d4af37] uppercase tracking-widest text-[10px] font-bold mb-2">
+                <span className="text-[#3E2723]/80 uppercase tracking-widest text-[10px] font-bold mb-2">
                   {isAr ? "دقة واحترافية" : "Precision & Care"}
                 </span>
                 <h3 className="font-headline text-2xl font-bold mb-2">
@@ -206,9 +206,9 @@ export default function ReservationSection({ isAr }: Props) {
               </div>
             </div>
 
-            <div className="bg-[#2B1B17] rounded-[2rem] p-6 text-white border border-[#d4af37]/20 shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#d4af37]/5 rounded-full blur-xl pointer-events-none" />
-              <h4 className="font-bold text-xs text-[#d4af37] uppercase tracking-wider mb-3 border-b border-white/10 pb-2">
+            <div className="bg-[#2B1B17] rounded-[2rem] p-6 text-white border border-[#3E2723]/10 shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
+              <h4 className="font-bold text-xs text-[#3E2723]/80 uppercase tracking-wider mb-3 border-b border-white/10 pb-2">
                 {isAr ? "ماذا تشمل المعاينة المجانية؟" : "What is included?"}
               </h4>
               <ul className="space-y-2.5 text-[11px] text-white/80">
@@ -229,7 +229,7 @@ export default function ReservationSection({ isAr }: Props) {
           </div>
 
           {/* Interactive Card */}
-          <div className="lg:col-span-7 bg-white border-2 border-[#3E2723]/10 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_20px_50px_rgba(62,39,35,0.04)] hover:border-[#d4af37]/20 transition-all duration-300 flex flex-col justify-between">
+          <div className="lg:col-span-7 bg-white border-2 border-[#3E2723]/10 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_20px_50px_rgba(62,39,35,0.04)] hover:border-[#3E2723]/10 transition-all duration-300 flex flex-col justify-between">
             
             {step === 1 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
@@ -255,7 +255,7 @@ export default function ReservationSection({ isAr }: Props) {
                     <button 
                       type="button"
                       onClick={prevMonth} 
-                      className="w-8 h-8 rounded-full border border-[#3E2723]/10 flex items-center justify-center hover:border-[#d4af37] hover:bg-[#d4af37]/5 transition-all"
+                      className="w-8 h-8 rounded-full border border-[#3E2723]/10 flex items-center justify-center hover:border-[#d4af37] hover:bg-white/5 transition-all"
                     >
                       <span className="material-symbols-outlined text-[#3E2723] text-base">{isAr ? 'chevron_right' : 'chevron_left'}</span>
                     </button>
@@ -265,7 +265,7 @@ export default function ReservationSection({ isAr }: Props) {
                     <button 
                       type="button"
                       onClick={nextMonth} 
-                      className="w-8 h-8 rounded-full border border-[#3E2723]/10 flex items-center justify-center hover:border-[#d4af37] hover:bg-[#d4af37]/5 transition-all"
+                      className="w-8 h-8 rounded-full border border-[#3E2723]/10 flex items-center justify-center hover:border-[#d4af37] hover:bg-white/5 transition-all"
                     >
                       <span className="material-symbols-outlined text-[#3E2723] text-base">{isAr ? 'chevron_left' : 'chevron_right'}</span>
                     </button>
@@ -352,7 +352,7 @@ export default function ReservationSection({ isAr }: Props) {
                               onClick={() => setSelectedTime(t)}
                               className={`py-3 rounded-lg text-xs sm:text-sm font-semibold border transition-all duration-200
                                 ${isSel ? 'bg-[#3E2723] text-white border-[#3E2723] shadow-sm' : ''}
-                                ${!isSel && !booked ? 'border-[#3E2723]/15 text-[#3E2723] hover:border-[#d4af37] hover:bg-[#d4af37]/5' : ''}
+                                ${!isSel && !booked ? 'border-[#3E2723]/15 text-[#3E2723] hover:border-[#d4af37] hover:bg-white/5' : ''}
                                 ${booked ? 'bg-[#3E2723]/5 text-[#3E2723]/25 border-transparent cursor-not-allowed line-through' : ''}
                               `}
                             >
@@ -372,7 +372,7 @@ export default function ReservationSection({ isAr }: Props) {
                   {/* Summary & Next Button */}
                   <div className="mt-8 flex flex-col gap-4">
                     {selectedDate && selectedTime && (
-                      <div className={`bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 text-xs sm:text-sm text-[#3E2723] ${isAr ? 'text-right' : 'text-left'}`}>
+                      <div className={`bg-[#d4af37]/10 border border-[#3E2723]/10 rounded-xl p-4 text-xs sm:text-sm text-[#3E2723] ${isAr ? 'text-right' : 'text-left'}`}>
                         <p className="font-bold mb-1">{isAr ? 'ملخص الاختيار' : 'Selection Summary'}</p>
                         <p className="text-[#3E2723]/70 font-light">
                           {isAr ? (apptType === 'inspection' ? 'معاينة' : 'تركيب') : (apptType === 'inspection' ? 'Inspection' : 'Installation')} · {selectedDate} · {formatTime12h(selectedTime, isAr)}
@@ -399,7 +399,7 @@ export default function ReservationSection({ isAr }: Props) {
                 
                 {/* ── Left Column: Slot Summary Info Box (col-span-5) ── */}
                 <div className="md:col-span-5 flex flex-col h-full justify-between">
-                  <div className="relative bg-[#3E2723] bg-gradient-to-br from-[#3E2723] to-[#1c110f] border border-[#d4af37]/20 rounded-2xl p-6 text-[#FFFDFA] overflow-hidden flex flex-col justify-between min-h-[300px] shadow-md">
+                  <div className="relative bg-[#3E2723] bg-gradient-to-br from-[#3E2723] to-[#1c110f] border border-[#3E2723]/10 rounded-2xl p-6 text-[#FFFDFA] overflow-hidden flex flex-col justify-between min-h-[300px] shadow-md">
                     {/* Decorative quote icon background */}
                     <div className={`absolute -bottom-6 ${isAr ? "-left-6" : "-right-6"} text-white/5 pointer-events-none select-none`}>
                       <span className="material-symbols-outlined text-[140px] font-bold">calendar_month</span>
@@ -508,12 +508,12 @@ export default function ReservationSection({ isAr }: Props) {
                       </select>
                       
                       {form.systemType === 'smart_app' && (
-                        <p className={`text-xs text-[#3E2723]/80 mt-2 bg-[#d4af37]/10 border border-[#d4af37]/20 p-3 rounded-xl ${isAr ? 'text-right' : 'text-left'}`}>
+                        <p className={`text-xs text-[#3E2723]/80 mt-2 bg-[#d4af37]/10 border border-[#3E2723]/10 p-3 rounded-xl ${isAr ? 'text-right' : 'text-left'}`}>
                           <span className="font-bold text-[#3E2723]">{isAr ? 'تنبيه:' : 'Note:'}</span> {isAr ? 'تأكد من وجود تأسيس سمارت (Smart Home) في المنزل.' : 'Ensure smart home infrastructure is already set up in your house.'}
                         </p>
                       )}
                       {form.systemType === 'remote' && (
-                        <p className={`text-xs text-[#3E2723]/80 mt-2 bg-[#d4af37]/10 border border-[#d4af37]/20 p-3 rounded-xl ${isAr ? 'text-right' : 'text-left'}`}>
+                        <p className={`text-xs text-[#3E2723]/80 mt-2 bg-[#d4af37]/10 border border-[#3E2723]/10 p-3 rounded-xl ${isAr ? 'text-right' : 'text-left'}`}>
                           <span className="font-bold text-[#3E2723]">{isAr ? 'تنبيه:' : 'Note:'}</span> {isAr ? 'تأكد من توفير وصلة كهرباء (أرضي وكهرباء) بالقرب من الشباك.' : 'Ensure a power connection is available near the window.'}
                         </p>
                       )}

@@ -55,7 +55,7 @@ export default function CartSidebar({ isAr }: { isAr: boolean }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-xl text-[#d4af37]">shopping_bag</span>
+            <span className="material-symbols-outlined text-xl text-[#3E2723]">shopping_bag</span>
             <h2 className="text-base font-bold uppercase tracking-wider">{isAr ? 'سلة التسوق' : 'Your Cart'}</h2>
           </div>
           <button 
@@ -133,7 +133,7 @@ export default function CartSidebar({ isAr }: { isAr: boolean }) {
                         </button>
                       </div>
                       {/* Price */}
-                      <div className="font-bold text-xs text-[#d4af37]">
+                      <div className="font-bold text-xs text-[#3E2723]">
                         {(item.price * item.quantity).toLocaleString()} {isAr ? 'ج.م' : 'EGP'}
                       </div>
                     </div>
@@ -155,7 +155,7 @@ export default function CartSidebar({ isAr }: { isAr: boolean }) {
             <Link 
               href={`/${isAr ? 'ar' : 'en'}/checkout/cart`}
               onClick={() => toggleCart(false)}
-              className="w-full flex items-center justify-center gap-2 bg-[#d4af37] text-white py-3 rounded-lg font-bold uppercase text-xs tracking-wider hover:bg-[#c4a133] transition-colors shadow-lg shadow-[#d4af37]/30"
+              className="w-full flex items-center justify-center gap-2 bg-[#2C1D18] hover:bg-[#3E2723] text-white border border-[#C5A059]/40 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all shadow-md"
             >
               <span>{isAr ? 'متابعة لطلب الشراء' : 'Proceed to Checkout'}</span>
               <span className="material-symbols-outlined text-[18px]">{isAr ? 'arrow_back' : 'arrow_forward'}</span>

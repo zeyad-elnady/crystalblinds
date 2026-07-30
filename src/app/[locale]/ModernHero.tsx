@@ -108,7 +108,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
           >
             {/* ── Small tagline ── */}
             <p
-              className={`text-[#d4af37] text-[13px] md:text-[15px] font-semibold mb-5 tracking-wide transition-all duration-1000 delay-200 ${
+              className={`text-[#C5A059] text-[13px] md:text-[15px] font-semibold mb-5 tracking-wide transition-all duration-1000 delay-200 ${
                 mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
             >
@@ -157,7 +157,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
               {/* Primary: Book Free Inspection */}
               <a
                 href="#reserve"
-                className={`inline-flex items-center gap-2.5 bg-[#d4af37] hover:bg-[#c5a030] text-[#3E2723] font-bold text-[13px] px-7 py-3.5 rounded-lg transition-all duration-300 shadow-[0_4px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_8px_30px_rgba(212,175,55,0.5)] ${
+                className={`inline-flex items-center gap-2.5 bg-[#3E2723] hover:bg-[#2C1D18] text-[#FFFDFA] border border-[#C5A059]/40 font-bold text-[13px] px-7 py-3.5 rounded-lg transition-all duration-300 shadow-md ${
                   isAr ? "flex-row-reverse" : ""
                 }`}
               >

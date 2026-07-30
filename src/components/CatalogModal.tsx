@@ -55,14 +55,14 @@ export default function CatalogModal({ isOpen, onClose, isAr }: CatalogModalProp
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.4)] flex flex-col max-h-[75vh] border border-[#d4af37]/30 my-auto"
+        className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.4)] flex flex-col max-h-[75vh] border border-white/10 my-auto"
         dir={isAr ? "rtl" : "ltr"}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-[#3E2723] px-6 py-4 text-white flex items-center justify-between border-b border-[#d4af37]/20 shrink-0">
+        <div className="bg-[#3E2723] px-6 py-4 text-white flex items-center justify-between border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[#d4af37] text-xl">menu_book</span>
             </div>
             <div>
@@ -98,7 +98,7 @@ export default function CatalogModal({ isOpen, onClose, isAr }: CatalogModalProp
                 >
                   {/* Photo + Info */}
                   <div className={`flex items-center gap-3.5 w-full sm:w-auto flex-1 ${isAr ? "flex-row" : ""}`}>
-                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-[#3E2723]/10 relative group-hover:border-[#d4af37]/40 transition-colors">
+                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden bg-neutral-100 shrink-0 border border-[#3E2723]/10 relative group-hover:border-white/40 transition-colors">
                       <img
                         src={photo}
                         alt={item.titleAr}

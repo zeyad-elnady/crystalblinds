@@ -1,4 +1,8 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 interface Breadcrumb {
   label: string;
@@ -16,12 +20,32 @@ export default function PageHero({
   isAr: boolean;
   breadcrumbs: Breadcrumb[];
 }) {
+  const [currentBg, setCurrentBg] = useState(bgImage);
+
+  useEffect(() => {
+    async function loadHeaderBg() {
+      try {
+        const { data } = await supabase
+          .from("website_assets")
+          .select("url")
+          .eq("key", "page_header")
+          .single();
+        if (data && data.url) {
+          setCurrentBg(data.url);
+        }
+      } catch (err) {
+        console.error("Error loading header background:", err);
+      }
+    }
+    loadHeaderBg();
+  }, []);
+
   return (
     <section className="relative w-full h-[280px] md:h-[360px] flex items-center justify-center">
-      {/* Background Image Container (clips the image and overlays, allowing breadcrumbs to overflow) */}
+      {/* Background Image Container */}
       <div className="absolute inset-0 z-0 rounded-b-[2rem] md:rounded-b-[3rem] overflow-hidden border-b-2 border-[#d4af37]/30">
         <img
-          src={bgImage}
+          src={currentBg}
           alt={title}
           className="w-full h-full object-cover"
         />

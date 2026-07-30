@@ -88,13 +88,13 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
       <div className="max-w-7xl mx-auto">
         {/* Section Heading */}
         <div className="text-center mb-16">
-          <span className="text-[#d4af37] text-xs uppercase tracking-[0.3em] font-semibold">
+          <span className="text-[#3E2723]/60 text-xs uppercase tracking-[0.3em] font-semibold">
             {isAr ? "مجموعتنا" : "OUR SELECTION"}
           </span>
           <h2 className="font-headline text-3xl md:text-5xl font-bold text-[#3E2723] mt-2">
             {isAr ? "اكتشف أنواع الستائر" : "Discover Blind Types"}
           </h2>
-          <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-4" />
+          <div className="w-16 h-[2px] bg-[#3E2723]/15 mx-auto mt-4" />
         </div>
 
         {/* 5-Column Grid */}
@@ -103,7 +103,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
             <Link
               href={item.link}
               key={i}
-              className="group relative h-96 rounded-2xl overflow-hidden border border-[#3E2723]/10 shadow-[0_10px_30px_rgba(62,39,35,0.02)] hover:border-[#d4af37] hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] transition-all duration-500 flex flex-col justify-end"
+              className="group relative h-96 rounded-2xl overflow-hidden border border-[#3E2723]/10 shadow-[0_10px_30px_rgba(62,39,35,0.02)] hover:border-white/40 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)] transition-all duration-500 flex flex-col justify-end"
             >
               {/* Image */}
               <div className="absolute inset-0 z-0">
@@ -119,11 +119,11 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
               {/* Card Content */}
               <div className="relative z-20 p-6 flex flex-col items-center text-center text-white">
                 {/* Floating Icon */}
-                <div className="w-12 h-12 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#d4af37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:bg-[#d4af37] group-hover:text-[#3E2723]">
+                <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:bg-white group-hover:text-[#3E2723]">
                   <span className="material-symbols-outlined text-xl">{item.icon}</span>
                 </div>
 
-                <h3 className="font-headline text-xl font-bold mb-2 group-hover:text-[#d4af37] transition-colors">
+                <h3 className="font-headline text-xl font-bold mb-2 group-hover:text-white transition-colors">
                   {isAr ? item.labelAr : item.labelEn}
                 </h3>
                 <p className="text-white/60 text-xs font-light leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 h-0 group-hover:h-auto overflow-hidden">
@@ -138,7 +138,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
         <div className="flex justify-center mt-16">
           <Link
             href={`/${locale}/products`}
-            className="px-8 py-3.5 bg-transparent border-2 border-[#3E2723] text-[#3E2723] hover:border-[#d4af37] hover:bg-[#d4af37] hover:text-[#3E2723] rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 shadow-md"
+            className="px-8 py-3.5 bg-transparent border-2 border-[#3E2723] text-[#3E2723] hover:bg-[#3E2723] hover:text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 shadow-md"
           >
             {isAr ? "عرض جميع المنتجات" : "View All Products"}
           </Link>

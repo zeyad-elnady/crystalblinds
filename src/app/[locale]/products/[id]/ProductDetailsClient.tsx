@@ -7,13 +7,13 @@ import PageHero from "../../PageHero";
 import { useCart } from "@/context/CartContext";
 
 const STANDARD_SIZES = [
-  { width: "100", height: "100", labelAr: "١٠٠ × ١٠٠ سم", labelEn: "100 x 100 cm" },
-  { width: "120", height: "120", labelAr: "١٠٠ × ١٢٠ سم", labelEn: "120 x 120 cm" },
-  { width: "140", height: "140", labelAr: "١٤٠ × ١٤٠ سم", labelEn: "140 x 140 cm" },
-  { width: "150", height: "160", labelAr: "١٥٠ × ١٦٠ سم", labelEn: "150 x 160 cm" },
-  { width: "160", height: "200", labelAr: "١٦٠ × ٢٠٠ سم", labelEn: "160 x 200 cm" },
-  { width: "180", height: "220", labelAr: "١٨٠ × ٢٢٠ سم", labelEn: "180 x 220 cm" },
-  { width: "200", height: "220", labelAr: "٢٠٠ × ٢٢٠ سم", labelEn: "200 x 220 cm" },
+  { width: "1.0", height: "1.0", labelAr: "١.٠ × ١.٠ م", labelEn: "1.0 x 1.0 m" },
+  { width: "1.0", height: "1.2", labelAr: "١.٠ × ١.٢ م", labelEn: "1.0 x 1.2 m" },
+  { width: "1.4", height: "1.4", labelAr: "١.٤ × ١.٤ م", labelEn: "1.4 x 1.4 m" },
+  { width: "1.5", height: "1.6", labelAr: "١.٥ × ١.٦ م", labelEn: "1.5 x 1.6 m" },
+  { width: "1.6", height: "2.0", labelAr: "١.٦ × ٢.٠ م", labelEn: "1.6 x 2.0 m" },
+  { width: "1.8", height: "2.2", labelAr: "١.٨ × ٢.٢ م", labelEn: "1.8 x 2.2 m" },
+  { width: "2.0", height: "2.2", labelAr: "٢.٠ × ٢.٢ م", labelEn: "2.0 x 2.2 m" },
 ];
 
 export default function ProductDetailsClient({
@@ -28,15 +28,23 @@ export default function ProductDetailsClient({
   const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [colorPreviewImage, setColorPreviewImage] = useState<string | null>(null);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxImageIndex, setLightboxImageIndex] = useState(0);
+  
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
   
   const colors = product.colors || [];
   const [selectedColor, setSelectedColor] = useState<string | null>(colors.length > 0 ? colors[0].id : null);
 
-  const widthVal = parseFloat(width) || 0;
-  const heightVal = parseFloat(height) || 0;
-  const area = widthVal > 0 && heightVal > 0 ? (widthVal / 100) * (heightVal / 100) : 1;
+  const rawWidth = parseFloat(width) || 0;
+  const rawHeight = parseFloat(height) || 0;
+  
+  // Convert legacy cm input (>20) to meters seamlessly if typed
+  const widthVal = rawWidth > 20 ? rawWidth / 100 : rawWidth;
+  const heightVal = rawHeight > 20 ? rawHeight / 100 : rawHeight;
+
+  const area = widthVal > 0 && heightVal > 0 ? widthVal * heightVal : 1;
   const totalPrice = Math.round(product.price * area);
 
   const handleAddToCart = () => {
@@ -62,8 +70,13 @@ export default function ProductDetailsClient({
     });
   };
 
+  const handleImageClick = () => {
+    setLightboxImageIndex(currentImageIndex);
+    setIsLightboxOpen(true);
+  };
+
   return (
-    <div className={`min-h-screen bg-[#FFFDFA] text-[#3E2723] pb-24 ${isAr ? "rtl" : "ltr"}`}>
+    <div className={`min-h-screen bg-[#FAF8F5] text-[#2C1D18] pb-28 ${isAr ? "rtl" : "ltr"}`}>
       <PageHero
         title={isAr ? product.labelAr : product.labelEn}
         bgImage="/hero_bg.png"
@@ -75,118 +88,159 @@ export default function ProductDetailsClient({
         ]}
       />
 
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12 pt-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Left Column: Images and Details */}
-          <div className="lg:col-span-7 flex flex-col gap-8">
-
-            {/* Gallery */}
-            <div className="flex gap-4">
-              {/* Thumbnails */}
-              <div className="flex flex-col gap-3 w-20 shrink-0">
-                {product.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentImageIndex(idx)}
-                    className={`relative aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                      currentImageIndex === idx ? "border-[#d4af37]" : "border-transparent opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                    <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 pt-10 md:pt-14">
+        {/* Balanced 50/50 Side-by-Side Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          
+          {/* Product Gallery Column (50% Split) */}
+          <div className="lg:col-span-6 flex flex-col gap-5 lg:sticky lg:top-24">
+            
+            {/* Gallery Layout: Tiny Thumbnails Side-by-Side with Main Image */}
+            <div className="flex gap-3 md:gap-4 items-start">
               
-              {/* Main Image */}
-              <div className="flex-1 relative aspect-[4/5] rounded-xl overflow-hidden bg-[#FFFDFA]/50 border border-[#3E2723]/10 shadow-sm group">
-                <div className="absolute top-4 w-full text-center z-10 pointer-events-none">
-                  <span className="bg-[#FFFDFA]/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase text-[#3E2723] shadow-sm">
+              {/* Vertical Tiny Thumbnails Strip Next to Photo */}
+              {product.images && product.images.length > 0 && (
+                <div className="flex flex-col gap-2.5 w-16 sm:w-20 shrink-0">
+                  {product.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setCurrentImageIndex(idx);
+                        setColorPreviewImage(null);
+                      }}
+                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                        currentImageIndex === idx && !colorPreviewImage
+                          ? "border-[#d4af37] ring-2 ring-[#d4af37]/30 scale-105 shadow-sm"
+                          : "border-[#3E2723]/10 opacity-75 hover:opacity-100 hover:border-[#3E2723]/30"
+                      }`}
+                    >
+                      <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Main Product Image Container with Click-to-Zoom & Tight Border */}
+              <div 
+                onClick={handleImageClick}
+                className="flex-1 relative w-full max-h-[75vh] h-[480px] md:h-[530px] rounded-xl overflow-hidden bg-white border border-[#3E2723]/15 shadow-xs flex items-center justify-center p-1 md:p-1.5 group transition-all cursor-zoom-in"
+                title={isAr ? "انقر للتكبير" : "Click to enlarge"}
+              >
+                {/* Category Badge */}
+                <div className="absolute top-3 left-3 z-10">
+                  <span className="bg-[#FAF8F5]/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase text-[#3E2723] shadow-xs border border-[#3E2723]/10">
                     {isAr ? product.category : product.category.toUpperCase()}
                   </span>
                 </div>
+
+                {/* Zoom Hint Icon */}
+                <div className="absolute top-3 right-3 z-10 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-md transition-all shadow-xs">
+                  <span className="material-symbols-outlined text-base block">zoom_in</span>
+                </div>
+
+                {/* Main Image with object-contain for 100% full uncropped visibility */}
                 <img
-                  src={colorPreviewImage || product.images[currentImageIndex]}
+                  src={colorPreviewImage || product.images[currentImageIndex] || product.images[0]}
                   alt={product.alt}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full max-h-[75vh] object-contain transition-transform duration-500 group-hover:scale-[1.02]"
                 />
               </div>
             </div>
 
-            {/* Description & Features */}
-            <div className={`mt-4 ${isAr ? "text-right" : "text-left"}`}>
-              <p className="text-[#3E2723]/80 leading-relaxed mb-6">
+            {/* Product Details & Features Accordion / Card */}
+            <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-[#3E2723]/10 p-6 shadow-xs mt-1">
+              <h3 className="font-headline font-bold text-base text-[#3E2723] mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#d4af37] text-xl">description</span>
+                {isAr ? "تفاصيل المنتج المميزة" : "Product Features & Details"}
+              </h3>
+              <p className="text-xs md:text-sm text-[#3E2723]/80 leading-relaxed mb-6">
                 {isAr ? product.detailsAr : product.detailsEn}
               </p>
               
-              <div className="w-full h-px bg-[#3E2723]/10 my-8 relative flex justify-center">
-                <div className="absolute -top-3 w-6 h-6 rounded-full bg-[#FFFDFA] border border-[#3E2723]/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[14px] text-[#d4af37]">add</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-4 border-t border-[#3E2723]/10 text-xs text-[#3E2723]/80 font-medium">
+                <div className="flex items-center gap-2.5 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#3E2723]/5">
+                  <span className="material-symbols-outlined text-[#d4af37] text-lg">verified</span>
+                  <span>{isAr ? "خامات عالية الجودة ومقاومة" : "Premium & Durable Fabric"}</span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm text-[#3E2723]/70">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#d4af37] text-[18px]">check</span>
-                  <span>{isAr ? "مواد عالية الجودة" : "High Quality Material"}</span>
+                <div className="flex items-center gap-2.5 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#3E2723]/5">
+                  <span className="material-symbols-outlined text-[#d4af37] text-lg">palette</span>
+                  <span>{isAr ? "تشكيلة ألوان أنيقة ومتنوعة" : "Wide Range of Rich Colors"}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#d4af37] text-[18px]">check</span>
-                  <span className="underline decoration-[#d4af37] underline-offset-4">{isAr ? "ألوان داكنة متاحة" : "Dark colours available"}</span>
+                <div className="flex items-center gap-2.5 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#3E2723]/5">
+                  <span className="material-symbols-outlined text-[#d4af37] text-lg">shield</span>
+                  <span>{isAr ? "ضمان ممتد 3 سنوات" : "Extended 3-Year Warranty"}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#d4af37] text-[18px]">check</span>
-                  <span>{isAr ? "ضمان ممتد" : "Extended Warranty"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#d4af37] text-[18px]">check</span>
-                  <span>{isAr ? "مثالية للمنازل العصرية" : "Perfect for modern homes"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#d4af37] text-[18px]">check</span>
-                  <span>{isAr ? "تشطيب فاخر" : "Premium finish"}</span>
+                <div className="flex items-center gap-2.5 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#3E2723]/5">
+                  <span className="material-symbols-outlined text-[#d4af37] text-lg">home</span>
+                  <span>{isAr ? "تصميم عصري يناسب كافة الديكورات" : "Modern Fit for Any Interior"}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Customization */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
-            {/* Title, Stars & Starting Price (moved here for clean layout) */}
-            <div className={`${isAr ? "text-right" : "text-left"} border-b border-[#3E2723]/10 pb-4`}>
-              <div className="text-[#d4af37] font-bold text-2xl">
-                {isAr ? "يبدأ من" : "from"} {product.price.toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} className="material-symbols-outlined text-[#d4af37] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    star
-                  </span>
-                ))}
-                <span className="text-[#3E2723]/50 text-xs ml-2">(24 reviews)</span>
-              </div>
-            </div>
-
-            <div className={`border-b border-[#3E2723] pb-2 ${isAr ? "text-right" : "text-left"}`}>
-              <h2 className="font-headline text-lg font-bold text-[#3E2723]">
-                {isAr ? "قم بتخصيص منتجك" : "Customize your product"}
-              </h2>
-            </div>
-
-            <div className="bg-[#f2ece4]/50 border border-[#3E2723]/5 rounded-xl flex flex-col divide-y divide-[#3E2723]/10 overflow-hidden shadow-sm">
-              
-              {/* Measurements */}
-              <div className={`p-6 md:p-8 ${isAr ? "text-right" : "text-left"}`}>
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="font-bold text-[#3E2723]">{isAr ? "مقاسات منتجك" : "Measurements of your product"}</h3>
-                  <span className="material-symbols-outlined text-[16px] text-[#3E2723]/40">info</span>
+          {/* Product Details & Customization Column (50% Split) */}
+          <div className="lg:col-span-6 flex flex-col gap-6">
+            
+            {/* Header: Title, Reviews, & Base Price Banner */}
+            <div className="bg-white rounded-2xl border border-[#3E2723]/10 p-6 md:p-7 shadow-xs flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <h1 className="font-headline text-2xl md:text-3xl font-extrabold text-[#3E2723] leading-tight">
+                    {isAr ? product.labelAr : product.labelEn}
+                  </h1>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center text-[#d4af37]">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span key={star} className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          star
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-xs font-bold text-[#3E2723]/70">(4.9/5)</span>
+                    <span className="text-xs text-[#3E2723]/40">• 24 {isAr ? "تقييم" : "reviews"}</span>
+                  </div>
                 </div>
-                
-                {/* Standard Sizes Selection */}
-                <div className="mb-4">
-                  <label className="text-xs font-semibold text-[#3E2723]/60 block mb-2">
-                    {isAr ? "المقاسات القياسية (أو أدخل مقاسك بالأسفل):" : "Standard sizes (or enter custom sizes below):"}
+
+                <div className="bg-[#F7F4EF] border border-[#3E2723]/10 rounded-2xl px-4 py-3 flex flex-col items-end">
+                  <span className="text-[11px] font-semibold text-[#3E2723]/60 uppercase tracking-wider">
+                    {isAr ? "السعر يبدأ من" : "Starting Price"}
+                  </span>
+                  <div className="flex items-baseline gap-1 text-[#3E2723] font-black text-xl md:text-2xl mt-0.5">
+                    <span>{product.price.toLocaleString(isAr ? 'ar-EG' : 'en-US')}</span>
+                    <span className="text-xs font-bold text-[#3E2723]/60">{isAr ? "ج.م / م²" : "EGP / m²"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Customization Form Container */}
+            <div className="bg-white rounded-2xl border border-[#3E2723]/10 overflow-hidden shadow-xs divide-y divide-[#3E2723]/10">
+              
+              {/* Size Section Header & Selector */}
+              <div className="p-6 md:p-7">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#FAF8F5] border border-[#3E2723]/15 flex items-center justify-center text-[#3E2723]">
+                      <span className="material-symbols-outlined text-lg">straighten</span>
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-base text-[#3E2723]">
+                        {isAr ? "مقاسات الستارة المطلوبة" : "Select Your Dimensions"}
+                      </h2>
+                      <p className="text-[11px] text-[#3E2723]/60">
+                        {isAr ? "اختر من المقاسات القياسية أو أدخل مقاسك الخاص بالمتر" : "Choose a standard size or enter custom dimensions in meters"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Standard Sizes Pills in Meters */}
+                <div className="mb-6">
+                  <label className="text-xs font-bold text-[#3E2723]/70 block mb-3">
+                    {isAr ? "المقاسات القياسية السريعة (بالمتر):" : "Quick Standard Sizes (in meters):"}
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {STANDARD_SIZES.map((size, index) => {
                       const isActive = width === size.width && height === size.height;
                       return (
@@ -197,13 +251,13 @@ export default function ProductDetailsClient({
                             setWidth(size.width);
                             setHeight(size.height);
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition-all flex flex-col items-center justify-center gap-0.5 ${
                             isActive
-                              ? "bg-[#3E2723] border-[#3E2723] text-white shadow-sm"
-                              : "bg-[#FFFDFA] border-[#3E2723]/10 text-[#3E2723]/80 hover:border-[#d4af37] hover:text-[#d4af37]"
+                              ? "bg-[#2C1D18] border-[#2C1D18] text-[#d4af37] shadow-md scale-[1.02]"
+                              : "bg-[#FAF8F5] border-[#3E2723]/10 text-[#3E2723]/80 hover:border-[#d4af37] hover:bg-white"
                           }`}
                         >
-                          {isAr ? size.labelAr : size.labelEn}
+                          <span>{isAr ? size.labelAr : size.labelEn}</span>
                         </button>
                       );
                     })}
@@ -213,256 +267,301 @@ export default function ProductDetailsClient({
                         setWidth("");
                         setHeight("");
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                      className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center ${
                         width === "" && height === ""
-                          ? "bg-[#3E2723] border-[#3E2723] text-white shadow-sm"
-                          : "bg-[#FFFDFA] border-[#3E2723]/10 text-[#3E2723]/80 hover:border-[#d4af37] hover:text-[#d4af37]"
+                          ? "bg-[#2C1D18] border-[#2C1D18] text-[#d4af37] shadow-md scale-[1.02]"
+                          : "bg-[#FAF8F5] border-[#3E2723]/10 text-[#3E2723]/80 hover:border-[#d4af37] hover:bg-white"
                       }`}
                     >
-                      {isAr ? "مقاس مخصص" : "Custom"}
+                      {isAr ? "مقاس مخصص" : "Custom Size"}
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold text-[#3E2723]/60">{isAr ? "العرض (سم)" : "Width cm"}</label>
-                    <input 
-                      type="number" 
-                      placeholder={isAr ? "من 40 إلى 600 سم" : "40 up to 600cm"}
-                      value={width}
-                      onChange={(e) => setWidth(e.target.value)}
-                      className="bg-[#FFFDFA] border border-[#3E2723]/10 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors"
-                      dir="ltr"
-                    />
+                {/* Custom Inputs in Meters */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#FAF8F5] p-4 md:p-5 rounded-2xl border border-[#3E2723]/10">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-[#3E2723]/80 flex items-center justify-between">
+                      <span>{isAr ? "العرض المطلوب (متر)" : "Width (meters)"}</span>
+                      <span className="text-[10px] font-normal text-[#3E2723]/50">(0.4 - 6.0 {isAr ? "متر" : "m"})</span>
+                    </label>
+                    <div className="relative flex items-center">
+                      <input 
+                        type="number" 
+                        step="0.1"
+                        placeholder={isAr ? "مثال: 1.5" : "e.g. 1.5"}
+                        value={width}
+                        onChange={(e) => setWidth(e.target.value)}
+                        className="w-full bg-white border border-[#3E2723]/20 rounded-xl px-4 py-3 text-sm font-bold text-[#3E2723] focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 transition-all"
+                        dir="ltr"
+                      />
+                      <span className="absolute right-3 text-xs font-bold text-[#3E2723]/40 pointer-events-none">
+                        {isAr ? "متر" : "m"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold text-[#3E2723]/60">{isAr ? "الارتفاع (سم)" : "Height cm"}</label>
-                    <input 
-                      type="number" 
-                      placeholder={isAr ? "من 40 إلى 275 سم" : "40 up to 275cm"}
-                      value={height}
-                      onChange={(e) => setHeight(e.target.value)}
-                      className="bg-[#FFFDFA] border border-[#3E2723]/10 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors"
-                      dir="ltr"
-                    />
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-[#3E2723]/80 flex items-center justify-between">
+                      <span>{isAr ? "الارتفاع المطلوب (متر)" : "Height (meters)"}</span>
+                      <span className="text-[10px] font-normal text-[#3E2723]/50">(0.4 - 2.75 {isAr ? "متر" : "m"})</span>
+                    </label>
+                    <div className="relative flex items-center">
+                      <input 
+                        type="number" 
+                        step="0.1"
+                        placeholder={isAr ? "مثال: 1.8" : "e.g. 1.8"}
+                        value={height}
+                        onChange={(e) => setHeight(e.target.value)}
+                        className="w-full bg-white border border-[#3E2723]/20 rounded-xl px-4 py-3 text-sm font-bold text-[#3E2723] focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 transition-all"
+                        dir="ltr"
+                      />
+                      <span className="absolute right-3 text-xs font-bold text-[#3E2723]/40 pointer-events-none">
+                        {isAr ? "متر" : "m"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-6 flex flex-col gap-3 text-xs text-[#3E2723]/70">
-                  <div className="flex gap-3">
-                    <span className="material-symbols-outlined text-[18px] text-[#3E2723]/40 shrink-0">straighten</span>
-                    <p>
-                      {isAr ? "اتبع " : "Follow our "}
-                      <a href="#" className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#3E2723]">{isAr ? "دليل القياسات" : "measuring guide"}</a>
-                      {isAr ? " للحصول على نتيجة مثالية. قم بذلك بنفسك لتوفير الوقت والمال." : " for a perfect result. Do it yourself! faster and cheaper."}
-                    </p>
-                  </div>
-                  <div className="flex gap-3 items-center">
-                    <span className="material-symbols-outlined text-[18px] text-[#3E2723]/40 shrink-0">construction</span>
-                    <p>
-                      {isAr ? "تحتاج لتركيب؟ " : "Need installation? "}
-                      <Link href={`/${locale}/contact`} className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#3E2723]">{isAr ? "تواصل معنا" : "Contact our experts"}</Link>
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Colors */}
-              <div className={`p-6 md:p-8 ${isAr ? "text-right" : "text-left"}`}>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-bold text-[#3E2723]">{isAr ? "تغيير اللون" : "Change color"}</h3>
-                    <span className="text-[10px] text-[#3E2723]/50 bg-[#FFFDFA] px-2 py-0.5 rounded border border-[#3E2723]/10">
-                      {isAr ? "+٢٦ لون" : "+ 26 colors"}
+                {/* Helpful Measurement Links */}
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-[#3E2723]/70 pt-2">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#d4af37] text-base">straighten</span>
+                    <span>
+                      {isAr ? "حائر في القياس؟ " : "Unsure about dimensions? "}
+                      <a href="#" className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#3E2723]">{isAr ? "دليل رفع القياسات" : "Measuring guide"}</a>
                     </span>
                   </div>
-                  <button className="material-symbols-outlined text-[18px] text-[#3E2723]/40 hover:text-[#3E2723]">close</button>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <button className="w-8 h-8 flex items-center justify-center text-[#3E2723]/40 hover:text-[#d4af37] shrink-0">
-                    <span className="material-symbols-outlined">chevron_left</span>
-                  </button>
-                  
-                  <div className="flex gap-3 overflow-x-auto hide-scrollbar px-2">
-                    {colors.length === 0 && (
-                      <span className="text-sm text-[#3E2723]/50">{isAr ? "لا توجد ألوان متاحة حالياً" : "No colors available currently"}</span>
-                    )}
-                    {colors.map((c) => (
-                      <div key={c.id} className="flex flex-col items-center gap-2">
-                        <button 
-                          onClick={() => {
-                            if (c.isSoldOut) return;
-                            setSelectedColor(c.id);
-                            setColorPreviewImage(c.image || null);
-                          }}
-                          disabled={c.isSoldOut}
-                          className={`relative w-[60px] h-[60px] rounded border shadow-sm transition-all p-1 ${selectedColor === c.id ? "border-[#d4af37] bg-[#FFFDFA]" : "border-[#3E2723]/15 hover:border-[#3E2723]/30"} ${c.isSoldOut ? "opacity-50 cursor-not-allowed" : ""}`}
-                        >
-                          <div className="w-full h-full rounded-sm border border-[#3E2723]/5" style={{ backgroundColor: c.hex }} />
-                          {c.isSoldOut && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-full h-0.5 bg-red-500 rotate-45 absolute" />
-                              <div className="w-full h-0.5 bg-red-500 -rotate-45 absolute" />
-                            </div>
-                          )}
-                        </button>
-                        <span className={`text-[10px] mt-1 ${c.isSoldOut ? "text-red-500 font-bold" : "text-[#3E2723]/60"}`}>
-                          {c.isSoldOut ? (isAr ? "نفذت" : "Sold Out") : (isAr ? c.nameAr : c.nameEn)}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#d4af37] text-base">construction</span>
+                    <Link href={`/${locale}/contact`} className="font-bold underline decoration-[#d4af37] underline-offset-4 text-[#3E2723]">
+                      {isAr ? "طلب خدمة تركيب احترافية" : "Request Installation Service"}
+                    </Link>
                   </div>
-
-                  <button className="w-8 h-8 flex items-center justify-center text-[#3E2723]/40 hover:text-[#d4af37] shrink-0">
-                    <span className="material-symbols-outlined">chevron_right</span>
-                  </button>
                 </div>
               </div>
 
+              {/* Color Customization */}
+              {colors.length > 0 && (
+                <div className="p-6 md:p-7">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#FAF8F5] border border-[#3E2723]/15 flex items-center justify-center text-[#3E2723]">
+                        <span className="material-symbols-outlined text-lg">palette</span>
+                      </div>
+                      <h3 className="font-bold text-base text-[#3E2723]">{isAr ? "اختر اللون المناسب" : "Select Color"}</h3>
+                    </div>
+                    <span className="text-xs font-semibold text-[#3E2723]/60 bg-[#FAF8F5] px-3 py-1 rounded-full border border-[#3E2723]/10">
+                      {colors.length} {isAr ? "ألوان متوفرة" : "Colors available"}
+                    </span>
+                  </div>
 
-
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    {colors.map((c) => {
+                      const isSelected = selectedColor === c.id;
+                      return (
+                        <div key={c.id} className="flex flex-col items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (c.isSoldOut) return;
+                              setSelectedColor(c.id);
+                              setColorPreviewImage(c.image || null);
+                            }}
+                            disabled={c.isSoldOut}
+                            title={isAr ? c.nameAr : c.nameEn}
+                            className={`relative w-12 h-12 rounded-xl border-2 transition-all p-1 shadow-xs flex items-center justify-center ${
+                              isSelected
+                                ? "border-[#d4af37] ring-2 ring-[#d4af37]/30 scale-110"
+                                : "border-[#3E2723]/15 hover:border-[#3E2723]/40"
+                            } ${c.isSoldOut ? "opacity-40 cursor-not-allowed" : ""}`}
+                          >
+                            <div className="w-full h-full rounded-lg border border-black/10" style={{ backgroundColor: c.hex }} />
+                            {isSelected && (
+                              <span className="absolute text-white material-symbols-outlined text-sm font-bold drop-shadow-md">
+                                check
+                              </span>
+                            )}
+                            {c.isSoldOut && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-full h-0.5 bg-red-600 rotate-45 absolute" />
+                              </div>
+                            )}
+                          </button>
+                          <span className={`text-[10px] font-bold ${isSelected ? "text-[#3E2723]" : "text-[#3E2723]/60"}`}>
+                            {isAr ? c.nameAr : c.nameEn}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Price & Action Section — Premium Redesign */}
-            <div className={`mt-2 rounded-2xl overflow-hidden border border-[#d4af37]/20 shadow-[0_8px_40px_rgba(62,39,35,0.08)] ${isAr ? 'text-right' : 'text-left'}`}>
-              {/* Price header band */}
-              <div className="bg-gradient-to-br from-[#2B1B17] to-[#3E2723] px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
-                <div className={`flex flex-col gap-1 ${isAr ? 'items-end' : 'items-start'}`}>
-                  <span className="text-[#d4af37]/60 text-[10px] font-semibold tracking-widest uppercase">
-                    {isAr ? 'السعر الإجمالي' : 'Total Price'}
+            {/* Price Banner & Action Buttons */}
+            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-md">
+              {/* Premium dark gradient header */}
+              <div className="bg-[#2C1D18] p-6 text-white flex items-center justify-between flex-wrap gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-white/60 text-[11px] font-bold tracking-widest uppercase">
+                    {isAr ? "الإجمالي المستحق" : "Total Price"}
                   </span>
-                  <div className={`flex items-baseline gap-2 ${isAr ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-[#d4af37] font-extrabold text-3xl md:text-4xl leading-none" dir="ltr">
+                  <div className="flex items-baseline gap-2" dir="ltr">
+                    <span className="text-white font-black text-3xl md:text-4xl tracking-tight">
                       {totalPrice.toLocaleString(isAr ? 'ar-EG' : 'en-US')}
                     </span>
-                    <span className="text-[#d4af37]/80 font-bold text-base">{isAr ? 'ج.م' : 'EGP'}</span>
+                    <span className="text-white/80 font-bold text-base">{isAr ? "ج.م" : "EGP"}</span>
                   </div>
-                  <div className={`flex items-center gap-1.5 mt-1 ${isAr ? 'flex-row-reverse' : ''}`}>
-                    <span className="material-symbols-outlined text-[#d4af37]/40 text-sm">straighten</span>
-                    <span className="text-[10px] text-white/40" dir="rtl">
-                      {isAr ?
-                        `${area.toFixed(2)} م² × ${product.price.toLocaleString('ar-EG')} ج.م / م²` :
-                        `${area.toFixed(2)} m² × ${product.price.toLocaleString('en-US')} EGP / m²`
-                      }
-                    </span>
-                  </div>
+                  <p className="text-[11px] text-white/50 mt-0.5">
+                    {isAr
+                      ? `${area.toFixed(2)} م² (بناءً على مقاساتك المحددة بالمتر)`
+                      : `${area.toFixed(2)} m² based on your custom size in meters`
+                    }
+                  </p>
                 </div>
-                {/* Quick trust pills */}
-                <div className={`flex flex-col gap-2 ${isAr ? 'items-end' : 'items-start'}`}>
-                  <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-3 py-1">
-                    <span className="material-symbols-outlined text-[#d4af37] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
-                    <span className="text-[10px] text-white/70 font-medium">{isAr ? 'ضمان 3 سنوات' : '3-Year Warranty'}</span>
+
+                <div className="flex flex-col gap-2 items-end">
+                  <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs">
+                    <span className="material-symbols-outlined text-[#d4af37] text-sm">workspace_premium</span>
+                    <span className="text-white/90 font-medium">{isAr ? "ضمان 3 سنوات" : "3-Year Guarantee"}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-3 py-1">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                    <span className="text-[10px] text-white/70 font-medium">{isAr ? 'منتج أصلي مضمون' : 'Authentic Product'}</span>
+                  <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs">
+                    <span className="material-symbols-outlined text-emerald-400 text-sm">local_shipping</span>
+                    <span className="text-white/90 font-medium">{isAr ? "شحن لجميع المحافظات" : "Nationwide Shipping"}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div className="bg-[#FFFDFA] px-6 py-5 flex flex-col gap-3">
-                {/* Primary: Buy Now */}
+              {/* Action Buttons Section */}
+              <div className="bg-white p-6 flex flex-col gap-3">
                 {product.is_active === false ? (
                   <button
                     disabled
-                    className="w-full bg-gray-200 text-gray-400 py-4 rounded-xl font-bold text-sm cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-gray-200 text-gray-500 py-4 rounded-xl font-bold text-sm cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-lg">remove_shopping_cart</span>
-                    {isAr ? 'نفذت الكمية' : 'Sold Out'}
+                    {isAr ? "غير متوفر حالياً" : "Out of Stock"}
                   </button>
                 ) : (
                   <Link
-                    href={`/${locale}/checkout/${product.id}?width=${width}&height=${height}&color=${selectedColor}&pieces=1`}
-                    className="w-full bg-gradient-to-r from-[#d4af37] to-[#b8922a] text-white py-4 rounded-xl font-extrabold text-sm shadow-[0_4px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_6px_28px_rgba(212,175,55,0.5)] hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-2"
+                    href={`/${locale}/checkout/${product.id}?width=${widthVal}&height=${heightVal}&color=${selectedColor}&pieces=1`}
+                    className="w-full bg-[#2C1D18] hover:bg-[#3E2723] text-white border border-[#C5A059]/40 py-4 rounded-xl font-extrabold text-sm shadow-md hover:shadow-lg transition-all text-center flex items-center justify-center gap-2"
                   >
-                    <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-                    {isAr ? 'اشتري الآن' : 'Buy Now'}
+                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+                    {isAr ? "اشتري الآن" : "Buy Now"}
                   </Link>
                 )}
 
-                {/* Secondary row */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   {product.is_active !== false && (
                     <button
+                      type="button"
                       onClick={handleAddToCart}
-                      className="flex items-center justify-center gap-2 bg-white border-2 border-[#3E2723]/15 hover:border-[#d4af37] text-[#3E2723] hover:text-[#b8922a] py-3 rounded-xl font-bold text-xs transition-all hover:-translate-y-0.5"
+                      className="flex items-center justify-center gap-2 bg-[#FAF8F5] border border-[#3E2723]/20 hover:border-[#d4af37] text-[#3E2723] hover:text-[#b8922a] py-3.5 rounded-xl font-bold text-xs transition-all shadow-xs"
                     >
-                      <span className="material-symbols-outlined text-base">add_shopping_cart</span>
-                      {isAr ? 'أضف للسلة' : 'Add to Cart'}
+                      <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
+                      {isAr ? "أضف للسلة" : "Add to Cart"}
                     </button>
                   )}
                   <Link
                     href={`/${locale}/#reserve`}
-                    className={`flex items-center justify-center gap-2 bg-[#3E2723]/5 border-2 border-[#3E2723]/10 hover:border-[#3E2723]/30 text-[#3E2723] py-3 rounded-xl font-bold text-xs transition-all hover:-translate-y-0.5 ${product.is_active === false ? 'col-span-2' : ''}`}
+                    className={`flex items-center justify-center gap-2 bg-[#FAF8F5] border border-[#3E2723]/20 hover:border-[#3E2723]/50 text-[#3E2723] py-3.5 rounded-xl font-bold text-xs transition-all shadow-xs ${
+                      product.is_active === false ? "col-span-2" : ""
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-base">calendar_month</span>
-                    {isAr ? 'احجز معاينة' : 'Book Visit'}
+                    <span className="material-symbols-outlined text-lg">calendar_month</span>
+                    {isAr ? "احجز معاينة مجانية" : "Book Visit"}
                   </Link>
-                </div>
-
-                {/* Shipping strip */}
-                <div className={`flex items-center justify-between mt-1 pt-4 border-t border-[#3E2723]/8 text-[11px] text-[#3E2723]/60 ${isAr ? 'flex-row-reverse' : ''}`}>
-                  <div className={`flex items-center gap-1.5 ${isAr ? 'flex-row-reverse' : ''}`}>
-                    <span className="material-symbols-outlined text-[#3E2723]/40 text-sm">local_shipping</span>
-                    <span>{isAr ? 'شحن قياسي' : 'Standard Shipping'}</span>
-                  </div>
-                  <span className="font-semibold text-[#3E2723]/80">
-                    {isAr ? 'التسليم خلال أسبوعين' : '~2 weeks delivery'}
-                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Trust Info */}
-            <div className={`mt-2 border-t-2 border-[#3E2723] pt-4 ${isAr ? "text-right" : "text-left"}`}>
-              <h3 className="font-headline text-lg font-bold text-[#3E2723] mb-6">
-                {isAr ? "يمكنك الوثوق في كريستال بليندز" : "You can trust in Crystal Blinds"}
-              </h3>
-              
-              <div className="flex flex-col gap-5">
-                <div className={`flex items-center gap-3 ${isAr ? "flex-row-reverse" : ""}`}>
-                  <span className="material-symbols-outlined text-[24px] text-[#3E2723]/50">workspace_premium</span>
-                  <div className="text-sm">
-                    <span className="font-bold text-[#3E2723]">{isAr ? "الضمان " : "Warranty "}</span>
-                    <span className="text-[#3E2723]/70">{isAr ? "٣ سنوات" : "3 years"}</span>
-                  </div>
-                </div>
-                
-                <p className="text-xs text-[#3E2723]/60">
-                  {isAr ? "أكثر من " : "More than "}
-                  <span className="font-bold text-[#3E2723]">{isAr ? "١ مليون" : "1 million"}</span>
-                  {isAr ? " نافذة تم تزيينها بمنتجاتنا" : " decorated windows"}
-                </p>
-
-                <div className={`flex items-center gap-3 ${isAr ? "flex-row-reverse" : ""}`}>
-                  <span className="material-symbols-outlined text-[24px] text-[#3E2723]/50">support_agent</span>
-                  <div className="text-sm">
-                    <Link href={`/${locale}/contact`} className="font-bold text-[#3E2723] underline decoration-[#d4af37] underline-offset-4">{isAr ? "خدمة العملاء " : "Customer service "}</Link>
-                    <span className="text-[#3E2723]/70">{isAr ? "مجانية ومتاحة دائماً" : "gratuitous & available"}</span>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-2 mt-2 ${isAr ? "flex-row-reverse" : ""}`}>
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <span key={star} className="material-symbols-outlined text-[#d4af37] text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        star
-                      </span>
-                    ))}
-                  </div>
-                  <span className="text-xs text-[#3E2723]/60">
-                    {isAr ? "٣١,٨٢٠ مراجعة" : "31,820 reviews"}
-                  </span>
-                </div>
+            {/* Trust Footer Card */}
+            <div className="bg-white/60 rounded-2xl border border-[#3E2723]/10 p-5 flex items-center justify-between text-xs text-[#3E2723]/70 flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#d4af37]">verified_user</span>
+                <span>{isAr ? "دفع آمن 100% ومعتمد" : "100% Secure Checkout"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#d4af37]">headset_mic</span>
+                <span>{isAr ? "دعم وتواصل مستمر" : "Dedicated Support"}</span>
               </div>
             </div>
 
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      {isLightboxOpen && (
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 md:p-8 animate-in fade-in duration-200"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          {/* Lightbox Header */}
+          <div className="w-full flex items-center justify-between text-white z-10" onClick={(e) => e.stopPropagation()}>
+            <span className="text-xs md:text-sm font-semibold opacity-70">
+              {isAr ? product.labelAr : product.labelEn} ({lightboxImageIndex + 1} / {product.images.length})
+            </span>
+            <button 
+              onClick={() => setIsLightboxOpen(false)}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-2xl">close</span>
+            </button>
+          </div>
+
+          {/* Lightbox Main Image Display */}
+          <div className="relative flex-1 w-full flex items-center justify-center p-2 md:p-6" onClick={(e) => e.stopPropagation()}>
+            {product.images.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setLightboxImageIndex((prev) => (prev > 0 ? prev - 1 : product.images.length - 1))}
+                className="absolute left-2 md:left-6 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-2xl">chevron_left</span>
+              </button>
+            )}
+
+            <img
+              src={colorPreviewImage || product.images[lightboxImageIndex]}
+              alt={product.alt}
+              className="max-h-[85vh] max-w-[90vw] object-contain rounded-xl shadow-2xl transition-transform duration-300"
+            />
+
+            {product.images.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setLightboxImageIndex((prev) => (prev < product.images.length - 1 ? prev + 1 : 0))}
+                className="absolute right-2 md:right-6 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-2xl">chevron_right</span>
+              </button>
+            )}
+          </div>
+
+          {/* Lightbox Thumbnails Navigation */}
+          {product.images.length > 1 && (
+            <div className="flex gap-2.5 max-w-full overflow-x-auto p-2 z-10" onClick={(e) => e.stopPropagation()}>
+              {product.images.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setLightboxImageIndex(idx)}
+                  className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                    lightboxImageIndex === idx ? "border-[#d4af37] scale-105 shadow-md" : "border-white/20 opacity-50 hover:opacity-100"
+                  }`}
+                >
+                  <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
+

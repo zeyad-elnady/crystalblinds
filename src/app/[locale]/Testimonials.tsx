@@ -155,13 +155,13 @@ export default function Testimonials({ isAr }: { isAr: boolean }) {
     <section id="testimonials" className="py-24 bg-[#FFFDFA] text-[#3E2723] overflow-hidden">
       {/* Heading */}
       <div className="text-center mb-14 px-6">
-        <span className="text-[#d4af37] text-xs uppercase tracking-[0.3em] font-semibold">
+        <span className="text-[#3E2723]/60 text-xs uppercase tracking-[0.3em] font-semibold">
           {isAr ? "آراء عملائنا" : "TESTIMONIALS"}
         </span>
         <h2 className="font-headline text-3xl md:text-5xl font-bold text-[#3E2723] mt-2">
           {isAr ? "ماذا يقول عملائنا عنا؟" : "What Our Clients Say"}
         </h2>
-        <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-4" />
+        <div className="w-16 h-[2px] bg-[#3E2723]/25 mx-auto mt-4" />
       </div>
 
       {/* Carousel */}
@@ -196,12 +196,12 @@ export default function Testimonials({ isAr }: { isAr: boolean }) {
             >
               <div
                 className={`bg-white rounded-2xl px-8 py-7 shadow-[0_4px_30px_rgba(62,39,35,0.08)] border ${
-                  isCenter ? "border-[#d4af37]/25 shadow-[0_8px_40px_rgba(62,39,35,0.12)]" : "border-[#3E2723]/8"
+                  isCenter ? "border-[#3E2723]/15 shadow-[0_8px_40px_rgba(62,39,35,0.12)]" : "border-[#3E2723]/8"
                 }`}
                 dir={isAr ? "rtl" : "ltr"}
               >
                 {/* Quote mark */}
-                <span className="text-5xl leading-none text-[#d4af37]/20 font-serif select-none">"</span>
+                <span className="text-5xl leading-none text-[#3E2723]/10 font-serif select-none">"</span>
 
                 {/* Text */}
                 <p className={`text-[13.5px] leading-relaxed text-[#3E2723]/75 mt-1 mb-6 line-clamp-4 ${isAr ? "text-right" : "text-left"}`}>
@@ -210,7 +210,7 @@ export default function Testimonials({ isAr }: { isAr: boolean }) {
 
                 {/* Author */}
                 <div className={`flex items-center gap-3 border-t border-[#3E2723]/8 pt-4 ${isAr ? "flex-row-reverse" : ""}`}>
-                  <div className="w-10 h-10 rounded-full bg-[#3E2723]/8 flex items-center justify-center text-[#d4af37] font-bold text-base shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-[#3E2723]/8 flex items-center justify-center text-[#3E2723] font-bold text-base shrink-0">
                     {item.avatar}
                   </div>
                   <div className={isAr ? "text-right" : "text-left"}>
@@ -231,7 +231,7 @@ export default function Testimonials({ isAr }: { isAr: boolean }) {
             key={i}
             onClick={() => setActive(i)}
             className={`transition-all duration-300 rounded-full ${
-              i === active ? "w-6 h-2 bg-[#d4af37]" : "w-2 h-2 bg-[#3E2723]/15 hover:bg-[#3E2723]/30"
+              i === active ? "w-6 h-2 bg-[#3E2723]" : "w-2 h-2 bg-[#3E2723]/15 hover:bg-[#3E2723]/30"
             }`}
           />
         ))}

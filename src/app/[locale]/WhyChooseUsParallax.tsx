@@ -107,12 +107,12 @@ export default function WhyChooseUsParallax({ isAr }: { isAr: boolean }) {
     <section id="collections" className="bg-[#FFFDFA] text-[#3E2723] w-full relative z-20 overflow-hidden">
       <div className="min-h-[70vh] w-full flex flex-col items-center justify-center px-6 relative pt-20">
 <div className="text-center relative z-10 mt-20">
-          <span className="text-[#d4af37] uppercase tracking-[0.3em] text-sm md:text-base font-semibold mb-6 block drop-shadow-sm">
+          <span className="text-[#3E2723]/60 uppercase tracking-[0.3em] text-sm md:text-base font-semibold mb-6 block drop-shadow-sm">
             {isAr ? "لماذا نحن" : "WHY CHOOSE US"}
           </span>
           <h3 className="font-headline text-5xl md:text-7xl lg:text-[6rem] text-[#3E2723] leading-[1.1] mb-8">
             {isAr ? "اختلاف كريستال للستائر" : "The Crystal Blinds"} <br className="hidden md:block" />
-            <span className="text-[#d4af37] italic font-light">{isAr ? "" : "Difference"}</span>
+            <span className="text-white italic font-light">{isAr ? "" : "Difference"}</span>
           </h3>
           <p className="text-[#3E2723]/70 text-lg md:text-xl max-w-2xl mx-auto leading-[1.8] pb-12">
             {isAr
@@ -121,7 +121,7 @@ export default function WhyChooseUsParallax({ isAr }: { isAr: boolean }) {
           </p>
         </div>
         
-        <div className="mt-10 flex flex-col items-center gap-3 text-sm text-[#d4af37] tracking-widest uppercase relative z-10 animate-bounce">
+        <div className="mt-10 flex flex-col items-center gap-3 text-sm text-white/60 tracking-widest uppercase relative z-10 animate-bounce">
           <span>{isAr ? "مرر لأسفل" : "SCROLL"}</span>
           <ArrowDown size={20} />
         </div>

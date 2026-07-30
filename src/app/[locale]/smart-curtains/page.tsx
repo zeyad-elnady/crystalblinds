@@ -37,7 +37,7 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
             <h2 className="font-headline text-2xl md:text-3.5xl font-bold text-[#3E2723]">
               {isAr ? "بالتعاون مع أفضل الشركات العالمية" : "In Cooperation with Top Global Brands"}
             </h2>
-            <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-3" />
+            <div className="w-16 h-[2px] bg-[#3E2723]/15 mx-auto mt-3" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -105,7 +105,7 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
             <h2 className="font-headline text-2xl md:text-3.5xl font-bold text-[#3E2723]">
               {isAr ? "مميزات ستائر الريموت كنترول" : "Remote Control Blinds Features"}
             </h2>
-            <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-3" />
+            <div className="w-16 h-[2px] bg-[#3E2723]/15 mx-auto mt-3" />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -117,7 +117,7 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
               { icon: "smartphone", titleAr: "تحكم ذكي", titleEn: "Smart Control", descAr: "التحكم بالستائر عبر الهاتف أو الريموت", descEn: "Control blinds easily via smartphone or remote" }
             ].map((feat, index) => (
               <div key={index} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm text-center flex flex-col items-center gap-3 hover:-translate-y-1 transition-all duration-300">
-                <div className="w-12 h-12 rounded-full bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37]">
+                <div className="w-12 h-12 rounded-full bg-[#3E2723]/5 flex items-center justify-center text-[#3E2723]/80">
                   <span className="material-symbols-outlined text-2xl">{feat.icon}</span>
                 </div>
                 <h4 className="font-bold text-sm">{isAr ? feat.titleAr : feat.titleEn}</h4>
@@ -133,7 +133,7 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
             <h2 className="font-headline text-2xl md:text-3.5xl font-bold text-[#3E2723]">
               {isAr ? "رحلة طلب ستائر بالريموت كنترول" : "Order Journey for Smart Blinds"}
             </h2>
-            <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mt-3" />
+            <div className="w-16 h-[2px] bg-[#3E2723]/15 mx-auto mt-3" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 relative">
@@ -145,7 +145,7 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
               { step: "5", titleAr: "ضمان وصيانة", titleEn: "Warranty & Support", descAr: "ضمان حقيقي وخدمة صيانة دورية للمحركات", descEn: "Real warranty & continuous customer support" }
             ].map((j, i) => (
               <div key={i} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm relative flex flex-col items-center text-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-[#d4af37] text-white flex items-center justify-center text-xs font-bold font-mono">
+                <div className="w-7 h-7 rounded-full bg-[#3E2723] text-white flex items-center justify-center text-xs font-bold font-mono">
                   {j.step}
                 </div>
                 <h4 className="font-bold text-sm mt-1">{isAr ? j.titleAr : j.titleEn}</h4>
@@ -156,12 +156,12 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
         </div>
 
         {/* Section 4: Banner */}
-        <div className="relative bg-[#2B1B17] text-[#FFFDFA] rounded-[2rem] p-8 md:p-12 overflow-hidden border border-[#d4af37]/20 shadow-xl flex flex-col md:flex-row items-center gap-8 justify-between">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-[#d4af37]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative bg-[#2B1B17] text-[#FFFDFA] rounded-[2rem] p-8 md:p-12 overflow-hidden border border-[#3E2723]/10 shadow-xl flex flex-col md:flex-row items-center gap-8 justify-between">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#3E2723]/10 rounded-full blur-3xl pointer-events-none" />
           
           <div className="flex items-center gap-4 shrink-0 z-10">
-            <span className="material-symbols-outlined text-[#d4af37] text-5xl md:text-6xl animate-bounce">settings_remote</span>
+            <span className="material-symbols-outlined text-[#3E2723]/80 text-5xl md:text-6xl animate-bounce">settings_remote</span>
           </div>
 
           <div className="flex-1 text-center md:text-right space-y-3 z-10">
@@ -195,23 +195,23 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
         {/* Section 5: Bottom Features Bar */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-6 border-t border-gray-100 pt-8 text-center text-xs text-gray-500 font-light">
           <div className="flex flex-col items-center gap-2">
-            <span className="material-symbols-outlined text-[#d4af37] text-2xl">verified</span>
+            <span className="material-symbols-outlined text-[#3E2723]/80 text-2xl">verified</span>
             <span>{isAr ? "معاينة مجانية داخل القاهرة والجيزة" : "Free measurement inside Cairo & Giza"}</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="material-symbols-outlined text-[#d4af37] text-2xl">support_agent</span>
+            <span className="material-symbols-outlined text-[#3E2723]/80 text-2xl">support_agent</span>
             <span>{isAr ? "خدمة ما بعد البيع ودعم فني دائم" : "After-sales service & tech support"}</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="material-symbols-outlined text-[#d4af37] text-2xl">handyman</span>
+            <span className="material-symbols-outlined text-[#3E2723]/80 text-2xl">handyman</span>
             <span>{isAr ? "تركيب احترافي بفريق متخصص" : "Professional install by expert team"}</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="material-symbols-outlined text-[#d4af37] text-2xl">hardware</span>
+            <span className="material-symbols-outlined text-[#3E2723]/80 text-2xl">hardware</span>
             <span>{isAr ? "قطع غيار أصلية 100%" : "100% original spare parts"}</span>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="material-symbols-outlined text-[#d4af37] text-2xl">security</span>
+            <span className="material-symbols-outlined text-[#3E2723]/80 text-2xl">security</span>
             <span>{isAr ? "ضمان حتى 10 سنوات على الموتور" : "Up to 10 years warranty on motor"}</span>
           </div>
         </div>

@@ -85,16 +85,12 @@ export default function ReportsView() {
           <div style="margin-top: 80px; text-align: left; font-size: 14px;">
             <div>اعتماد المدير العام: ___________________</div>
           </div>
-          
-          <script>
-            window.onload = function() {
-              window.print();
-            }
-          </script>
         </body>
       </html>
     `);
     printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
   };
 
   return (

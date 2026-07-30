@@ -101,7 +101,7 @@ export default function BeforeAfterSlider({ isAr }: { isAr: boolean }) {
               style={{ width: containerRef.current?.getBoundingClientRect().width }}
             />
             {/* Label */}
-            <span className={`absolute top-4 ${isAr ? "left-4" : "right-4"} z-20 bg-[#d4af37] text-[#2B1B17] px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider shadow`}>
+            <span className={`absolute top-4 ${isAr ? "left-4" : "right-4"} z-20 bg-white/95 text-[#3E2723] border border-[#3E2723]/10 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider shadow`}>
               {isAr ? "بعد" : "AFTER"}
             </span>
           </div>
@@ -111,7 +111,7 @@ export default function BeforeAfterSlider({ isAr }: { isAr: boolean }) {
             className="absolute top-0 bottom-0 z-20 w-[2px] bg-white cursor-ew-resize"
             style={{ left: `${sliderPosition}%` }}
           >
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#d4af37] border border-white text-white flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#3E2723] border border-white text-white flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95">
               <span className="text-[10px] font-bold select-none leading-none">&lt; &gt;</span>
             </div>
           </div>

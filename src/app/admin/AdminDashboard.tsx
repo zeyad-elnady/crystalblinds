@@ -20,6 +20,7 @@ import MotorProductsView from './views/MotorProductsView';
 import ProductCategoriesView from './views/ProductCategoriesView';
 import TestimonialsView from './views/TestimonialsView';
 import CatalogsView from './views/CatalogsView';
+import ProjectsView from './views/ProjectsView';
 import { ProductCategory, getCategories } from '@/lib/products';
 import { getBookingSettings, saveBookingSettings, formatTime12h, ALL_POSSIBLE_TIMES, DAYS_NAMES } from '@/lib/bookingSettings';
 
@@ -57,7 +58,7 @@ type FilterStatus = 'all' | AppointmentStatus;
 type FilterType = 'all' | AppointmentType;
 
 const ROLE_TABS: Record<string, string[]> = {
-  admin: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'product_categories', 'expenses', 'employees', 'reports', 'messages', 'website_edit', 'users', 'motor_products', 'testimonials', 'catalogs'],
+  admin: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'product_categories', 'expenses', 'employees', 'reports', 'messages', 'website_edit', 'users', 'motor_products', 'testimonials', 'catalogs', 'projects'],
   customer_service: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'messages'],
   sales: ['dashboard', 'clients', 'orders', 'products', 'bills', 'installations', 'maintenance', 'motor_products'],
   accountant: ['dashboard', 'bills', 'expenses', 'reports'],
@@ -94,7 +95,7 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false);
 
   // New states for active tab
-  const [activeTab, setActiveTab] = useState<'appointments' | 'website_edit' | 'products' | 'product_categories' | 'orders' | 'bills' | 'messages' | 'users' | 'dashboard' | 'clients' | 'inspections' | 'installations' | 'maintenance' | 'expenses' | 'employees' | 'reports' | 'motor_products' | 'testimonials' | 'catalogs'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'website_edit' | 'products' | 'product_categories' | 'orders' | 'bills' | 'messages' | 'users' | 'dashboard' | 'clients' | 'inspections' | 'installations' | 'maintenance' | 'expenses' | 'employees' | 'reports' | 'motor_products' | 'testimonials' | 'catalogs' | 'projects'>('dashboard');
   const [websiteAssets, setWebsiteAssets] = useState<WebsiteAsset[]>([]);
   const [dbCategories, setDbCategories] = useState<ProductCategory[]>([]);
 
@@ -295,7 +296,19 @@ export default function AdminDashboard() {
   const fetchWebsiteAssets = useCallback(async () => {
     setLoadingAssets(true);
     const { data, error } = await supabase.from('website_assets').select('*').order('key');
-    if (!error && data) setWebsiteAssets(data as WebsiteAsset[]);
+    if (!error && data) {
+      setWebsiteAssets(data as WebsiteAsset[]);
+      const hasPageHeader = data.some((asset: any) => asset.key === 'page_header');
+      if (!hasPageHeader) {
+        await supabase.from('website_assets').insert({
+          key: 'page_header',
+          url: '/hero_bg.png',
+          description: 'صورة الهيدر والخرائط لجميع الصفحات الداخلية (Header Background)'
+        });
+        const { data: updatedData } = await supabase.from('website_assets').select('*').order('key');
+        if (updatedData) setWebsiteAssets(updatedData as WebsiteAsset[]);
+      }
+    }
     setLoadingAssets(false);
   }, []);
 
@@ -1299,6 +1312,7 @@ export default function AdminDashboard() {
     { tab: 'motor_products', label: 'منتجات المحركات', icon: 'precision_manufacturing', access: 'motor_products' },
     { tab: 'testimonials', label: 'آراء العملاء', icon: 'rate_review', access: 'testimonials' },
     { tab: 'catalogs', label: 'الكتالوجات', icon: 'menu_book', access: 'catalogs' },
+    { tab: 'projects', label: 'معرض مشاريعنا', icon: 'photo_library', access: 'projects' },
     { tab: 'users', label: 'إدارة المستخدمين', icon: 'group', access: 'users' },
   ];
 
@@ -1339,21 +1353,14 @@ export default function AdminDashboard() {
               </button>
             </div>
           )}
-          <div className="flex flex-col items-center gap-2 pb-5 border-b border-white/5 w-full">
-            {showFullMenu ? (
-              <span className="text-xs text-[#d4af37] font-extrabold tracking-widest uppercase py-2">CRYSTAL BLINDS</span>
-            ) : (
-              <span className="text-xs text-[#d4af37] font-extrabold uppercase py-2">C</span>
-            )}
-          </div>
-          <nav className="flex flex-col gap-1.5 flex-1 w-full overflow-y-auto hide-scrollbar">
+          <nav className="flex flex-col gap-1 flex-1 w-full overflow-y-auto hide-scrollbar pt-4">
             {sidebarLinks.map(link => {
               if (!hasAccess(link.access)) return null;
               const isActive = activeTab === link.tab;
               return (
                 <div
                   key={link.tab}
-                  className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 ${isActive
+                  className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 ${isActive
                     ? 'bg-[#d4af37]/15 !text-[#d4af37] shadow-sm'
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                     }`}
@@ -1375,7 +1382,7 @@ export default function AdminDashboard() {
             })}
 
             <div
-              className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5`}
+              className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5`}
               onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}
               title={!showFullMenu ? "الإعدادات" : undefined}
             >
@@ -1384,7 +1391,7 @@ export default function AdminDashboard() {
             </div>
 
             <div
-              className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5`}
+              className={`flex items-center ${showFullMenu ? 'gap-3 px-4 justify-start' : 'justify-center'} py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 text-white/60 hover:text-white hover:bg-white/5`}
               onClick={handleSignOut}
               title={!showFullMenu ? "تسجيل الخروج" : undefined}
             >
@@ -1392,26 +1399,6 @@ export default function AdminDashboard() {
               {showFullMenu && <span>تسجيل الخروج</span>}
             </div>
           </nav>
-
-          {/* Current user role card indicator at bottom of sidebar */}
-          <div className="w-full flex flex-col gap-2 pt-4 border-t border-white/5">
-            <div className={`bg-[#3E2723]/35 border border-[#d4af37]/25 p-3 rounded-xl flex items-center ${showFullMenu ? 'gap-3' : 'justify-center'}`} title={!showFullMenu ? "الصلاحية الحالية" : undefined}>
-              <span className="material-symbols-outlined text-[#d4af37] text-xl shrink-0">workspace_premium</span>
-              {showFullMenu && (
-                <div className="flex flex-col text-right text-white">
-                  <span className="text-[9px] opacity-60">الصلاحية الحالية</span>
-                  <span className="text-xs font-bold">
-                    {userRole === 'admin' ? 'مدير عام' :
-                      userRole === 'customer_service' ? 'خدمة عملاء' :
-                        userRole === 'sales' ? 'مبيعات' :
-                          userRole === 'accountant' ? 'محاسب مالي' :
-                            userRole === 'technician' ? 'فني تركيبات' : 'موظف'}
-                  </span>
-                </div>
-              )}
-            </div>
-            {showFullMenu && <div className="text-[10px] text-white/30 text-center mt-2">Crystal Blinds © 2024</div>}
-          </div>
         </aside>
 
         {/* Main */}
@@ -1452,6 +1439,8 @@ export default function AdminDashboard() {
             <TestimonialsView />
           ) : activeTab === 'catalogs' ? (
             <CatalogsView />
+          ) : activeTab === 'projects' ? (
+            <ProjectsView />
           ) : activeTab === 'appointments' ? (
             <>
               {/* Header */}

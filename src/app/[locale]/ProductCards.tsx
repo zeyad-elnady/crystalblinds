@@ -37,7 +37,7 @@ function ProductCardItem({
       {/* Content */}
       <div className={`flex flex-col flex-1 p-6 ${isAr ? "items-end" : "items-start"}`}>
         <div className={`w-full flex items-center justify-between mb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-          <span className="text-[#d4af37] text-xs uppercase tracking-[0.2em] font-semibold">
+          <span className="text-[#3E2723]/60 text-xs uppercase tracking-[0.2em] font-semibold">
             {isAr ? "الأقمشة الفاخرة" : "Artisan Fabrics"}
           </span>
           {/* Price */}
@@ -55,7 +55,7 @@ function ProductCardItem({
 
         <Link
           href={`/${isAr ? 'ar' : 'en'}/products/${product.id}`}
-          className={`flex items-center gap-2 text-white bg-[#3E2723] px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-[#d4af37] transition-colors mt-auto w-fit shadow-md ${isAr ? "mr-auto flex-row-reverse" : "ml-auto"}`}
+          className={`flex items-center gap-2 text-white bg-[#3E2723] px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-[#2C1D18] transition-colors mt-auto w-fit shadow-md ${isAr ? "mr-auto flex-row-reverse" : "ml-auto"}`}
         >
           <span>
             {isAr ? "عرض التفاصيل" : "View Details"}
@@ -100,7 +100,7 @@ export default function ProductCards({ isAr, products, categories, isBrief = fal
             onClick={() => setIsCatalogModalOpen(true)}
             className="flex items-center gap-2 px-6 py-2.5 md:py-3 rounded-full text-xs md:text-sm font-bold bg-[#3E2723] text-white hover:bg-[#2B1B17] shadow-md hover:shadow-lg transition-all duration-300 border border-[#d4af37]/30"
           >
-            <span className="material-symbols-outlined text-[#d4af37] text-base md:text-lg">file_download</span>
+            <span className="material-symbols-outlined text-white/80 text-base md:text-lg">file_download</span>
             <span>{isAr ? "تحميل الكتالوج" : "Download Catalog"}</span>
           </button>
 

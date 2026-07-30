@@ -364,27 +364,27 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
 
             {/* Result Block (col-span-4) */}
             <div className="lg:col-span-4 w-full flex flex-col items-center">
-              {/* Gold bordered card */}
-              <div className="w-full border border-[#d4af37]/45 rounded-2xl p-5 bg-[#201310]/40 flex items-center justify-between shadow-inner">
+              {/* Clean crisp white/silver card */}
+              <div className="w-full border border-white/15 rounded-2xl p-5 bg-[#201310]/50 flex items-center justify-between shadow-inner">
                 <div className="flex flex-col items-start text-start">
-                  <span className="text-[#d4af37]/80 text-[10px] uppercase font-bold tracking-wider mb-1">
+                  <span className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
                     {isAr ? "السعر التقديري" : "Estimated Price"}
                   </span>
-                  <span className="text-3xl font-extrabold text-[#d4af37] tracking-tight">
+                  <span className="text-3xl font-extrabold text-white tracking-tight">
                     {estimatedPrice > 0 ? estimatedPrice.toLocaleString(isAr ? "ar-EG" : "en-US") : "—"}
                   </span>
-                  <span className="text-[#d4af37] text-[10px] font-bold mt-1">
+                  <span className="text-white/80 text-[10px] font-bold mt-1">
                     {isAr ? "جنيه مصري" : "EGP"}
                   </span>
                 </div>
-                {/* Gold Calculator Icon */}
-                <div className="w-12 h-12 rounded-xl bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37]">
+                {/* Calculator Icon */}
+                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white">
                   <span className="material-symbols-outlined text-2xl">calculate</span>
                 </div>
               </div>
 
               {/* Disclaimer */}
-              <span className="text-[#d4af37]/80 text-[9px] font-light mt-3 block text-center">
+              <span className="text-white/40 text-[9px] font-light mt-3 block text-center">
                 {isAr
                   ? "* السعر تقريبي وقد يختلف بعد المعاينة"
                   : "* Price is estimate only and may vary after measurement"}

@@ -64,7 +64,12 @@ export async function getCategories(): Promise<ProductCategory[]> {
 export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: 'z11648-v3',
-    images: ['/photos for crystal/1.jpeg'],
+    images: [
+      '/photos for crystal/1.jpeg',
+      '/photos for crystal/ستائر زيبرا.jpeg',
+      '/photos for crystal/hero3.jpeg',
+      '/photos for crystal/3.jpeg'
+    ],
     alt: 'Zebra Blinds Z11648-V3',
     labelEn: 'Zebra Blinds Z11648-V3',
     labelAr: 'ستائر زيبرا Z11648-V3',
@@ -82,7 +87,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'z11648-v6',
-    images: ['/photos for crystal/2.jpeg'],
+    images: [
+      '/photos for crystal/2.jpeg',
+      '/photos for crystal/ستائر زيبرا.jpeg',
+      '/photos for crystal/4.jpeg',
+      '/photos for crystal/hero1.jpeg'
+    ],
     alt: 'Zebra Blinds Z11648-V6',
     labelEn: 'Zebra Blinds Z11648-V6',
     labelAr: 'ستائر زيبرا Z11648-V6',
@@ -100,7 +110,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'z298-812',
-    images: ['/photos for crystal/3.jpeg'],
+    images: [
+      '/photos for crystal/3.jpeg',
+      '/photos for crystal/ستائر زيبرا.jpeg',
+      '/photos for crystal/1.jpeg',
+      '/photos for crystal/hero2.jpeg'
+    ],
     alt: 'Zebra Blinds Z298-812',
     labelEn: 'Zebra Blinds Z298-812',
     labelAr: 'ستائر زيبرا Z298-812',
@@ -117,7 +132,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'zbo-702',
-    images: ['/photos for crystal/4.jpeg'],
+    images: [
+      '/photos for crystal/4.jpeg',
+      '/photos for crystal/ستائر زيبرا.jpeg',
+      '/photos for crystal/2.jpeg',
+      '/photos for crystal/hero3.jpeg'
+    ],
     alt: 'Zebra Blinds ZBO-702',
     labelEn: 'Zebra Blinds ZBO-702',
     labelAr: 'ستائر زيبرا ZBO-702',
@@ -134,7 +154,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'blackout-roller-01',
-    images: ['/photos for crystal/ستائر رول بلاك أوت.jpeg'],
+    images: [
+      '/photos for crystal/ستائر رول بلاك أوت.jpeg',
+      '/photos for crystal/hero2.jpeg',
+      '/photos for crystal/1.jpeg',
+      '/photos for crystal/before.jpg.jpeg'
+    ],
     alt: 'Blackout Roller Blinds',
     labelEn: 'Blackout Roller Blinds',
     labelAr: 'ستائر رول بلاك أوت',
@@ -151,7 +176,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'sunscreen-roller-01',
-    images: ['/photos for crystal/ستائر رول صن سكرين.jpeg'],
+    images: [
+      '/photos for crystal/ستائر رول صن سكرين.jpeg',
+      '/photos for crystal/hero1.jpeg',
+      '/photos for crystal/moa.jpg.jpeg',
+      '/photos for crystal/after.jpg.jpeg'
+    ],
     alt: 'Sunscreen Roller Blinds',
     labelEn: 'Sunscreen Roller Blinds',
     labelAr: 'ستائر رول صن سكرين',
@@ -168,7 +198,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'printed-roller-01',
-    images: ['/photos for crystal/printed_roller.png'],
+    images: [
+      '/photos for crystal/printed_roller.png',
+      '/photos for crystal/hero3.jpeg',
+      '/photos for crystal/after.jpg.jpeg',
+      '/photos for crystal/3.jpeg'
+    ],
     alt: 'Printed Roller Blinds',
     labelEn: 'Printed Roller Blinds',
     labelAr: 'ستائر رول مطبوعة',
@@ -185,7 +220,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'wooden-bamboo-01',
-    images: ['/photos for crystal/ستائر شرائح خشبيه.jpeg'],
+    images: [
+      '/photos for crystal/ستائر شرائح خشبيه.jpeg',
+      '/photos for crystal/ستائر شرائح معدنية.jpeg',
+      '/photos for crystal/hero1.jpeg',
+      '/photos for crystal/1.jpeg'
+    ],
     alt: 'Wooden & Bamboo Blinds',
     labelEn: 'Wooden & Bamboo Blinds',
     labelAr: 'ستائر شرائح خشبية وبامبو',
