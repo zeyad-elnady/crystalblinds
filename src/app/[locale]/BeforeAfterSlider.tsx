@@ -56,17 +56,11 @@ export default function BeforeAfterSlider({ isAr }: { isAr: boolean }) {
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-[#3E2723] mb-3">
             {isAr ? "قبل و بعد" : "Before & After"}
           </h2>
-          <p className="text-[#3E2723]/80 font-light text-sm mb-6 leading-relaxed">
+          <p className="text-[#3E2723]/80 font-light text-sm leading-relaxed">
             {isAr
               ? "شاهد الفرق الذي تحدثه ستائر كريستال"
               : "Witness the difference made by Crystal Blinds"}
           </p>
-          <a
-            href="#portfolio"
-            className="bg-[#2B1B17] hover:bg-[#3E2723] text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 shadow-md inline-block"
-          >
-            {isAr ? "المزيد من الصور" : "More Images"}
-          </a>
         </div>
 
         {/* Right Slider Column */}

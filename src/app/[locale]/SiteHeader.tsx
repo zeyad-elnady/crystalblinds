@@ -57,6 +57,7 @@ export default function SiteHeader({
       {
         title: isAr ? "ستائر رول" : "Roller Blinds",
         img: "/photos for crystal/ستائر رول صن سكرين.jpeg",
+        hoverImg: "/photos for crystal/ستائر رول بلاك أوت.jpeg",
         items: [
           { label: isAr ? "صن سكرين" : "Sunscreen", href: `/${locale}/products?category=sunscreen` },
           { label: isAr ? "بلاك أوت" : "Blackout", href: `/${locale}/products?category=blackout` },
@@ -67,6 +68,7 @@ export default function SiteHeader({
       {
         title: isAr ? "ستائر زيبرا" : "Zebra Blinds",
         img: "/photos for crystal/ستائر زيبرا.jpeg",
+        hoverImg: "/photos for crystal/1.jpeg",
         items: [
           { label: isAr ? "زيبرا مودرن" : "Zebra Modern", href: `/${locale}/products?category=zebra` },
           { label: isAr ? "زيبرا بلاك أوت" : "Zebra Blackout", href: `/${locale}/products?category=zebra` },
@@ -76,6 +78,7 @@ export default function SiteHeader({
       {
         title: isAr ? "ستائر شرائح خشبية" : "Wooden Blinds",
         img: "/photos for crystal/ستائر شرائح خشبيه.jpeg",
+        hoverImg: "/photos for crystal/ستائر شرائح راسيه.jpeg",
         items: [
           { label: isAr ? "رومان" : "Roman", href: `/${locale}/products?category=roman` },
           { label: isAr ? "دريم" : "Dream", href: `/${locale}/products?category=dream` },
@@ -86,8 +89,9 @@ export default function SiteHeader({
       {
         title: isAr ? "ستائر مطبوعة" : "Printed Blinds",
         img: "/photos for crystal/printed_roller.png",
+        hoverImg: "/photos for crystal/hero3.jpeg",
         items: [
-          { label: isAr ? "تصاميم فنية" : "Artistic Designs", href: `/${locale}/products` },
+          { label: isAr ? "تصاميم فنية" : "Artistic Designs", href: `/${locale}/products?category=printed` },
           { label: isAr ? "مطبوع حسب الطلب" : "Custom Print", href: `/${locale}/contact` },
         ],
         cta: { label: isAr ? "طلب تصميم خاص" : "Custom Order", href: `/${locale}/contact` },
@@ -109,6 +113,7 @@ export default function SiteHeader({
       {
         title: "Somfy",
         img: "/photos for crystal/hero1.jpeg",
+        hoverImg: "/photos for crystal/somfy.png",
         items: [
           { label: isAr ? "موتورات Somfy" : "Somfy Motors", href: `/${locale}/smart-curtains/somfy` },
           { label: isAr ? "تحكم صوتي" : "Voice Control", href: `/${locale}/smart-curtains/somfy` },
@@ -117,14 +122,15 @@ export default function SiteHeader({
         cta: { label: isAr ? "استكشف Somfy" : "Explore Somfy", href: `/${locale}/smart-curtains/somfy` },
       },
       {
-        title: "Azura",
+        title: "Azzurra",
         img: "/photos for crystal/hero2.jpeg",
+        hoverImg: "/photos for crystal/azzurra.png",
         items: [
-          { label: isAr ? "موتورات Azura" : "Azura Motors", href: `/${locale}/smart-curtains/azura` },
-          { label: isAr ? "أتمتة لاسلكية" : "Wireless Auto", href: `/${locale}/smart-curtains/azura` },
-          { label: isAr ? "شحن بالطاقة الشمسية" : "Solar Charging", href: `/${locale}/smart-curtains/azura` },
+          { label: isAr ? "موتورات Azzurra" : "Azzurra Motors", href: `/${locale}/smart-curtains/azzurra` },
+          { label: isAr ? "أتمتة لاسلكية" : "Wireless Auto", href: `/${locale}/smart-curtains/azzurra` },
+          { label: isAr ? "شحن بالطاقة الشمسية" : "Solar Charging", href: `/${locale}/smart-curtains/azzurra` },
         ],
-        cta: { label: isAr ? "استكشف Azura" : "Explore Azura", href: `/${locale}/smart-curtains/azura` },
+        cta: { label: isAr ? "استكشف Azzurra" : "Explore Azzurra", href: `/${locale}/smart-curtains/azzurra` },
       },
     ],
     sidePanel: {
@@ -144,21 +150,23 @@ export default function SiteHeader({
       {
         title: isAr ? "مشاريع سكنية" : "Residential",
         img: "/photos for crystal/1.jpeg",
+        hoverImg: "/photos for crystal/2.jpeg",
         items: [
-          { label: isAr ? "فيلل وقصور" : "Villas & Palaces", href: `/${locale}/projects` },
-          { label: isAr ? "شقق وفاخرة" : "Apartments", href: `/${locale}/projects` },
+          { label: isAr ? "فيلل وقصور" : "Villas & Palaces", href: `/${locale}/projects?category=Villa` },
+          { label: isAr ? "شقق وفاخرة" : "Apartments", href: `/${locale}/projects?category=Apartment` },
         ],
-        cta: { label: isAr ? "مشاهدة المشاريع" : "View Projects", href: `/${locale}/projects` },
+        cta: { label: "", href: `/${locale}/projects?category=Villa` },
       },
       {
         title: isAr ? "مشاريع تجارية" : "Commercial",
         img: "/photos for crystal/hospital_curtain.png",
+        hoverImg: "/photos for crystal/3.jpeg",
         items: [
-          { label: isAr ? "مكاتب وشركات" : "Offices & Firms", href: `/${locale}/projects` },
-          { label: isAr ? "فنادق ومنتجعات" : "Hotels & Resorts", href: `/${locale}/projects` },
-          { label: isAr ? "مستشفيات" : "Medical Centers", href: `/${locale}/projects` },
+          { label: isAr ? "مكاتب وشركات" : "Offices & Firms", href: `/${locale}/projects?category=Office` },
+          { label: isAr ? "فنادق ومنتجعات" : "Hotels & Resorts", href: `/${locale}/projects?category=Mall` },
+          { label: isAr ? "مستشفيات" : "Medical Centers", href: `/${locale}/projects?category=Clinic` },
         ],
-        cta: { label: isAr ? "تواصل معنا" : "Get a Quote", href: `/${locale}/contact` },
+        cta: { label: "", href: `/${locale}/contact` },
       },
     ],
     sidePanel: {
@@ -245,14 +253,41 @@ export default function SiteHeader({
                             {menuData.columns.map((col, ci) => (
                               <div key={ci} className={`flex flex-col p-5 gap-3 ${isAr && ci < menuData.columns.length - 1 ? "border-r border-[#3E2723]/6" : ""}`}>
                                 {/* Photo */}
-                                <a href={col.cta.href} className="relative w-full rounded-lg overflow-hidden bg-[#f5f0eb] block group" style={{ height: 120 }}>
+                                <a href={col.cta.href} className="relative w-full rounded-lg overflow-hidden bg-[#f5f0eb] block" style={{ height: 120 }}>
                                   <img
                                     src={col.img}
                                     alt={col.title}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    className="w-full h-full object-cover transition-all duration-500"
+                                    style={{ position: 'absolute', inset: 0 }}
                                   />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                                  <span className="absolute bottom-2.5 left-3 right-3 text-white font-bold text-[11px] tracking-wide leading-tight">
+                                  {col.hoverImg && (
+                                    <img
+                                      src={col.hoverImg}
+                                      alt={`${col.title} hover`}
+                                      className="w-full h-full object-cover transition-all duration-500"
+                                      style={{ position: 'absolute', inset: 0, opacity: 0 }}
+                                      onMouseEnter={(e) => {
+                                        const parent = e.currentTarget.parentElement;
+                                        if (parent) {
+                                          const mainImg = parent.querySelector('img:first-of-type') as HTMLElement;
+                                          if (mainImg) mainImg.style.opacity = '0';
+                                          e.currentTarget.style.opacity = '1';
+                                          e.currentTarget.style.transform = 'scale(1.05)';
+                                        }
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        const parent = e.currentTarget.parentElement;
+                                        if (parent) {
+                                          const mainImg = parent.querySelector('img:first-of-type') as HTMLElement;
+                                          if (mainImg) mainImg.style.opacity = '1';
+                                          e.currentTarget.style.opacity = '0';
+                                          e.currentTarget.style.transform = 'scale(1)';
+                                        }
+                                      }}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent pointer-events-none" />
+                                  <span className="absolute bottom-2.5 left-3 right-3 text-white font-bold text-[11px] tracking-wide leading-tight pointer-events-none">
                                     {col.title}
                                   </span>
                                 </a>
@@ -271,13 +306,15 @@ export default function SiteHeader({
                                 </div>
 
                                 {/* Column link */}
-                                <a
-                                  href={col.cta.href}
-                                  className="mt-auto text-[11px] font-bold text-[#3E2723] hover:text-[#b8922a] transition-colors flex items-center gap-1 group"
-                                >
-                                  {col.cta.label}
-                                  <span className="material-symbols-outlined text-[13px] group-hover:translate-x-0.5 transition-transform">{isAr ? "chevron_left" : "chevron_right"}</span>
-                                </a>
+                                {col.cta?.label ? (
+                                  <a
+                                    href={col.cta.href}
+                                    className="mt-auto text-[11px] font-bold text-[#3E2723] hover:text-[#b8922a] transition-colors flex items-center gap-1 group"
+                                  >
+                                    {col.cta.label}
+                                    <span className="material-symbols-outlined text-[13px] group-hover:translate-x-0.5 transition-transform">{isAr ? "chevron_left" : "chevron_right"}</span>
+                                  </a>
+                                ) : null}
                               </div>
                             ))}
                           </div>

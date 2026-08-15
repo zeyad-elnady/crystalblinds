@@ -42,42 +42,20 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
 
   const fetchTechnicians = async () => {
     let list: any[] = [];
-    
     try {
-      const saved = localStorage.getItem('crystal_blinds_technicians');
-      if (saved) {
-        list = JSON.parse(saved);
-      }
+      const { data: profData } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
+      const { data: empData } = await supabase.from('employees').select('id, name');
+      
+      const all: any[] = [];
+      (profData || []).forEach(p => { if (p.name && !all.some(x => x.name === p.name)) all.push(p); });
+      (empData || []).forEach(e => { if (e.name && !all.some(x => x.name === e.name)) all.push(e); });
+      list = all;
     } catch (e) {
       console.error(e);
-    }
-
-    try {
-      const { data } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
-      if (data && data.length > 0) {
-        const merged = [...list];
-        data.forEach(dbTech => {
-          if (!merged.some(t => t.name === dbTech.name || t.id === dbTech.id)) {
-            merged.push(dbTech);
-          }
-        });
-        list = merged;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    if (!list || list.length === 0) {
-      list = [
-        { id: 't1', name: 'م. أحمد خالد' },
-        { id: 't2', name: 'م. شريف مصطفى' }
-      ];
+      list = [];
     }
 
     setTechnicians(list);
-    try {
-      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(list));
-    } catch (e) {}
   };
 
   const handleAddTechnician = async () => {
@@ -193,7 +171,7 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
       client_address: '',
       appointment_date: new Date().toISOString().split('T')[0],
       appointment_time: '12:00',
-      technician_name: technicians[0]?.name || 'م. أحمد خالد',
+      technician_name: technicians[0]?.name || '',
       status: 'pending',
     });
     setProductsInputList(['ستائر زيبرا']);
@@ -208,7 +186,7 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
       client_address: order.client_address || '',
       appointment_date: order.appointment_date || new Date().toISOString().split('T')[0],
       appointment_time: order.appointment_time || '12:00',
-      technician_name: order.technician_name || technicians[0]?.name || 'م. أحمد خالد',
+      technician_name: order.technician_name || technicians[0]?.name || '',
       status: order.status || 'pending',
     });
     setProductsInputList(order.products_list && order.products_list.length > 0 ? order.products_list : ['']);
@@ -302,6 +280,97 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
     setOrders(prev => prev.filter(o => o.id !== id));
   };
 
+  const handlePrint = (order: InstallationOrder) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    let productsHtml = '';
+    if (order.products_list && order.products_list.length > 0) {
+      productsHtml = order.products_list.map((p, idx) => `
+        <tr>
+          <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${idx + 1}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${p}</td>
+        </tr>
+      `).join('');
+    } else {
+      productsHtml = `<tr><td colSpan="2" style="padding: 12px; text-align: center; color: #888;">لا توجد منتجات محددة</td></tr>`;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+        <head>
+          <title>أمر تركيب - ${order.client_name}</title>
+          <style>
+            body { font-family: 'Tajawal', Arial, sans-serif; padding: 20px; color: #2B1B17; }
+            .header { text-align: center; border-bottom: 2px solid #3E2723; padding-bottom: 15px; margin-bottom: 20px; }
+            .header h1 { margin: 0; color: #3E2723; font-size: 24px; }
+            .header p { margin: 5px 0 0 0; color: #666; font-size: 13px; }
+            .grid { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+            .info-box { flex: 1; background: #faf8f5; border: 1px solid #e0d8cc; padding: 15px; border-radius: 8px; }
+            .info-box h3 { margin-top: 0; color: #3E2723; border-bottom: 1px solid #ddd; padding-bottom: 5px; font-size: 14px; }
+            .info-box div { margin-bottom: 8px; font-size: 13px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+            .title { font-weight: bold; color: #3E2723; font-size: 15px; margin-top: 20px; }
+            @media print { .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>كريستال للستائر — أمر تركيب وتسليم</h1>
+            <p>Crystal Blinds — Installation & Handover Order</p>
+          </div>
+          
+          <div class="grid">
+            <div class="info-box">
+              <h3>بيانات العميل</h3>
+              <div><b>اسم العميل:</b> ${order.client_name}</div>
+              <div><b>الهاتف:</b> ${order.client_phone}</div>
+              <div><b>العنوان:</b> ${order.client_address}</div>
+            </div>
+            <div class="info-box">
+              <h3>تفاصيل أمر التركيب</h3>
+              <div><b>رقم أمر التركيب:</b> #${order.id.slice(0, 8)}</div>
+              <div><b>الفني المسئول:</b> ${order.technician_name || 'غير محدد'}</div>
+              <div><b>موعد التركيب:</b> ${order.appointment_date || ''} — ${order.appointment_time || ''}</div>
+              <div><b>ملاحظات:</b> ${order.notes || '—'}</div>
+            </div>
+          </div>
+          
+          <div class="title">المنتجات المطلوب تركيبها</div>
+          <table>
+            <thead>
+              <tr style="background: #3E2723; color: white;">
+                <th style="padding: 8px; border: 1px solid #ddd; width: 50px;">م</th>
+                <th style="padding: 8px; border: 1px solid #ddd;">تفاصيل المنتج</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${productsHtml}
+            </tbody>
+          </table>
+
+          ${order.signature_data ? `
+            <div style="margin-top: 30px; border: 1px solid #22c55e; background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center;">
+              <div style="color: #15803d; font-weight: bold; margin-bottom: 10px;">تم توقيع العميل بالاستلام الإلكتروني</div>
+              <img src="${order.signature_data}" style="max-height: 80px; object-fit: contain;" />
+            </div>
+          ` : ''}
+
+          <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+            <div style="text-align: center;">توقيع الفني المنفذ: ___________________</div>
+            <div style="text-align: center;">توقيع العميل بالاستلام: ___________________</div>
+          </div>
+
+          <div class="no-print" style="margin-top: 40px; text-align: center;">
+            <button onclick="window.print()" style="padding: 10px 20px; background: #d4af37; color: #2B1B17; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">إجراء الطباعة / حفظ PDF</button>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const fetchInstallations = async () => {
     setLoading(true);
     try {
@@ -314,60 +383,29 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
       if (error) throw error;
 
       const mapped: InstallationOrder[] = (data || []).map((item: any) => {
-        let extra = { technician_name: 'م. أحمد خالد', products_list: ['ستائر زيبرا - غرف نوم'], execution_photos: [], signature_data: null };
+        let extra = { technician_name: '', products_list: item.curtain_type ? [item.curtain_type] : [], execution_photos: [], signature_data: null };
         try {
           const parsed = JSON.parse(item.notes || '{}');
-          extra = {
-            technician_name: parsed.tech || 'م. أحمد خالد',
-            products_list: parsed.products || ['ستائر زيبرا - غرف نوم'],
-            execution_photos: parsed.photos || [],
-            signature_data: parsed.signature || null
-          };
+          if (parsed && typeof parsed === 'object') {
+            extra = {
+              technician_name: parsed.tech || '',
+              products_list: Array.isArray(parsed.products) ? parsed.products : item.curtain_type ? [item.curtain_type] : [],
+              execution_photos: Array.isArray(parsed.photos) ? parsed.photos : [],
+              signature_data: parsed.signature || null
+            };
+          }
         } catch {
-          // Default mock
+          if (item.notes?.includes('Tech:')) {
+            extra.technician_name = item.notes.split('Tech:')[1]?.split(';')[0]?.trim() || '';
+          }
         }
         return { ...item, ...extra };
       });
 
       setOrders(mapped);
-    } catch {
-      // Mock Fallback
-      setOrders([
-        {
-          id: 'INST-4001',
-          created_at: '',
-          client_name: 'ممدوح زكي',
-          client_phone: '01002233445',
-          client_address: 'العجوزة - ش النيل',
-          appointment_type: 'installation',
-          appointment_date: new Date().toISOString().split('T')[0],
-          appointment_time: '11:00',
-          status: 'confirmed',
-          technician_name: 'م. شريف مصطفى',
-          products_list: ['3 ستائر رول بلاك أوت', '2 ستائر دبل سيستم شيفون'],
-          execution_photos: ['/photos for crystal/ستائر بلاك اوت.jpeg'],
-          signature_data: null,
-          curtain_type: '',
-          notes: ''
-        },
-        {
-          id: 'INST-4002',
-          created_at: '',
-          client_name: 'هالة خليل',
-          client_phone: '01222998877',
-          client_address: 'مدينتي - مجموعة 12',
-          appointment_type: 'installation',
-          appointment_date: new Date().toISOString().split('T')[0],
-          appointment_time: '15:00',
-          status: 'pending',
-          technician_name: 'م. أحمد خالد',
-          products_list: ['4 ستائر رومن خشبية زيبرا'],
-          execution_photos: [],
-          signature_data: null,
-          curtain_type: '',
-          notes: ''
-        }
-      ]);
+    } catch (err: any) {
+      console.error('Error fetching installations:', err);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -653,11 +691,11 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
             <div className="flex items-center justify-between border-t border-[#3E2723]/5 pt-3 mt-2 flex-wrap gap-2">
               <div className="flex gap-1.5">
                 <button
-                  onClick={() => setActivePhotoOrder(order)}
+                  onClick={() => handlePrint(order)}
                   className="flex items-center gap-1 bg-white border border-[#3E2723]/15 text-[#3E2723] hover:border-[#d4af37] px-2.5 py-1.5 rounded-xl text-[10px] font-bold"
                 >
-                  <span className="material-symbols-outlined text-sm">photo_camera</span>
-                  <span>رفع صورة تنفيذ</span>
+                  <span className="material-symbols-outlined text-sm">print</span>
+                  <span>طباعة</span>
                 </button>
                 
                 {!order.signature_data && (

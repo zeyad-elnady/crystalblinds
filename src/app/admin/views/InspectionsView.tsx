@@ -56,42 +56,20 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
 
   const fetchTechnicians = async () => {
     let list: any[] = [];
-
     try {
-      const saved = localStorage.getItem('crystal_blinds_technicians');
-      if (saved) {
-        list = JSON.parse(saved);
-      }
+      const { data: profData } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
+      const { data: empData } = await supabase.from('employees').select('id, name');
+      
+      const all: any[] = [];
+      (profData || []).forEach(p => { if (p.name && !all.some(x => x.name === p.name)) all.push(p); });
+      (empData || []).forEach(e => { if (e.name && !all.some(x => x.name === e.name)) all.push(e); });
+      list = all;
     } catch (e) {
       console.error(e);
-    }
-
-    try {
-      const { data } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
-      if (data && data.length > 0) {
-        const merged = [...list];
-        data.forEach(dbTech => {
-          if (!merged.some(t => t.name === dbTech.name || t.id === dbTech.id)) {
-            merged.push(dbTech);
-          }
-        });
-        list = merged;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    if (!list || list.length === 0) {
-      list = [
-        { id: 't1', name: 'م. أحمد خالد' },
-        { id: 't2', name: 'م. شريف مصطفى' }
-      ];
+      list = [];
     }
 
     setTechnicians(list);
-    try {
-      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(list));
-    } catch (e) { }
   };
 
   const handleAddTechnician = async () => {
@@ -189,29 +167,28 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
       // Map schema columns and parse mocks for extra details (images, dimensions)
       const mapped: InspectionOrder[] = (data || []).map((item: any) => {
         let dimensions = [];
-        let techName = 'م. أحمد خالد';
+        let techName = '';
         let adminNotes = '';
+        let images: string[] = [];
         try {
           const parsed = JSON.parse(item.notes || '{}');
           if (parsed && typeof parsed === 'object') {
-            dimensions = parsed.dimensions || [];
-            techName = parsed.tech || 'م. أحمد خالد';
+            dimensions = Array.isArray(parsed.dimensions) ? parsed.dimensions : [];
+            techName = parsed.tech || '';
             adminNotes = parsed.adminNotes || '';
-          } else {
-            dimensions = [{ width: 1.5, height: 2.2, type: 'رول سكرين', notes: 'شباك غرفة معيشة' }];
+            images = Array.isArray(parsed.images) ? parsed.images : [];
           }
         } catch {
           if (item.notes?.includes('Tech:')) {
-            techName = item.notes.split('Tech:')[1]?.split(';')[0]?.trim() || 'م. أحمد خالد';
+            techName = item.notes.split('Tech:')[1]?.split(';')[0]?.trim() || '';
           }
-          dimensions = [{ width: 1.5, height: 2.2, type: 'رول سكرين', notes: 'شباك غرفة معيشة' }];
           adminNotes = item.notes || '';
         }
         return {
           ...item,
           technician_name: techName,
           dimensions,
-          images: ['/photos for crystal/ستائر رول.jpeg'],
+          images,
           notes: adminNotes
         };
       });
@@ -219,44 +196,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
       setOrders(mapped);
     } catch (err: any) {
       console.error('Error fetching inspections:', err);
-      // Mock fallback
-      setOrders([
-        {
-          id: 'INSP-1002',
-          created_at: '',
-          client_name: 'أحمد مصطفى',
-          client_phone: '01099887766',
-          client_address: 'التجمع الخامس - ش التسعين',
-          appointment_type: 'inspection',
-          appointment_date: new Date().toISOString().split('T')[0],
-          appointment_time: '12:00',
-          status: 'confirmed',
-          technician_name: 'م. أحمد خالد',
-          dimensions: [
-            { width: 2.2, height: 2.8, type: 'زيبرا', notes: 'غرفة نوم رئيسية' },
-            { width: 1.8, height: 2.4, type: 'بلاك أوت', notes: 'غرفة أطفال' }
-          ],
-          images: [],
-          curtain_type: 'Zebra Blinds',
-          notes: ''
-        },
-        {
-          id: 'INSP-1003',
-          created_at: '',
-          client_name: 'رانيا السباعي',
-          client_phone: '01122334455',
-          client_address: 'مصر الجديدة - ش النزهة',
-          appointment_type: 'inspection',
-          appointment_date: new Date().toISOString().split('T')[0],
-          appointment_time: '14:30',
-          status: 'pending',
-          technician_name: 'م. شريف مصطفى',
-          dimensions: [],
-          images: [],
-          curtain_type: 'Roller Blinds',
-          notes: ''
-        }
-      ]);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -271,7 +211,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
       appointment_date: new Date().toISOString().split('T')[0],
       appointment_time: '12:00',
       notes: '',
-      technician_name: technicians[0]?.name || 'م. أحمد خالد',
+      technician_name: technicians[0]?.name || '',
       dimensions_json: '[]',
       images_json: '[]',
       status: 'pending',
@@ -289,7 +229,7 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
       appointment_date: order.appointment_date,
       appointment_time: order.appointment_time || '',
       notes: order.notes || '',
-      technician_name: order.technician_name || 'م. أحمد خالد',
+      technician_name: order.technician_name || technicians[0]?.name || '',
       dimensions_json: JSON.stringify(order.dimensions || []),
       images_json: JSON.stringify(order.images || []),
       status: order.status,
@@ -585,13 +525,6 @@ export default function InspectionsView({ userRole, userProfile }: { userRole: s
                   >
                     <span className="material-symbols-outlined text-[13px]">print</span>
                     <span>طباعة</span>
-                  </button>
-                  <button
-                    onClick={() => handlePrint(order)}
-                    className="flex items-center gap-1 bg-white border border-[#3E2723]/15 text-[#3E2723] hover:border-[#d4af37] px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all"
-                  >
-                    <span className="material-symbols-outlined text-[13px]">picture_as_pdf</span>
-                    <span>PDF</span>
                   </button>
                 </div>
 

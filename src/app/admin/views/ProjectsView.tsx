@@ -72,16 +72,23 @@ export default function ProjectsView() {
   const persistData = async (updatedCategories: Category[], updatedProjects: Project[]) => {
     setSaving(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const res = await fetch("/api/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ categories: updatedCategories, projects: updatedProjects }),
       });
       if (res.ok) {
         setCategories(updatedCategories);
         setProjects(updatedProjects);
       } else {
-        alert("Failed to save changes");
+        const errData = await res.json().catch(() => ({}));
+        alert("Failed to save changes: " + (errData.error || res.statusText));
       }
     } catch (error) {
       alert("Error saving data: " + (error as any).message);

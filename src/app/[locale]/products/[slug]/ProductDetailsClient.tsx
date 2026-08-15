@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type Product } from "@/lib/products";
 import PageHero from "../../PageHero";
 import { useCart } from "@/context/CartContext";
@@ -25,7 +26,8 @@ export default function ProductDetailsClient({
   isAr: boolean;
   locale: string;
 }) {
-  const { addToCart } = useCart();
+  const router = useRouter();
+  const { addToCart, toggleCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [colorPreviewImage, setColorPreviewImage] = useState<string | null>(null);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -36,6 +38,7 @@ export default function ProductDetailsClient({
   
   const colors = product.colors || [];
   const [selectedColor, setSelectedColor] = useState<string | null>(colors.length > 0 ? colors[0].id : null);
+  const selectedColorObj = colors.find(c => c.id === selectedColor);
 
   const rawWidth = parseFloat(width) || 0;
   const rawHeight = parseFloat(height) || 0;
@@ -53,8 +56,7 @@ export default function ProductDetailsClient({
       return;
     }
     
-    const colorObj = colors.find(c => c.id === selectedColor);
-    const colorName = colorObj ? (isAr ? colorObj.nameAr : colorObj.nameEn) : "";
+    const colorName = selectedColorObj ? (isAr ? selectedColorObj.nameAr : selectedColorObj.nameEn) : "";
     const colorSuffix = colorName ? ` (${colorName})` : "";
     
     addToCart({
@@ -67,7 +69,34 @@ export default function ProductDetailsClient({
       quantity: 1,
       width: widthVal,
       height: heightVal,
+      colorName: colorName,
+      colorHex: selectedColorObj?.hex,
     });
+  };
+
+  const handleBuyNow = () => {
+    if (!widthVal || !heightVal) {
+      alert(isAr ? "يرجى إدخال المقاسات أولاً للمتابعة للشراء" : "Please enter dimensions first to proceed");
+      return;
+    }
+    const colorName = selectedColorObj ? (isAr ? selectedColorObj.nameAr : selectedColorObj.nameEn) : "";
+    const colorSuffix = colorName ? ` (${colorName})` : "";
+    
+    addToCart({
+      id: `${product.id}_${widthVal}_${heightVal}_${selectedColor || ""}_${Date.now()}`,
+      productId: product.id,
+      labelEn: product.labelEn + colorSuffix,
+      labelAr: product.labelAr + colorSuffix,
+      image: colorPreviewImage || product.images[0] || "",
+      price: totalPrice,
+      quantity: 1,
+      width: widthVal,
+      height: heightVal,
+      colorName: colorName,
+      colorHex: selectedColorObj?.hex,
+    });
+    toggleCart(false);
+    router.push(`/${locale}/checkout`);
   };
 
   const handleImageClick = () => {
@@ -444,13 +473,14 @@ export default function ProductDetailsClient({
                     {isAr ? "غير متوفر حالياً" : "Out of Stock"}
                   </button>
                 ) : (
-                  <Link
-                    href={`/${locale}/checkout/${product.id}?width=${widthVal}&height=${heightVal}&color=${selectedColor}&pieces=1`}
-                    className="w-full bg-[#2C1D18] hover:bg-[#3E2723] text-white border border-[#C5A059]/40 py-4 rounded-xl font-extrabold text-sm shadow-md hover:shadow-lg transition-all text-center flex items-center justify-center gap-2"
+                  <button
+                    type="button"
+                    onClick={handleBuyNow}
+                    className="w-full bg-[#2C1D18] hover:bg-[#3E2723] text-white border border-[#C5A059]/40 py-4 rounded-xl font-extrabold text-sm shadow-md hover:shadow-lg transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
                     {isAr ? "اشتري الآن" : "Buy Now"}
-                  </Link>
+                  </button>
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -506,54 +536,51 @@ export default function ProductDetailsClient({
             </span>
             <button 
               onClick={() => setIsLightboxOpen(false)}
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer"
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
             >
-              <span className="material-symbols-outlined text-2xl">close</span>
+              <span className="material-symbols-outlined block">close</span>
             </button>
           </div>
 
-          {/* Lightbox Main Image Display */}
-          <div className="relative flex-1 w-full flex items-center justify-center p-2 md:p-6" onClick={(e) => e.stopPropagation()}>
+          {/* Lightbox Center: Image with Prev/Next Navigation */}
+          <div className="relative flex-1 w-full max-w-5xl flex items-center justify-center my-auto" onClick={(e) => e.stopPropagation()}>
             {product.images.length > 1 && (
-              <button
-                type="button"
+              <button 
                 onClick={() => setLightboxImageIndex((prev) => (prev > 0 ? prev - 1 : product.images.length - 1))}
-                className="absolute left-2 md:left-6 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer"
+                className="absolute left-2 md:left-4 z-10 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white transition-all backdrop-blur-xs"
               >
-                <span className="material-symbols-outlined text-2xl">chevron_left</span>
+                <span className="material-symbols-outlined text-2xl block">chevron_left</span>
               </button>
             )}
 
-            <img
-              src={colorPreviewImage || product.images[lightboxImageIndex]}
-              alt={product.alt}
-              className="max-h-[85vh] max-w-[90vw] object-contain rounded-xl shadow-2xl transition-transform duration-300"
+            <img 
+              src={product.images[lightboxImageIndex]} 
+              alt={`${product.alt} Full Preview`}
+              className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl"
             />
 
             {product.images.length > 1 && (
-              <button
-                type="button"
+              <button 
                 onClick={() => setLightboxImageIndex((prev) => (prev < product.images.length - 1 ? prev + 1 : 0))}
-                className="absolute right-2 md:right-6 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer"
+                className="absolute right-2 md:right-4 z-10 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white transition-all backdrop-blur-xs"
               >
-                <span className="material-symbols-outlined text-2xl">chevron_right</span>
+                <span className="material-symbols-outlined text-2xl block">chevron_right</span>
               </button>
             )}
           </div>
 
-          {/* Lightbox Thumbnails Navigation */}
+          {/* Lightbox Footer: Thumbnails strip */}
           {product.images.length > 1 && (
-            <div className="flex gap-2.5 max-w-full overflow-x-auto p-2 z-10" onClick={(e) => e.stopPropagation()}>
+            <div className="flex gap-2 max-w-md overflow-x-auto py-2 z-10" onClick={(e) => e.stopPropagation()}>
               {product.images.map((img, idx) => (
                 <button
                   key={idx}
-                  type="button"
                   onClick={() => setLightboxImageIndex(idx)}
-                  className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                    lightboxImageIndex === idx ? "border-[#d4af37] scale-105 shadow-md" : "border-white/20 opacity-50 hover:opacity-100"
+                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${
+                    lightboxImageIndex === idx ? "border-[#d4af37] scale-105" : "border-white/30 opacity-50 hover:opacity-100"
                   }`}
                 >
-                  <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                  <img src={img} alt="thumb" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -563,5 +590,3 @@ export default function ProductDetailsClient({
     </div>
   );
 }
-
-

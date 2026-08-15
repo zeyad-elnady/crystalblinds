@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface Project {
   nameAr: string;
@@ -112,6 +113,9 @@ const DEFAULT_PROJECTS: Project[] = [
 ];
 
 export default function ProjectsGallery({ isAr }: { isAr: boolean }) {
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams ? searchParams.get("category") : null;
+
   const [activeTab, setActiveTab] = useState<string>("All");
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS);
@@ -134,10 +138,31 @@ export default function ProjectsGallery({ isAr }: { isAr: boolean }) {
 
   const allCategories = [{ id: "All", labelAr: "الكل", labelEn: "All" }, ...categories];
 
+  useEffect(() => {
+    if (categoryParam) {
+      const match = allCategories.find(
+        (c) =>
+          c.id.toLowerCase() === categoryParam.toLowerCase() ||
+          c.labelEn.toLowerCase() === categoryParam.toLowerCase() ||
+          c.labelAr.toLowerCase() === categoryParam.toLowerCase()
+      );
+      if (match) {
+        setActiveTab(match.id);
+      } else if (categoryParam.toLowerCase() === "residential") {
+        setActiveTab("Villa");
+      } else if (categoryParam.toLowerCase() === "commercial") {
+        setActiveTab("Office");
+      }
+    } else {
+      setActiveTab("All");
+    }
+  }, [categoryParam, categories]);
+
   const filteredProjects =
     activeTab === "All"
       ? projects
       : projects.filter((p) => p.category === activeTab);
+
 
   return (
     <div className={`w-full ${isAr ? "rtl" : ""}`}>

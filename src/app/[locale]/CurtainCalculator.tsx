@@ -235,19 +235,14 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
         </div>
 
         {/* Brown Container Box */}
-        <div className="bg-[#2B1B17] rounded-[2rem] p-6 md:p-10 shadow-lg relative">
-          {/* Background decorative circles wrapped to prevent clipping children */}
-          <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#d4af37]/5 rounded-full blur-2xl" />
-            <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-          </div>
+        <div className="bg-[#2B1B17] rounded-[2rem] p-6 md:p-10 border border-[#3E2723]/20 relative">
 
           {/* Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center" style={{ direction: isAr ? "rtl" : "ltr" }}>
 
             {/* Inputs Block (col-span-8) */}
             <div className="lg:col-span-8 w-full">
-              <div className="bg-white rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between border border-white/10 shadow-md">
+              <div className="bg-white rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between border border-[#3E2723]/15">
 
                 {/* 1. Curtain Type Dropdown */}
                 <div className="w-full md:w-[40%] relative z-30">
@@ -270,7 +265,7 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
                     {isOpen && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                        <div className="absolute left-0 right-0 mt-1 bg-white border border-[#3E2723]/15 rounded-xl shadow-lg z-50 max-h-[220px] overflow-y-auto py-1">
+                        <div className="absolute left-0 right-0 mt-1 bg-white border border-[#3E2723]/15 rounded-xl z-50 max-h-[220px] overflow-y-auto py-1">
                           {activeProducts.map((prod) => (
                             <button
                               key={prod.id}
@@ -365,7 +360,7 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
             {/* Result Block (col-span-4) */}
             <div className="lg:col-span-4 w-full flex flex-col items-center">
               {/* Clean crisp white/silver card */}
-              <div className="w-full border border-white/15 rounded-2xl p-5 bg-[#201310]/50 flex items-center justify-between shadow-inner">
+              <div className="w-full border border-white/15 rounded-2xl p-5 bg-[#201310] flex items-center justify-between">
                 <div className="flex flex-col items-start text-start">
                   <span className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
                     {isAr ? "السعر التقديري" : "Estimated Price"}
@@ -397,14 +392,14 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
           <div className="flex flex-col sm:flex-row justify-center mt-8 gap-4">
             <button
               onClick={handleAddToCart}
-              className="bg-[#2B1B17] hover:bg-[#d4af37] border border-[#d4af37] text-white px-8 py-3 rounded-xl text-xs font-bold transition-all duration-300 shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              className="bg-[#2B1B17] hover:bg-[#d4af37] border border-[#d4af37] text-white px-8 py-3 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
               {isAr ? "أضف إلى السلة" : "Add to Cart"}
             </button>
             <a
               href="#reserve"
-              className="bg-[#d4af37] hover:bg-white text-[#2B1B17] px-8 py-3 rounded-xl text-xs font-bold transition-all duration-300 shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              className="bg-[#d4af37] hover:bg-white text-[#2B1B17] border border-[#d4af37] px-8 py-3 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
             >
               {isAr ? "احجز موعد للمعاينة مجاناً" : "Book Free Measurement"}
             </a>

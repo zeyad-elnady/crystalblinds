@@ -5,7 +5,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type AppointmentType = 'inspection' | 'installation';
+export type AppointmentType = 'inspection' | 'installation' | 'maintenance';
 export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 export interface Appointment {

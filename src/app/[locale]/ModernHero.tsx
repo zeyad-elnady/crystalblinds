@@ -27,33 +27,42 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
     return () => clearInterval(timer);
   }, []);
 
-  // Animate counters when stats bar comes into view
+  // Animate counters when stats bar scrolls into view
   useEffect(() => {
+    const el = statsRef.current;
+    if (!el) return;
+
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !hasAnimated.current) {
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
           hasAnimated.current = true;
-          const duration = 2000;
-          const steps = 60;
-          const interval = duration / steps;
-          let step = 0;
-          const timer = setInterval(() => {
-            step++;
-            const progress = step / steps;
-            const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+
+          const targets = { clients: 5000, meters: 12000, years: 5, satisfaction: 98 };
+          const duration = 5000; // 5 seconds for much slower, elegant counting
+          let start: number | null = null;
+
+          const animate = (ts: number) => {
+            if (!start) start = ts;
+            const progress = Math.min((ts - start) / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic for a smooth, visible roll
+
             setCounts({
-              clients: Math.round(5000 * ease),
-              meters: Math.round(12000 * ease),
-              years: Math.round(10 * ease),
-              satisfaction: Math.round(98 * ease),
+              clients: Math.round(targets.clients * ease),
+              meters: Math.round(targets.meters * ease),
+              years: Math.round(targets.years * ease),
+              satisfaction: Math.round(targets.satisfaction * ease),
             });
-            if (step >= steps) clearInterval(timer);
-          }, interval);
+
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+
+          requestAnimationFrame(animate);
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.2 }
     );
-    if (statsRef.current) observer.observe(statsRef.current);
+
+    observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
@@ -157,7 +166,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
               {/* Primary: Book Free Inspection */}
               <a
                 href="#reserve"
-                className={`inline-flex items-center gap-2.5 bg-[#3E2723] hover:bg-[#2C1D18] text-[#FFFDFA] border border-[#C5A059]/40 font-bold text-[13px] px-7 py-3.5 rounded-lg transition-all duration-300 shadow-md ${
+                className={`inline-flex items-center gap-2.5 bg-[#3E2723] hover:bg-[#2C1D18] text-[#FFFDFA] border border-[#C5A059]/40 font-bold text-[13px] px-7 py-3.5 rounded-lg transition-colors ${
                   isAr ? "flex-row-reverse" : ""
                 }`}
               >
@@ -170,7 +179,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
                 href="https://wa.me/201100080609"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center gap-2.5 bg-white/10 border border-white/25 hover:bg-white/15 hover:border-white/40 text-white font-bold text-[13px] px-7 py-3.5 rounded-lg transition-all duration-300 backdrop-blur-sm ${
+                className={`inline-flex items-center gap-2.5 bg-white/10 border border-white/25 hover:bg-white/15 hover:border-white/40 text-white font-bold text-[13px] px-7 py-3.5 rounded-lg transition-colors ${
                   isAr ? "flex-row-reverse" : ""
                 }`}
               >
@@ -192,7 +201,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
       >
         <div className="max-w-[1200px] mx-auto">
           <div
-            className={`relative bg-[#3E2723]/80 backdrop-blur-md rounded-2xl overflow-hidden shadow-[0_15px_50px_rgba(0,0,0,0.5)] border border-[#5a3a2e]/60 transition-all duration-1000 delay-700 ${
+            className={`relative bg-[#3E2723] rounded-2xl overflow-hidden border border-[#5a3a2e] transition-all duration-1000 delay-700 ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
@@ -214,8 +223,8 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
                 <span className="material-symbols-outlined text-[#d4af37] text-[18px] sm:text-[22px] md:text-[26px] mb-1 sm:mb-2">
                   groups
                 </span>
-                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none">
-                  +{counts.clients.toLocaleString()}
+                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none" dir="ltr">
+                  {counts.clients.toLocaleString()}+
                 </span>
                 <span className="text-white/50 text-[9px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-light mt-1 sm:mt-1.5 text-center">
                   {isAr ? "عميل سعيد" : "Happy Customers"}
@@ -231,8 +240,8 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
                 <span className="material-symbols-outlined text-[#d4af37] text-[18px] sm:text-[22px] md:text-[26px] mb-1 sm:mb-2">
                   architecture
                 </span>
-                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none">
-                  +{counts.meters.toLocaleString()}
+                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none" dir="ltr">
+                  {counts.meters.toLocaleString()}+
                 </span>
                 <span className="text-white/50 text-[9px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-light mt-1 sm:mt-1.5 text-center">
                   {isAr ? "متر ستائر منفذة" : "Meters Installed"}
@@ -248,8 +257,8 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
                 <span className="material-symbols-outlined text-[#d4af37] text-[18px] sm:text-[22px] md:text-[26px] mb-1 sm:mb-2">
                   workspace_premium
                 </span>
-                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none">
-                  +{counts.years}
+                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none" dir="ltr">
+                  {counts.years}+
                 </span>
                 <span className="text-white/50 text-[9px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-light mt-1 sm:mt-1.5 text-center">
                   {isAr ? "سنوات خبرة" : "Years Experience"}
@@ -261,7 +270,7 @@ export default function ModernHero({ isAr }: { isAr: boolean }) {
                 <span className="material-symbols-outlined text-[#d4af37] text-[18px] sm:text-[22px] md:text-[26px] mb-1 sm:mb-2">
                   thumb_up
                 </span>
-                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none">
+                <span className="text-white text-[16px] sm:text-[22px] md:text-[28px] lg:text-[32px] font-extrabold tracking-tight leading-none" dir="ltr">
                   {counts.satisfaction}%
                 </span>
                 <span className="text-white/50 text-[9px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-light mt-1 sm:mt-1.5 text-center">

@@ -41,7 +41,7 @@ export default function PageHero({
   }, []);
 
   return (
-    <section className="relative w-full h-[280px] md:h-[360px] flex items-center justify-center">
+    <section className="relative w-full min-h-[300px] md:min-h-[380px] pt-16 pb-10 md:pt-20 md:pb-12 flex items-center justify-center">
       {/* Background Image Container */}
       <div className="absolute inset-0 z-0 rounded-b-[2rem] md:rounded-b-[3rem] overflow-hidden border-b-2 border-[#d4af37]/30">
         <img
@@ -56,8 +56,8 @@ export default function PageHero({
       </div>
 
       {/* Hero Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 text-center mt-6 md:mt-10">
-        <h1 className="font-headline text-3xl md:text-5xl lg:text-6xl text-white font-extrabold tracking-tight mb-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 text-center mt-8 md:mt-12">
+        <h1 className="font-headline text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-white font-extrabold tracking-tight mb-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
           {title}
         </h1>
         <div className="w-16 h-[2px] bg-[#d4af37] mx-auto mb-6" />

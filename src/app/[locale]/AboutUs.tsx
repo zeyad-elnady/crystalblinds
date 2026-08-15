@@ -32,16 +32,10 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
     }
   ];
 
-  // We reverse the array for Arabic to render from right to left as shown in the screenshot:
-  // Rightmost is "تركيب احترافي", then "معاينة مجانية", then "ضمان حقيقي", then leftmost "خامات أوروبية".
   const orderedItems = isAr ? [...items].reverse() : items;
 
   return (
     <section id="about" className="py-16 md:py-24 px-6 md:px-12 bg-[#FFFDFA] relative overflow-hidden text-[#3E2723]">
-      {/* Decorative Blur Background Element */}
-      <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[#d4af37]/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-[#3E2723]/5 rounded-full blur-[120px] pointer-events-none" />
-
       <div className="max-w-6xl mx-auto relative z-10">
         
         {/* Title */}
@@ -50,7 +44,7 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
         </h2>
 
         {/* Card Row */}
-        <div className="bg-white border border-[#d4af37]/20 rounded-3xl p-6 md:p-10 shadow-[0_10px_30px_rgba(62,39,35,0.02)] mb-16">
+        <div className="bg-white border border-[#d4af37]/30 rounded-3xl p-6 md:p-10 mb-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
             {orderedItems.map((item, idx) => {
               const borderStyle = isAr
@@ -63,7 +57,7 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
                   className={`flex flex-col items-center text-center p-4 ${borderStyle}`}
                 >
                   {/* Gold Circle Icon */}
-                  <div className="w-12 h-12 rounded-full border border-[#d4af37]/40 flex items-center justify-center text-[#d4af37] bg-[#fdfbf7] shadow-sm mb-4">
+                  <div className="w-12 h-12 rounded-full border border-[#d4af37] flex items-center justify-center text-[#d4af37] bg-[#fdfbf7] mb-4">
                     <span className="material-symbols-outlined text-xl">{item.icon}</span>
                   </div>
 
@@ -83,15 +77,11 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
         </div>
 
         {/* Founder Section */}
-        <div className="relative bg-[#3E2723] bg-gradient-to-br from-[#3E2723] via-[#3E2723] to-[#1c110f] rounded-3xl p-8 md:p-16 overflow-hidden border border-[#d4af37]/20 shadow-[0_20px_50px_rgba(62,39,35,0.15)]">
+        <div className="relative bg-[#3E2723] rounded-3xl p-8 md:p-16 overflow-hidden border border-[#d4af37]/30">
           {/* Decorative quote icon background */}
           <div className={`absolute top-6 ${isAr ? "left-8" : "right-8"} text-white/5 pointer-events-none select-none`}>
             <span className="material-symbols-outlined text-[120px] md:text-[200px] font-bold">format_quote</span>
           </div>
-          
-          {/* Subtle glow layers */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-[#d4af37]/5 rounded-full blur-[80px] pointer-events-none mix-blend-screen" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#3E2723]/30 rounded-full blur-[80px] pointer-events-none mix-blend-screen" />
 
           <div className="relative z-10 flex flex-col justify-between h-full" style={{ direction: isAr ? "rtl" : "ltr" }}>
             <span className="material-symbols-outlined text-4xl text-[#d4af37] mb-6 block opacity-85">format_quote</span>
@@ -103,8 +93,8 @@ export default function AboutUs({ isAr }: { isAr: boolean }) {
             </blockquote>
             
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full border border-[#d4af37]/40 overflow-hidden bg-zinc-800 flex items-center justify-center shadow-md">
-                <div className="w-full h-full flex items-center justify-center bg-[#FFFDFA]/10 text-[#d4af37] font-bold text-base select-none">
+              <div className="w-12 h-12 rounded-full border border-[#d4af37] overflow-hidden bg-[#2B1B17] flex items-center justify-center">
+                <div className="w-full h-full flex items-center justify-center text-[#d4af37] font-bold text-base select-none">
                   {isAr ? "م ع" : "MA"}
                 </div>
               </div>

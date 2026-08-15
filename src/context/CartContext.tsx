@@ -14,6 +14,8 @@ export interface CartItem {
   quantity: number;
   width?: number;
   height?: number;
+  colorName?: string;
+  colorHex?: string;
 }
 
 interface CartContextType {

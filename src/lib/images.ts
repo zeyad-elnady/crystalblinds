@@ -9,6 +9,27 @@ export interface WebsiteAsset {
 }
 
 /**
+ * Fetches a single website asset URL by its unique key.
+ * Falls back to fallbackUrl if not found or if an error occurs.
+ */
+export async function getWebsiteAsset(key: string, fallbackUrl: string): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('website_assets')
+      .select('url')
+      .eq('key', key)
+      .single();
+
+    if (!error && data?.url) {
+      return data.url;
+    }
+  } catch (err) {
+    console.error(`Error fetching website asset for key "${key}":`, err);
+  }
+  return fallbackUrl;
+}
+
+/**
  * Fetches all website assets from Supabase and returns them as a Record<key, url>
  * It can be used by server components to pass images down to client components.
  */

@@ -7,6 +7,7 @@ import { Product } from '@/lib/products';
 import { Partner } from '@/lib/partners';
 import { ContactMessage } from '@/lib/messages';
 import { getDeliveryFees, updateDeliveryFeeInDb, type Governorate } from '@/lib/deliveryFees';
+import { slugify } from '@/lib/slugs';
 import styles from './admin.module.css';
 import AdvancedDashboardView from './AdvancedDashboardView';
 import ClientsView from './views/ClientsView';
@@ -40,10 +41,12 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
 const TYPE_LABELS: Record<AppointmentType, string> = {
   inspection: 'معاينة',
   installation: 'تركيب',
+  maintenance: 'صيانة',
 };
 const TYPE_COLORS: Record<AppointmentType, string> = {
   inspection: styles.typeInspection,
   installation: styles.typeInstallation,
+  maintenance: styles.typeInspection,
 };
 const CURTAIN_LABELS: Record<string, string> = {
   'Roller Blinds': 'ستائر رول',
@@ -58,12 +61,12 @@ type FilterStatus = 'all' | AppointmentStatus;
 type FilterType = 'all' | AppointmentType;
 
 const ROLE_TABS: Record<string, string[]> = {
-  admin: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'product_categories', 'expenses', 'employees', 'reports', 'messages', 'website_edit', 'users', 'motor_products', 'testimonials', 'catalogs', 'projects'],
+  admin: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'product_categories', 'expenses', 'employees', 'messages', 'website_edit', 'users', 'motor_products', 'testimonials', 'catalogs', 'projects'],
   customer_service: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'messages'],
   sales: ['dashboard', 'clients', 'orders', 'products', 'bills', 'installations', 'maintenance', 'motor_products'],
-  accountant: ['dashboard', 'bills', 'expenses', 'reports'],
+  accountant: ['dashboard', 'bills', 'expenses'],
   technician: ['inspections', 'installations', 'maintenance'],
-  employee: ['dashboard', 'appointments', 'messages'],
+  employee: ['appointments', 'messages'],
 };
 
 export default function AdminDashboard() {
@@ -95,7 +98,7 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false);
 
   // New states for active tab
-  const [activeTab, setActiveTab] = useState<'appointments' | 'website_edit' | 'products' | 'product_categories' | 'orders' | 'bills' | 'messages' | 'users' | 'dashboard' | 'clients' | 'inspections' | 'installations' | 'maintenance' | 'expenses' | 'employees' | 'reports' | 'motor_products' | 'testimonials' | 'catalogs' | 'projects'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'website_edit' | 'products' | 'product_categories' | 'orders' | 'bills' | 'messages' | 'users' | 'dashboard' | 'clients' | 'inspections' | 'installations' | 'maintenance' | 'expenses' | 'employees' | 'motor_products' | 'testimonials' | 'catalogs' | 'projects'>('dashboard');
   const [websiteAssets, setWebsiteAssets] = useState<WebsiteAsset[]>([]);
   const [dbCategories, setDbCategories] = useState<ProductCategory[]>([]);
 
@@ -109,27 +112,14 @@ export default function AdminDashboard() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'employee' });
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editUserData, setEditUserData] = useState({ name: '', role: 'employee', password: '' });
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState<string | null>(null);
 
   // Website Edit sub tab
-  const [websiteEditSubTab, setWebsiteEditSubTab] = useState<'images' | 'partners' | 'delivery_fees' | 'curtains'>('images');
-  const [selectedCurtainIds, setSelectedCurtainIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    const curtainsAsset = websiteAssets.find(a => a.key === 'homepage_curtains');
-    if (curtainsAsset && curtainsAsset.url) {
-      setSelectedCurtainIds(curtainsAsset.url.split(',').filter(Boolean));
-    } else {
-      setSelectedCurtainIds([
-        'b301c238-1234-4567-8901-abcdef123404',
-        'b301c238-1234-4567-8901-abcdef123407',
-        'b301c238-1234-4567-8901-abcdef123401',
-        'b301c238-1234-4567-8901-abcdef123402',
-        'b301c238-1234-4567-8901-abcdef123406'
-      ]);
-    }
-  }, [websiteAssets]);
+  const [websiteEditSubTab, setWebsiteEditSubTab] = useState<'images' | 'partners' | 'delivery_fees'>('images');
 
   // Delivery Fees state
   const [deliveryFees, setDeliveryFees] = useState<Governorate[]>([]);
@@ -180,6 +170,8 @@ export default function AdminDashboard() {
   const [ordersSearch, setOrdersSearch] = useState('');
   const [ordersStatusFilter, setOrdersStatusFilter] = useState('all');
   const [ordersDateFilter, setOrdersDateFilter] = useState('');
+  const [ordersDateRangePreset, setOrdersDateRangePreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
+  const [employees, setEmployees] = useState<any[]>([]);
 
   // Settings state
   const [newEmail, setNewEmail] = useState('');
@@ -276,6 +268,8 @@ export default function AdminDashboard() {
         setActiveTab('inspections');
       } else if (role === 'accountant') {
         setActiveTab('bills');
+      } else if (role === 'employee') {
+        setActiveTab('appointments');
       } else {
         setActiveTab('dashboard');
       }
@@ -298,13 +292,34 @@ export default function AdminDashboard() {
     const { data, error } = await supabase.from('website_assets').select('*').order('key');
     if (!error && data) {
       setWebsiteAssets(data as WebsiteAsset[]);
-      const hasPageHeader = data.some((asset: any) => asset.key === 'page_header');
-      if (!hasPageHeader) {
-        await supabase.from('website_assets').insert({
+      
+      const defaultAssets = [
+        {
           key: 'page_header',
           url: '/hero_bg.png',
           description: 'صورة الهيدر والخرائط لجميع الصفحات الداخلية (Header Background)'
-        });
+        },
+        {
+          key: 'somfy_hero_image',
+          url: '',
+          description: 'صورة قسم محركات Somfy الفرنسية'
+        },
+        {
+          key: 'azzurra_hero_image',
+          url: '',
+          description: 'صورة قسم محركات Azzurra الإيطالية'
+        }
+      ];
+
+      let needsRefresh = false;
+      for (const def of defaultAssets) {
+        if (!data.some((asset: any) => asset.key === def.key)) {
+          await supabase.from('website_assets').insert(def);
+          needsRefresh = true;
+        }
+      }
+
+      if (needsRefresh) {
         const { data: updatedData } = await supabase.from('website_assets').select('*').order('key');
         if (updatedData) setWebsiteAssets(updatedData as WebsiteAsset[]);
       }
@@ -331,6 +346,15 @@ export default function AdminDashboard() {
     setLoadingPartners(false);
   }, []);
 
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const { data } = await supabase.from('employees').select('*');
+      setEmployees(data || []);
+    } catch {
+      setEmployees([]);
+    }
+  }, []);
+
   const fetchDeliveryFees = useCallback(async () => {
     setLoadingFees(true);
     const data = await getDeliveryFees();
@@ -355,7 +379,7 @@ export default function AdminDashboard() {
     const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
     if (!error && data) {
       setProducts(data.map((row: any) => ({
-        id: row.id, images: row.images || [], alt: row.alt, labelEn: row.label_en, labelAr: row.label_ar,
+        id: row.id, slug: row.slug || undefined, images: row.images || [], alt: row.alt, labelEn: row.label_en, labelAr: row.label_ar,
         descEn: row.desc_en, descAr: row.desc_ar, detailsEn: row.details_en, detailsAr: row.details_ar,
         category: row.category, price: row.price, is_active: row.is_active ?? true, colors: row.colors || []
       })));
@@ -830,10 +854,16 @@ export default function AdminDashboard() {
     });
   };
 
-  // Redirect employees if they somehow land on admin-only tabs
+  // Redirect users if they somehow land on unauthorized tabs
   useEffect(() => {
-    if (userRole === 'employee' && ['bills', 'products', 'website_edit', 'users'].includes(activeTab)) {
-      setActiveTab('appointments');
+    if (userRole && !hasAccess(activeTab)) {
+      if (userRole === 'technician') {
+        setActiveTab('inspections');
+      } else if (userRole === 'accountant') {
+        setActiveTab('bills');
+      } else {
+        setActiveTab('appointments');
+      }
     }
   }, [activeTab, userRole]);
 
@@ -846,6 +876,7 @@ export default function AdminDashboard() {
       fetchProducts();
       fetchMessages();
       fetchExpenses();
+      fetchEmployees();
       getCategories().then(setDbCategories);
     }
     if (activeTab === 'appointments') fetchAppointments();
@@ -888,6 +919,11 @@ export default function AdminDashboard() {
 
   const groupedOrders = useMemo(() => {
     const groups: { [key: string]: any } = {};
+    const now = Date.now();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+
     orders.forEach(o => {
       if (ordersSearch) {
         const q = ordersSearch.toLowerCase();
@@ -895,10 +931,21 @@ export default function AdminDashboard() {
         const phoneMatch = o.client_phone?.includes(q);
         const prodArMatch = o.products?.label_ar?.toLowerCase().includes(q);
         const prodEnMatch = o.products?.label_en?.toLowerCase().includes(q);
-        if (!nameMatch && !phoneMatch && !prodArMatch && !prodEnMatch) return;
+        const codeMatch = String(o.id).toLowerCase().includes(q);
+        if (!nameMatch && !phoneMatch && !prodArMatch && !prodEnMatch && !codeMatch) return;
       }
       if (ordersStatusFilter !== 'all' && o.status !== ordersStatusFilter) return;
-      if (ordersDateFilter) {
+
+      if (ordersDateRangePreset === 'today') {
+        const orderDateStr = new Date(o.created_at).toISOString().split('T')[0];
+        if (orderDateStr !== todayStr) return;
+      } else if (ordersDateRangePreset === 'week') {
+        const orderTime = new Date(o.created_at).getTime();
+        if (orderTime < sevenDaysAgo) return;
+      } else if (ordersDateRangePreset === 'month') {
+        const orderTime = new Date(o.created_at).getTime();
+        if (orderTime < thirtyDaysAgo) return;
+      } else if (ordersDateRangePreset === 'custom' && ordersDateFilter) {
         const orderDateStr = new Date(o.created_at).toISOString().split('T')[0];
         if (orderDateStr !== ordersDateFilter) return;
       }
@@ -921,7 +968,7 @@ export default function AdminDashboard() {
       }
     });
     return Object.values(groups).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [orders, ordersSearch, ordersStatusFilter, ordersDateFilter]);
+  }, [orders, ordersSearch, ordersStatusFilter, ordersDateFilter, ordersDateRangePreset]);
 
   const counts = {
     all: appointments.length,
@@ -1033,6 +1080,48 @@ export default function AdminDashboard() {
       alert('تم إنشاء المستخدم بنجاح');
       setShowUserModal(false);
       setNewUser({ name: '', email: '', password: '', role: 'employee' });
+      fetchUsers();
+    } catch (err: any) {
+      alert('خطأ: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch('/api/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId: editingUser.id,
+          name: editUserData.name,
+          role: editUserData.role,
+          password: editUserData.password
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'فشل تحديث بيانات المستخدم');
+      }
+
+      if (data.warning) {
+        alert(data.warning);
+      } else {
+        alert('تم تحديث البيانات وكلمة المرور بنجاح');
+      }
+
+      setShowEditUserModal(false);
+      setEditingUser(null);
       fetchUsers();
     } catch (err: any) {
       alert('خطأ: ' + err.message);
@@ -1168,25 +1257,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSaveHomepageCurtains = async () => {
-    setSaving(true);
-    try {
-      const { error } = await supabase.from('website_assets').upsert({
-        key: 'homepage_curtains',
-        url: selectedCurtainIds.join(','),
-        description: 'معرفات الستائر المعروضة في الصفحة الرئيسية'
-      }, { onConflict: 'key' });
-
-      if (error) throw error;
-
-      alert('تم حفظ الستائر المعروضة بالصفحة الرئيسية بنجاح');
-      fetchWebsiteAssets();
-    } catch (err: any) {
-      alert('حدث خطأ أثناء حفظ الستائر: ' + err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const markMessageAsRead = async (id: string, isRead: boolean) => {
     const { error } = await supabase
@@ -1227,8 +1297,10 @@ export default function AdminDashboard() {
       alert('يرجى إدخال اسم المنتج'); return;
     }
     setSaving(true);
+    const computedSlug = selectedProduct.slug ? slugify(selectedProduct.slug) : slugify(selectedProduct.labelEn || selectedProduct.labelAr);
     const payload = {
       alt: selectedProduct.alt || selectedProduct.labelEn,
+      slug: computedSlug || null,
       label_en: selectedProduct.labelEn, label_ar: selectedProduct.labelAr,
       desc_en: selectedProduct.descEn || '', desc_ar: selectedProduct.descAr || '',
       details_en: selectedProduct.detailsEn || '', details_ar: selectedProduct.detailsAr || '',
@@ -1306,7 +1378,6 @@ export default function AdminDashboard() {
     { tab: 'product_categories', label: 'أقسام المنتجات', icon: 'category', access: 'product_categories' },
     { tab: 'expenses', label: 'المصروفات', icon: 'payments', access: 'expenses' },
     { tab: 'employees', label: 'الموظفون', icon: 'badge', access: 'employees' },
-    { tab: 'reports', label: 'التقارير', icon: 'assessment', access: 'reports' },
     { tab: 'messages', label: 'رسائل التواصل', icon: 'mail', access: 'messages', showUnread: true },
     { tab: 'website_edit', label: 'تعديل الموقع', icon: 'edit_document', access: 'website_edit' },
     { tab: 'motor_products', label: 'منتجات المحركات', icon: 'precision_manufacturing', access: 'motor_products' },
@@ -1415,7 +1486,7 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          {activeTab === 'dashboard' ? (
+          {activeTab === 'dashboard' && hasAccess('dashboard') ? (
             <AdvancedDashboardView
               appointments={appointments}
               orders={orders}
@@ -1423,6 +1494,7 @@ export default function AdminDashboard() {
               expenses={expenses}
               products={products}
               messages={messages}
+              employees={employees}
               unreadCount={unreadCount}
               userRole={userRole}
               userProfile={userProfile}
@@ -1583,13 +1655,6 @@ export default function AdminDashboard() {
                 >
                   إدارة مصاريف الشحن
                 </button>
-                <button
-                  type="button"
-                  className={`${styles.subTab} ${websiteEditSubTab === 'curtains' ? styles.subTabActive : ''}`}
-                  onClick={() => setWebsiteEditSubTab('curtains')}
-                >
-                  الستائر المعروضة بالرئيسية
-                </button>
               </div>
 
               {websiteEditSubTab === 'images' ? (
@@ -1600,15 +1665,22 @@ export default function AdminDashboard() {
                     {websiteAssets.filter(asset => asset.key !== 'homepage_curtains').map(asset => (
                       <div key={asset.key} className={styles.assetCard}>
                         <div className={styles.assetImageWrapper}>
-                          <img src={asset.url} alt={asset.description || asset.key} className={styles.assetImage} />
+                          {asset.url ? (
+                            <img src={asset.url} alt={asset.description || asset.key} className={styles.assetImage} />
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af', gap: '8px', padding: '20px' }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: '40px', color: '#d4af37' }}>add_photo_alternate</span>
+                              <span style={{ fontSize: '12px', fontWeight: 'bold' }}>لا توجد صورة محددة</span>
+                            </div>
+                          )}
                         </div>
                         <div className={styles.assetInfo}>
                           <h3 className={styles.assetTitle}>{asset.description || asset.key}</h3>
                           <p className={styles.assetKey}>{asset.key}</p>
 
-                          <div className={styles.assetActions}>
-                            <label className={`${styles.uploadBtn} ${uploadingAsset === asset.key ? styles.uploadingBtn : ''}`}>
-                              {uploadingAsset === asset.key ? 'جاري الرفع...' : 'تغيير الصورة'}
+                          <div className={styles.assetActions} style={{ display: 'flex', gap: '8px' }}>
+                            <label className={`${styles.uploadBtn} ${uploadingAsset === asset.key ? styles.uploadingBtn : ''}`} style={{ flex: 1 }}>
+                              {uploadingAsset === asset.key ? 'جاري الرفع...' : asset.url ? 'تغيير الصورة' : '+ رفع صورة'}
                               <input
                                 type="file"
                                 accept="image/*"
@@ -1621,6 +1693,30 @@ export default function AdminDashboard() {
                                 }}
                               />
                             </label>
+                            {asset.url && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (confirm('هل تريد مسح هذه الصورة وجعلها فارغة؟')) {
+                                    await supabase.from('website_assets').upsert({ key: asset.key, url: '', updated_at: new Date().toISOString() }, { onConflict: 'key' });
+                                    fetchWebsiteAssets();
+                                  }
+                                }}
+                                style={{
+                                  padding: '8px 12px',
+                                  background: '#fee2e2',
+                                  color: '#dc2626',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  fontWeight: 'bold',
+                                }}
+                                title="مسح الصورة"
+                              >
+                                مسح
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1748,81 +1844,6 @@ export default function AdminDashboard() {
                     </div>
                   </>
                 )
-              ) : websiteEditSubTab === 'curtains' ? (
-                <div className={styles.tableWrapper} style={{ marginTop: '1rem' }}>
-                  <div className={styles.filtersRow} style={{ justifyContent: 'space-between', width: '100%', marginBottom: '1rem', backgroundColor: '#fdfbf7', padding: '15px', borderRadius: '8px', border: '1px solid #e5e5e5' }}>
-                    <strong style={{ color: '#3E2723' }}>الستائر المعروضة بالرئيسية</strong>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>* سيتم عرض الستائر في الصفحة الرئيسية بنفس ترتيب تحديدها أدناه.</span>
-                  </div>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>تحديد</th>
-                        <th>الترتيب</th>
-                        <th>صورة</th>
-                        <th>المنتج (عربي)</th>
-                        <th>المنتج (إنجليزي)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {products.map(product => {
-                        const isSelected = selectedCurtainIds.includes(product.id);
-                        const orderNum = selectedCurtainIds.indexOf(product.id) + 1;
-                        return (
-                          <tr
-                            key={product.id}
-                            className={styles.tableRow}
-                            onClick={() => {
-                              if (isSelected) {
-                                setSelectedCurtainIds(prev => prev.filter(id => id !== product.id));
-                              } else {
-                                setSelectedCurtainIds(prev => [...prev, product.id]);
-                              }
-                            }}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <td>
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => { }}
-                                style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#d4af37' }}
-                              />
-                            </td>
-                            <td>
-                              {isSelected ? (
-                                <span style={{ background: '#d4af37', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                                  {orderNum}
-                                </span>
-                              ) : (
-                                <span style={{ color: '#ccc' }}>-</span>
-                              )}
-                            </td>
-                            <td>
-                              <img
-                                src={product.images[0] || '/placeholder.jpg'}
-                                alt={product.labelAr}
-                                style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: '8px' }}
-                              />
-                            </td>
-                            <td style={{ fontWeight: 'bold', color: '#3E2723' }}>{product.labelAr}</td>
-                            <td dir="ltr" style={{ textAlign: 'right' }}>{product.labelEn}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <div style={{ padding: '1rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #f0f2f5' }}>
-                    <button
-                      type="button"
-                      className={styles.addBtn}
-                      onClick={handleSaveHomepageCurtains}
-                      disabled={saving}
-                    >
-                      {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
-                    </button>
-                  </div>
-                </div>
               ) : null}
             </div>
 
@@ -1838,32 +1859,6 @@ export default function AdminDashboard() {
                 </div>
               </header>
 
-              {/* Bulk Update Section */}
-              <div className={styles.filtersRow} style={{ marginTop: '20px', backgroundColor: '#fdfbf7', padding: '15px', borderRadius: '8px', border: '1px solid #e5e5e5' }}>
-                <strong style={{ marginLeft: '15px', color: '#3E2723' }}>تحديث أسعار قسم بالكامل:</strong>
-                <select className={styles.filterSelect} value={bulkCategory} onChange={e => setBulkCategory(e.target.value)}>
-                  <option value="">اختر القسم...</option>
-                  {Array.from(new Set(products.map(p => p.category))).filter(Boolean).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  className={styles.formInput}
-                  style={{ width: '150px' }}
-                  placeholder="السعر للمتر"
-                  value={bulkPrice}
-                  onChange={e => setBulkPrice(e.target.value ? Number(e.target.value) : "")}
-                />
-                <button
-                  className={styles.saveBtn}
-                  style={{ padding: '8px 16px', marginRight: 'auto' }}
-                  onClick={handleBulkUpdatePrice}
-                  disabled={saving || !bulkCategory || bulkPrice === ""}
-                >
-                  {saving ? 'جاري التحديث...' : 'تطبيق'}
-                </button>
-              </div>
 
               {loadingProducts ? (
                 <div className={styles.loadingBox}><span className={styles.spinner} />جاري التحميل...</div>
@@ -1905,32 +1900,48 @@ export default function AdminDashboard() {
                 </div>
               </header>
 
-              <div className={styles.filtersRow}>
+              <div className={styles.filtersRow} style={{ flexWrap: 'wrap', gap: '10px' }}>
                 <input
                   className={styles.searchInput}
-                  placeholder="بحث باسم العميل أو نوع الستارة..."
+                  placeholder="بحث باسم العميل، الهاتف، أو نوع الستارة..."
                   value={ordersSearch}
                   onChange={e => setOrdersSearch(e.target.value)}
-                  style={{ flex: 2 }}
+                  style={{ flex: 2, minWidth: '220px' }}
                 />
-                <input
-                  type="date"
+                <select
                   className={styles.searchInput}
-                  value={ordersDateFilter}
-                  onChange={e => setOrdersDateFilter(e.target.value)}
-                  style={{ flex: 1 }}
-                />
+                  value={ordersDateRangePreset}
+                  onChange={e => setOrdersDateRangePreset(e.target.value as any)}
+                  style={{ flex: 1, minWidth: '160px', padding: '8px 12px' }}
+                >
+                  <option value="all">📅 كل الأوقات (الكل)</option>
+                  <option value="today">📅 طلبات اليوم (Today)</option>
+                  <option value="week">📅 طلبات هذا الأسبوع (This Week)</option>
+                  <option value="month">📅 طلبات هذا الشهر (This Month)</option>
+                  <option value="custom">📆 يوم محدد (Specific Date)</option>
+                </select>
+
+                {ordersDateRangePreset === 'custom' && (
+                  <input
+                    type="date"
+                    className={styles.searchInput}
+                    value={ordersDateFilter}
+                    onChange={e => setOrdersDateFilter(e.target.value)}
+                    style={{ flex: 1, minWidth: '140px' }}
+                  />
+                )}
+
                 <select
                   className={styles.searchInput}
                   value={ordersStatusFilter}
                   onChange={e => setOrdersStatusFilter(e.target.value)}
-                  style={{ flex: 1, padding: '8px 12px' }}
+                  style={{ flex: 1, minWidth: '140px', padding: '8px 12px' }}
                 >
                   <option value="all">كل الحالات</option>
-                  <option value="pending">قيد الانتظار</option>
-                  <option value="shipped">جاري التوصيل</option>
-                  <option value="delivered">تم التوصيل</option>
-                  <option value="cancelled">ملغي</option>
+                  <option value="pending">🟡 قيد الانتظار</option>
+                  <option value="shipped">🔵 جاري التوصيل</option>
+                  <option value="delivered">🟢 تم التوصيل</option>
+                  <option value="cancelled">🔴 ملغي</option>
                 </select>
               </div>
 
@@ -1960,14 +1971,28 @@ export default function AdminDashboard() {
                               {new Date(o.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </td>
-                          <td>
-                            <span className={`${styles.badge} ${o.status === 'delivered' ? styles.statusCompleted :
-                              o.status === 'shipped' ? styles.statusConfirmed :
-                                o.status === 'cancelled' ? styles.statusCancelled :
-                                  styles.statusPending
-                              }`}>
-                              {o.status === 'pending' ? 'قيد الانتظار' : o.status === 'shipped' ? 'جاري التوصيل' : o.status === 'delivered' ? 'تم التوصيل' : 'ملغي'}
-                            </span>
+                          <td onClick={e => e.stopPropagation()}>
+                            <select
+                              value={o.status}
+                              onChange={e => updateOrderStatus(o.actual_ids || o.id, e.target.value)}
+                              disabled={saving}
+                              className={styles.inlineSelect}
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                border: '1px solid rgba(62,39,35,0.15)',
+                                cursor: 'pointer',
+                                backgroundColor: o.status === 'delivered' ? '#dcfce7' : o.status === 'shipped' ? '#e0f2fe' : o.status === 'cancelled' ? '#fee2e2' : '#fef3c7',
+                                color: o.status === 'delivered' ? '#15803d' : o.status === 'shipped' ? '#0369a1' : o.status === 'cancelled' ? '#b91c1c' : '#b45309'
+                              }}
+                            >
+                              <option value="pending">🟡 قيد الانتظار</option>
+                              <option value="shipped">🔵 جاري التوصيل</option>
+                              <option value="delivered">🟢 تم التوصيل</option>
+                              <option value="cancelled">🔴 ملغي</option>
+                            </select>
                           </td>
                           <td>
                             <button className={styles.refreshBtn} style={{ padding: '4px 8px' }} onClick={(e) => { e.stopPropagation(); setSelectedOrder(o); setShowOrderModal(true); }}>عرض</button>
@@ -2035,7 +2060,6 @@ export default function AdminDashboard() {
                           <td style={{ color: '#b45309', fontWeight: 'bold' }}>{b.final_total} ج.م</td>
                           <td onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '8px' }}>
                             <button onClick={() => handlePrint(b)} className={styles.refreshBtn} style={{ padding: '4px 8px', margin: 0 }}>طباعة</button>
-                            <button onClick={() => handlePrint(b)} className={styles.downloadBtn} style={{ padding: '4px 8px', margin: 0 }}>تنزيل PDF</button>
                             <button onClick={() => handleDeleteBill(b.id)} className={styles.deleteBtn} style={{ padding: '4px 8px', margin: 0 }}>حذف</button>
                           </td>
                         </tr>
@@ -2167,7 +2191,19 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td>{new Date(u.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
-                          <td onClick={e => e.stopPropagation()}>
+                          <td onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingUser(u);
+                                setEditUserData({ name: u.name || '', role: u.role || 'employee', password: '' });
+                                setShowEditUserModal(true);
+                              }}
+                              className={styles.refreshBtn}
+                              style={{ padding: '4px 8px', margin: 0 }}
+                            >
+                              تعديل
+                            </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteUser(u.id)}
@@ -2199,8 +2235,6 @@ export default function AdminDashboard() {
             <ExpensesView />
           ) : activeTab === 'employees' ? (
             <EmployeesView />
-          ) : activeTab === 'reports' ? (
-            <ReportsView />
           ) : activeTab === 'product_categories' ? (
             <ProductCategoriesView />
           ) : activeTab === 'motor_products' ? (
@@ -2267,31 +2301,75 @@ export default function AdminDashboard() {
 
                   <div className={`${styles.formGroup} ${styles.formFull}`}>
                     <label className={styles.formLabel}>الصور المرفوعة ({selectedProduct.images?.length || 0})</label>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                    {/* Legend */}
+                    <div style={{ display: 'flex', gap: '16px', marginBottom: '10px', fontSize: '11px', color: '#6b7280', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#3E2723', display: 'inline-block' }} />
+                        الصورة الرئيسية (Main Image)
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#d4af37', display: 'inline-block' }} />
+                        الصورة الفرعية (Sub Main / عند مرور الماوس)
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#6b7280', display: 'inline-block' }} />
+                        صور إضافية (تظهر في صفحة التفاصيل)
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '10px' }}>
                       {selectedProduct.images?.map((img, i) => (
-                        <div key={i} style={{ position: 'relative', width: '80px', height: '80px' }}>
-                          <img src={img} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} alt="prod" />
-                          <span style={{
-                            position: 'absolute',
-                            bottom: '0',
-                            left: '0',
-                            right: '0',
-                            background: i === 0 ? 'rgba(62, 39, 35, 0.85)' : i === 1 ? 'rgba(212, 175, 55, 0.85)' : 'rgba(107, 114, 128, 0.85)',
-                            color: 'white',
-                            fontSize: '8.5px',
-                            textAlign: 'center',
-                            padding: '2px 0',
-                            borderBottomLeftRadius: '4px',
-                            borderBottomRightRadius: '4px',
-                            fontWeight: 'bold',
-                            pointerEvents: 'none',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
+                        <div key={i} style={{
+                          position: 'relative', width: '105px', height: '125px',
+                          border: i === 0 ? '2.5px solid #3E2723' : i === 1 ? '2.5px solid #d4af37' : '1.5px solid #e5e7eb',
+                          borderRadius: '8px', overflow: 'hidden', background: '#f9fafb',
+                          boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                        }}>
+                          <img src={img} style={{ width: '100%', height: '80px', objectFit: 'cover' }} alt="prod" />
+                          {/* Label badge */}
+                          <div style={{
+                            background: i === 0 ? '#3E2723' : i === 1 ? '#d4af37' : '#6b7280',
+                            color: 'white', fontSize: '9px', textAlign: 'center',
+                            padding: '3px 4px', fontWeight: 'bold',
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                           }}>
-                            {i === 0 ? 'الأساسية' : i === 1 ? 'صورة الهوفر' : 'صورة إضافية'}
-                          </span>
-                          <button onClick={() => setSelectedProduct({ ...selectedProduct, images: selectedProduct.images!.filter((_, index) => index !== i) })} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', border: 'none', cursor: 'pointer', zIndex: 10 }}>✕</button>
+                            {i === 0 ? '📷 الرئيسية' : i === 1 ? '🖼️ الفرعية' : `📎 إضافية ${i - 1}`}
+                          </div>
+                          {/* Action buttons row */}
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', padding: '3px 4px', background: '#ffffff' }}>
+                            {/* Move right (towards main / lower index) */}
+                            {i > 0 && (
+                              <button
+                                type="button"
+                                title={i === 1 ? 'اجعلها الصورة الرئيسية' : 'تقديم جهة الرئيسية'}
+                                onClick={() => {
+                                  const newImages = [...(selectedProduct.images || [])];
+                                  [newImages[i - 1], newImages[i]] = [newImages[i], newImages[i - 1]];
+                                  setSelectedProduct({ ...selectedProduct, images: newImages });
+                                }}
+                                style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3E2723', fontWeight: 'bold' }}
+                              >➡</button>
+                            )}
+                            {/* Move left (towards extras / higher index) */}
+                            {i < (selectedProduct.images?.length || 0) - 1 && (
+                              <button
+                                type="button"
+                                title="تأخير جهة الصور الإضافية"
+                                onClick={() => {
+                                  const newImages = [...(selectedProduct.images || [])];
+                                  [newImages[i], newImages[i + 1]] = [newImages[i + 1], newImages[i]];
+                                  setSelectedProduct({ ...selectedProduct, images: newImages });
+                                }}
+                                style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3E2723', fontWeight: 'bold' }}
+                              >⬅</button>
+                            )}
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              title="حذف الصورة"
+                              onClick={() => setSelectedProduct({ ...selectedProduct, images: selectedProduct.images!.filter((_, index) => index !== i) })}
+                              style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', fontWeight: 'bold' }}
+                            >✕</button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -3142,6 +3220,72 @@ export default function AdminDashboard() {
                   {saving ? 'جاري الحفظ...' : 'إنشاء الحساب'}
                 </button>
                 <button className={styles.cancelBtn} onClick={() => setShowUserModal(false)}>إلغاء</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Edit User Modal ── */}
+        {showEditUserModal && editingUser && (
+          <div className={styles.overlay} onClick={() => setShowEditUserModal(false)}>
+            <div className={styles.modal} style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>تعديل بيانات المستخدم وكلمة المرور</h2>
+                <button className={styles.closeBtn} onClick={() => setShowEditUserModal(false)}>✕</button>
+              </div>
+              <div className={styles.modalBody}>
+                <div className={styles.formGrid} style={{ gridTemplateColumns: '1fr' }}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>البريد الإلكتروني</label>
+                    <input
+                      className={styles.formInput}
+                      type="email"
+                      dir="ltr"
+                      value={editingUser.email}
+                      disabled
+                      style={{ backgroundColor: '#f5f5f5', color: '#777' }}
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>الاسم كامل *</label>
+                    <input
+                      className={styles.formInput}
+                      value={editUserData.name}
+                      onChange={e => setEditUserData({ ...editUserData, name: e.target.value })}
+                      placeholder="أدخل اسم الموظف"
+                      required
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>كلمة المرور الجديدة (تغيير كلمة المرور)</label>
+                    <input
+                      className={styles.formInput}
+                      type="password"
+                      dir="ltr"
+                      value={editUserData.password}
+                      onChange={e => setEditUserData({ ...editUserData, password: e.target.value })}
+                      placeholder="أدخل كلمة مرور جديدة أو اتركها فارغة للحفاظ على الحالية"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>الصلاحية / الدور *</label>
+                    <select
+                      className={styles.formInput}
+                      value={editUserData.role}
+                      onChange={e => setEditUserData({ ...editUserData, role: e.target.value })}
+                      style={{ outline: 'none', background: 'white' }}
+                    >
+                      <option value="employee">موظف (Employee) - صلاحيات محدودة</option>
+                      <option value="admin">مدير (Admin) - صلاحيات كاملة</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.saveBtn} onClick={handleUpdateUser} disabled={saving}>
+                  {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                </button>
+                <button className={styles.cancelBtn} onClick={() => setShowEditUserModal(false)}>إلغاء</button>
               </div>
             </div>
           </div>

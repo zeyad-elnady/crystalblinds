@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getProductSlug, slugify } from './slugs';
 
 export interface ProductColor {
   id: string;
@@ -19,6 +20,7 @@ export interface ProductCategory {
 
 export interface Product {
   id: string;
+  slug?: string;
   images: string[];
   alt: string;
   labelEn: string;
@@ -64,6 +66,7 @@ export async function getCategories(): Promise<ProductCategory[]> {
 export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: 'z11648-v3',
+    slug: 'zebra-blinds-z11648-v3',
     images: [
       '/photos for crystal/1.jpeg',
       '/photos for crystal/ستائر زيبرا.jpeg',
@@ -87,6 +90,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'z11648-v6',
+    slug: 'zebra-blinds-z11648-v6',
     images: [
       '/photos for crystal/2.jpeg',
       '/photos for crystal/ستائر زيبرا.jpeg',
@@ -110,6 +114,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'z298-812',
+    slug: 'zebra-blinds-z298-812',
     images: [
       '/photos for crystal/3.jpeg',
       '/photos for crystal/ستائر زيبرا.jpeg',
@@ -132,99 +137,60 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'zbo-702',
+    slug: 'blackout-zebra-blinds-zbo-702',
     images: [
       '/photos for crystal/4.jpeg',
       '/photos for crystal/ستائر زيبرا.jpeg',
       '/photos for crystal/2.jpeg',
       '/photos for crystal/hero3.jpeg'
     ],
-    alt: 'Zebra Blinds ZBO-702',
-    labelEn: 'Zebra Blinds ZBO-702',
-    labelAr: 'ستائر زيبرا ZBO-702',
-    descEn: 'Classic beige dual system zebra blinds for modern interiors',
-    descAr: 'ستائر زيبرا بيج كلاسيكية تناسب الديكورات العصرية',
-    detailsEn: 'Sleek aluminum bottom bar with easy operation.',
-    detailsAr: 'شريط سفلي من الألومنيوم الأنيق مع سهولة في الاستخدام.',
-    category: 'Zebra',
-    price: 2396,
+    alt: 'Blackout Zebra Blinds ZBO-702',
+    labelEn: 'Blackout Zebra Blinds ZBO-702',
+    labelAr: 'ستائر زيبرا بلاك أوت ZBO-702',
+    descEn: 'Maximum room darkening capability with contemporary horizontal bands',
+    descAr: 'تعتيم فائق للغرفة مع الحفاظ على المظهر العصري للشرائح',
+    detailsEn: 'Blackout fabric weave offering near 100% light blockage.',
+    detailsAr: 'نسيج بلاك أوت خاص يوفر حجب شبه تام للضوء والحرارة.',
+    category: 'Blackout',
+    price: 2150,
     is_active: true,
     colors: [
-      { id: 'c6', nameEn: 'Sand', nameAr: 'رملي', hex: '#E2E8F0', isSoldOut: false }
+      { id: 'c6', nameEn: 'Charcoal', nameAr: 'فحمي', hex: '#374151', isSoldOut: false },
+      { id: 'c7', nameEn: 'Off-White', nameAr: 'أوف وايت', hex: '#FAFAF9', isSoldOut: false }
     ]
   },
   {
-    id: 'blackout-roller-01',
+    id: 'rl-classic-101',
+    slug: 'classic-roller-blinds-101',
     images: [
-      '/photos for crystal/ستائر رول بلاك أوت.jpeg',
-      '/photos for crystal/hero2.jpeg',
+      '/photos for crystal/ستائر رول.jpeg',
       '/photos for crystal/1.jpeg',
-      '/photos for crystal/before.jpg.jpeg'
+      '/photos for crystal/hero1.jpeg',
+      '/photos for crystal/3.jpeg'
     ],
-    alt: 'Blackout Roller Blinds',
-    labelEn: 'Blackout Roller Blinds',
-    labelAr: 'ستائر رول بلاك أوت',
-    descEn: '100% complete blackout for total privacy and sleeping comfort',
-    descAr: 'عزل كامل للضوء والحرارة بنسبة 100% لراحة ونوم مثالي',
-    detailsEn: 'Thermal backing blocks UV rays and external temperature.',
-    detailsAr: 'بطانة حرارية تحجب الأشعة فوق البنفسجية والحرارة الخارجية.',
-    category: 'Blackout',
+    alt: 'Classic Roller Blinds',
+    labelEn: 'Classic Roller Blinds',
+    labelAr: 'ستائر رول كلاسيك',
+    descEn: 'Minimalist roller shades designed for clean lines and effortless control',
+    descAr: 'تصميم بسيط وعملي يمنح النوافذ مظهراً عصرياً ومريحاً',
+    detailsEn: 'Easy to clean and maintain, suitable for offices and homes.',
+    detailsAr: 'سهلة التنظيف والصيانة، مثالية للمكاتب والمنازل.',
+    category: 'Roller',
     price: 1450,
     is_active: true,
     colors: [
-      { id: 'c7', nameEn: 'Dark Brown', nameAr: 'بني داكن', hex: '#3E2723', isSoldOut: false }
+      { id: 'c8', nameEn: 'Snow White', nameAr: 'أبيض ثلجي', hex: '#FFFFFF', isSoldOut: false },
+      { id: 'c9', nameEn: 'Warm Grey', nameAr: 'رمادي دافئ', hex: '#9CA3AF', isSoldOut: false }
     ]
   },
   {
-    id: 'sunscreen-roller-01',
+    id: 'wd-slat-50',
+    slug: 'wooden-bamboo-blinds',
     images: [
-      '/photos for crystal/ستائر رول صن سكرين.jpeg',
-      '/photos for crystal/hero1.jpeg',
-      '/photos for crystal/moa.jpg.jpeg',
-      '/photos for crystal/after.jpg.jpeg'
-    ],
-    alt: 'Sunscreen Roller Blinds',
-    labelEn: 'Sunscreen Roller Blinds',
-    labelAr: 'ستائر رول صن سكرين',
-    descEn: 'Glare-free natural light while maintaining clear outside view',
-    descAr: 'إضاءة طبيعية خالية من الوهج مع الحفاظ على الرؤية الخارجية',
-    detailsEn: 'High performance sun barrier fabric reducing air conditioning load.',
-    detailsAr: 'قماش واقي من الشمس عالي الأداء يقلل أحمال التكييف.',
-    category: 'Sunscreen',
-    price: 1300,
-    is_active: true,
-    colors: [
-      { id: 'c8', nameEn: 'White Sunscreen', nameAr: 'أبيض', hex: '#FFFFFF', isSoldOut: false }
-    ]
-  },
-  {
-    id: 'printed-roller-01',
-    images: [
-      '/photos for crystal/printed_roller.png',
+      '/photos for crystal/hero2.jpeg',
+      '/photos for crystal/2.jpeg',
       '/photos for crystal/hero3.jpeg',
-      '/photos for crystal/after.jpg.jpeg',
-      '/photos for crystal/3.jpeg'
-    ],
-    alt: 'Printed Roller Blinds',
-    labelEn: 'Printed Roller Blinds',
-    labelAr: 'ستائر رول مطبوعة',
-    descEn: 'Custom HD printed artistic designs for luxury living rooms',
-    descAr: 'تصاميم ونقوش فنية مطبوعة بجودة عالية لغرف المعيشة',
-    detailsEn: 'Vibrant non-fading colors printed on high-density roller fabric.',
-    detailsAr: 'ألوان زاهية مقاومة للبهتان مطبوعة على قماش رول عالي الكثافة.',
-    category: 'Sunlight',
-    price: 1550,
-    is_active: true,
-    colors: [
-      { id: 'c9', nameEn: 'Multi-color', nameAr: 'متعدد الألوان', hex: '#D4AF37', isSoldOut: false }
-    ]
-  },
-  {
-    id: 'wooden-bamboo-01',
-    images: [
-      '/photos for crystal/ستائر شرائح خشبيه.jpeg',
-      '/photos for crystal/ستائر شرائح معدنية.jpeg',
-      '/photos for crystal/hero1.jpeg',
-      '/photos for crystal/1.jpeg'
+      '/photos for crystal/4.jpeg'
     ],
     alt: 'Wooden & Bamboo Blinds',
     labelEn: 'Wooden & Bamboo Blinds',
@@ -242,33 +208,120 @@ export const DEFAULT_PRODUCTS: Product[] = [
   }
 ];
 
+function mapProductRow(row: any): Product {
+  const labelEn = row.label_en || '';
+  const labelAr = row.label_ar || '';
+  const computedSlug = row.slug || getProductSlug({ slug: row.slug, labelEn, labelAr, id: row.id });
+
+  return {
+    id: String(row.id),
+    slug: computedSlug,
+    images: row.images || [],
+    alt: row.alt || labelEn || labelAr || '',
+    labelEn,
+    labelAr,
+    descEn: row.desc_en || '',
+    descAr: row.desc_ar || '',
+    detailsEn: row.details_en || '',
+    detailsAr: row.details_ar || '',
+    category: row.category || '',
+    price: Number(row.price) || 0,
+    is_active: row.is_active !== false,
+    colors: row.colors || [],
+  };
+}
+
 export async function getProducts(): Promise<Product[]> {
   try {
-    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: true });
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: true });
     
     if (error || !data || data.length === 0) {
       return DEFAULT_PRODUCTS;
     }
 
-    return data.map((row: any) => ({
-      id: row.id,
-      images: row.images || [],
-      alt: row.alt || '',
-      labelEn: row.label_en || '',
-      labelAr: row.label_ar || '',
-      descEn: row.desc_en || '',
-      descAr: row.desc_ar || '',
-      detailsEn: row.details_en || '',
-      detailsAr: row.details_ar || '',
-      category: row.category || '',
-      price: row.price || 0,
-      is_active: row.is_active !== false,
-      colors: row.colors || [],
-    }));
+    return data.map(mapProductRow);
   } catch (err) {
     console.error('Unexpected error fetching products:', err);
     return DEFAULT_PRODUCTS;
   }
+}
+
+/**
+ * Resolves a product by slug or legacy ID.
+ * Returns product, whether it was accessed via a legacy identifier, and the canonical slug.
+ */
+export async function getProductBySlugOrId(identifier: string): Promise<{
+  product: Product | null;
+  isLegacy: boolean;
+  canonicalSlug: string;
+}> {
+  if (!identifier) {
+    return { product: null, isLegacy: false, canonicalSlug: '' };
+  }
+
+  const decoded = decodeURIComponent(identifier).trim();
+  const normalizedSlug = slugify(decoded);
+
+  try {
+    // 1. Try direct database match by slug or id
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .or(`slug.eq.${decoded},id.eq.${decoded},slug.eq.${normalizedSlug}`)
+      .limit(1);
+
+    if (data && data.length > 0 && !error) {
+      const product = mapProductRow(data[0]);
+      const canonicalSlug = product.slug || getProductSlug(product);
+      const isLegacy = decoded === product.id && decoded !== canonicalSlug;
+      return { product, isLegacy, canonicalSlug };
+    }
+
+    // 2. If not matched, query all products and match against derived slugs
+    const allProducts = await getProducts();
+    const matched = allProducts.find(
+      p =>
+        p.slug === decoded ||
+        p.slug === normalizedSlug ||
+        p.id === decoded ||
+        slugify(p.labelEn) === normalizedSlug ||
+        slugify(p.labelAr) === normalizedSlug
+    );
+
+    if (matched) {
+      const canonicalSlug = matched.slug || getProductSlug(matched);
+      const isLegacy = decoded === matched.id && decoded !== canonicalSlug;
+      return { product: matched, isLegacy, canonicalSlug };
+    }
+  } catch (err) {
+    console.error('Error in getProductBySlugOrId:', err);
+  }
+
+  // 3. Fallback search in DEFAULT_PRODUCTS
+  const defaultMatch = DEFAULT_PRODUCTS.find(
+    p =>
+      p.slug === decoded ||
+      p.slug === normalizedSlug ||
+      p.id === decoded ||
+      slugify(p.labelEn) === normalizedSlug ||
+      slugify(p.labelAr) === normalizedSlug
+  );
+
+  if (defaultMatch) {
+    const canonicalSlug = defaultMatch.slug || getProductSlug(defaultMatch);
+    const isLegacy = decoded === defaultMatch.id && decoded !== canonicalSlug;
+    return { product: defaultMatch, isLegacy, canonicalSlug };
+  }
+
+  return { product: null, isLegacy: false, canonicalSlug: '' };
+}
+
+export async function getProductById(id: string): Promise<Product | null> {
+  const result = await getProductBySlugOrId(id);
+  return result.product;
 }
 
 export async function getFeaturedProducts(): Promise<Product[]> {
@@ -294,7 +347,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     
     const featuredProducts: Product[] = [];
     for (const id of featuredIds) {
-      const prod = products.find(p => p.id === id);
+      const prod = products.find(p => p.id === id || p.slug === id);
       if (prod) {
         featuredProducts.push(prod);
       }

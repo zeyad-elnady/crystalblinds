@@ -51,7 +51,7 @@ export default function MaintenanceView({ userRole }: { userRole: string | null 
     client_name: '',
     client_phone: '',
     client_address: '',
-    technician_name: 'م. شريف مصطفى',
+    technician_name: '',
     cost: 0,
     parts_used: '',
     status: 'new' as any,
@@ -67,26 +67,18 @@ export default function MaintenanceView({ userRole }: { userRole: string | null 
   const fetchTechnicians = async () => {
     let list: any[] = [];
     try {
-      const saved = localStorage.getItem('crystal_blinds_technicians');
-      if (saved) list = JSON.parse(saved);
-    } catch (e) {}
-
-    try {
-      const { data } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
-      if (data && data.length > 0) {
-        const merged = [...list];
-        data.forEach(dbTech => {
-          if (!merged.some(t => t.name === dbTech.name || t.id === dbTech.id)) {
-            merged.push(dbTech);
-          }
-        });
-        list = merged;
-      }
-    } catch (e) {}
-
-    if (!list || list.length === 0) {
-      list = [{ id: 't1', name: 'م. أحمد خالد' }, { id: 't2', name: 'م. شريف مصطفى' }];
+      const { data: profData } = await supabase.from('profiles').select('id, name').eq('role', 'technician');
+      const { data: empData } = await supabase.from('employees').select('id, name');
+      
+      const all: any[] = [];
+      (profData || []).forEach(p => { if (p.name && !all.some(x => x.name === p.name)) all.push(p); });
+      (empData || []).forEach(e => { if (e.name && !all.some(x => x.name === e.name)) all.push(e); });
+      list = all;
+    } catch (e) {
+      console.error(e);
+      list = [];
     }
+
     setTechnicians(list);
   };
 
@@ -106,38 +98,15 @@ export default function MaintenanceView({ userRole }: { userRole: string | null 
         client_name: item.client_name,
         client_phone: item.client_phone || '',
         client_address: item.client_address || '',
-        technician_name: item.technician_id ? 'فني الصيانة' : 'م. أحمد خالد',
+        technician_name: item.technician_name || '',
         cost: Number(item.cost) || 0,
         parts_used: item.parts_used || '',
         status: item.status,
       }));
       setRecords(mapped);
-    } catch {
-      // Mock Fallback
-      setRecords([
-        {
-          id: 'MAIN-901',
-          problem_type: 'عطل بمحرك الستارة الذكية',
-          client_name: 'ياسر السقا',
-          client_phone: '01011223344',
-          client_address: 'المعادي - دجلة',
-          technician_name: 'م. أحمد خالد',
-          cost: 350,
-          parts_used: 'تغيير تروس المحرك الداخلي وتنظيف المجرى',
-          status: 'in_progress',
-        },
-        {
-          id: 'MAIN-902',
-          problem_type: 'تمزق خيط سحب الستارة الرول',
-          client_name: 'أمل عبد العزيز',
-          client_phone: '01299887755',
-          client_address: 'شبرا - ش بضيع',
-          technician_name: 'م. شريف مصطفى',
-          cost: 120,
-          parts_used: 'استبدال حبل السحب البلاستيكي 3 متر',
-          status: 'completed',
-        }
-      ]);
+    } catch (err: any) {
+      console.error('Error fetching maintenance records:', err);
+      setRecords([]);
     } finally {
       setLoading(false);
     }
@@ -150,7 +119,7 @@ export default function MaintenanceView({ userRole }: { userRole: string | null 
       client_name: '',
       client_phone: '',
       client_address: '',
-      technician_name: 'م. أحمد خالد',
+      technician_name: '',
       cost: 0,
       parts_used: '',
       status: 'new',

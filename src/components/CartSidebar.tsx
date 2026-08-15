@@ -153,7 +153,7 @@ export default function CartSidebar({ isAr }: { isAr: boolean }) {
             </div>
 
             <Link 
-              href={`/${isAr ? 'ar' : 'en'}/checkout/cart`}
+              href={`/${isAr ? 'ar' : 'en'}/checkout`}
               onClick={() => toggleCart(false)}
               className="w-full flex items-center justify-center gap-2 bg-[#2C1D18] hover:bg-[#3E2723] text-white border border-[#C5A059]/40 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all shadow-md"
             >

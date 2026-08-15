@@ -9,19 +9,42 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutTime, setLockoutTime]       = useState<number | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (lockoutTime && Date.now() < lockoutTime) {
+      const remainingSec = Math.ceil((lockoutTime - Date.now()) / 1000);
+      setError(`تم تجاوز عدد المحاولات المسموح بها. يرجى الانتظار ${remainingSec} ثانية.`);
+      return;
+    }
+
+    if (!email.trim() || !password) {
+      setError('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+      return;
+    }
+
     setLoading(true); setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     if (error) {
-      if (error.message.toLowerCase().includes('confirm') || error.message.toLowerCase().includes('not confirmed')) {
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+
+      if (newAttempts >= 5) {
+        const lockoutUntil = Date.now() + 30 * 1000;
+        setLockoutTime(lockoutUntil);
+        setError('تم حظر المحاولات مؤقتاً لمدة 30 ثانية بسبب تكرار إدخال بيانات خاطئة.');
+      } else if (error.message.toLowerCase().includes('confirm') || error.message.toLowerCase().includes('not confirmed')) {
         setError('يرجى تأكيد البريد الإلكتروني أولاً لتسجيل الدخول');
       } else {
-        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        setError(`البريد الإلكتروني أو كلمة المرور غير صحيحة (المحاولة ${newAttempts} من 5)`);
       }
       setLoading(false);
     } else {
+      setFailedAttempts(0);
+      setLockoutTime(null);
       window.location.replace('/admin');
     }
   };
@@ -31,9 +54,8 @@ export default function LoginForm() {
       <div className={styles.loginCard}>
         <img src="/logo2.png" alt="Crystal Blinds" className={styles.loginLogo} />
         <h1 className={styles.loginTitle}>لوحة التحكم</h1>
-        <p className={styles.loginSubtitle}>تسجيل الدخول للمتابعة</p>
         <div className={styles.divider} />
-        <form className={styles.loginForm} onSubmit={handleLogin}>
+        <form className={styles.loginForm} onSubmit={handleLogin} noValidate>
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>البريد الإلكتروني</label>
             <input
@@ -42,8 +64,6 @@ export default function LoginForm() {
               dir="ltr"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="admin@crystalblinds.com"
-              required
               autoComplete="email"
             />
           </div>
@@ -55,8 +75,6 @@ export default function LoginForm() {
               dir="ltr"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
               autoComplete="current-password"
             />
           </div>

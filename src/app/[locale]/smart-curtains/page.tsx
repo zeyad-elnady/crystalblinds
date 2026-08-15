@@ -48,8 +48,8 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
             >
               <div className="flex-1 space-y-4">
                 <div className="flex items-center gap-3">
-                  <span className="font-sans font-black text-2xl text-[#E05206]" style={{ fontFamily: 'system-ui, sans-serif' }}>somfy.</span>
-                  <span className="bg-[#E05206]/10 text-[#E05206] text-[10px] font-bold px-2 py-0.5 rounded">
+                  <img src="/photos for crystal/somfy.png" alt="Somfy" className="h-6 w-auto object-contain" />
+                  <span className="bg-[#d4af37]/15 text-[#b89358] text-[10px] font-bold px-2 py-0.5 rounded border border-[#d4af37]/30">
                     {isAr ? "فرنسية" : "French"}
                   </span>
                 </div>
@@ -59,36 +59,36 @@ export default async function SmartCurtainsPage(props: { params: Promise<{ local
                     ? "رائدة عالمياً في حلول الأتمتة المنزلية والستائر الذكية بجودة فرنسية موثوقة منذ أكثر من 50 عاماً."
                     : "A global leader in home automation and smart curtain solutions with reliable French quality for over 50 years."}
                 </p>
-                <span className="inline-flex items-center gap-2 border border-[#E05206] text-[#E05206] px-6 py-2 rounded-lg text-xs font-semibold group-hover:bg-[#E05206] group-hover:text-white transition-colors">
+                <span className="inline-flex items-center gap-2 border border-[#d4af37] text-[#d4af37] px-6 py-2 rounded-lg text-xs font-semibold group-hover:bg-[#d4af37] group-hover:text-white transition-colors">
                   {isAr ? "اكتشف منتجات Somfy" : "Explore Somfy Products"}
                   <span className="material-symbols-outlined text-sm">{isAr ? "arrow_back" : "arrow_forward"}</span>
                 </span>
               </div>
-              <div className="w-28 h-28 rounded-full bg-gray-50 flex items-center justify-center p-4 border border-gray-100 shrink-0 group-hover:bg-[#E05206]/10 transition-colors">
-                <span className="material-symbols-outlined text-[#E05206] text-5xl">precision_manufacturing</span>
+              <div className="w-28 h-28 rounded-full bg-gray-50 flex items-center justify-center p-4 border border-gray-100 shrink-0 group-hover:bg-[#d4af37]/10 transition-colors">
+                <span className="material-symbols-outlined text-[#d4af37] text-5xl">precision_manufacturing</span>
               </div>
             </Link>
 
-            {/* Azura Card */}
+            {/* Azzurra Card */}
             <Link
-              href={`/${params.locale}/smart-curtains/azura`}
+              href={`/${params.locale}/smart-curtains/azzurra`}
               className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm flex flex-col md:flex-row gap-6 items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
             >
               <div className="flex-1 space-y-4">
                 <div className="flex items-center gap-3">
-                  <span className="font-sans font-black text-2xl text-[#0066b2]" style={{ fontFamily: 'system-ui, sans-serif' }}>AZURA</span>
-                  <span className="bg-[#0066b2]/10 text-[#0066b2] text-[10px] font-bold px-2 py-0.5 rounded">
-                    {isAr ? "تركية" : "Turkish"}
+                  <img src="/photos for crystal/azzurra.png" alt="AZZURRA" className="h-6 w-auto object-contain" />
+                  <span className="bg-[#0066b2]/10 text-[#0066b2] text-[10px] font-bold px-2 py-0.5 rounded border border-[#0066b2]/20">
+                    {isAr ? "إيطالية" : "Italian"}
                   </span>
                 </div>
-                <h3 className="font-bold text-lg">{isAr ? "شركة AZURA التركية" : "Turkish AZURA Company"}</h3>
+                <h3 className="font-bold text-lg">{isAr ? "شركة AZZURRA الإيطالية" : "Italian AZZURRA Company"}</h3>
                 <p className="text-xs md:text-sm text-gray-500 leading-relaxed font-light">
                   {isAr 
-                    ? "تتميز في تقديم مواتير قوية وهادئة بتقنيات متقدمة وتصميم أنيق يناسب جميع المساحات."
-                    : "Distinguished in providing powerful and quiet motors with advanced technologies and elegant design for all spaces."}
+                    ? "تتميز في تقديم مواتير قوية وهادئة بتقنيات إيطالية متقدمة وتصميم أنيق يناسب جميع المساحات."
+                    : "Distinguished in providing powerful and quiet motors with advanced Italian engineering and elegant design for all spaces."}
                 </p>
                 <span className="inline-flex items-center gap-2 border border-[#0066b2] text-[#0066b2] px-6 py-2 rounded-lg text-xs font-semibold group-hover:bg-[#0066b2] group-hover:text-white transition-colors">
-                  {isAr ? "اكتشف منتجات Azura" : "Explore Azura Products"}
+                  {isAr ? "اكتشف منتجات Azzurra" : "Explore Azzurra Products"}
                   <span className="material-symbols-outlined text-sm">{isAr ? "arrow_back" : "arrow_forward"}</span>
                 </span>
               </div>

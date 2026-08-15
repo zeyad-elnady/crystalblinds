@@ -67,15 +67,9 @@ export default function ExpensesView() {
         expense_date: e.expense_date,
         notes: e.notes || '',
       })));
-    } catch {
-      // Mock Fallback
-      setExpenses([
-        { id: 'exp-1', category: 'marketing', amount: 4500, expense_date: new Date().toISOString().split('T')[0], notes: 'حملة إعلانية ممولة فيسبوك' },
-        { id: 'exp-2', category: 'fuel', amount: 800, expense_date: new Date().toISOString().split('T')[0], notes: 'بنزين لسيارة الشحن والتركيبات' },
-        { id: 'exp-3', category: 'salaries', amount: 28000, expense_date: '2026-06-01', notes: 'رواتب موظفي المعرض الفني' },
-        { id: 'exp-4', category: 'rent', amount: 9000, expense_date: '2026-06-01', notes: 'إيجار معرض التجمع الخامس' },
-        { id: 'exp-5', category: 'maintenance', amount: 1200, expense_date: '2026-05-28', notes: 'صيانة ماكينات ورشة الستائر' },
-      ]);
+    } catch (err: any) {
+      console.error('Error fetching expenses:', err);
+      setExpenses([]);
     } finally {
       setLoading(false);
     }

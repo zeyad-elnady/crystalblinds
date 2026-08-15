@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { AppointmentType } from '@/lib/supabase';
 import { getBookingSettings, formatTime12h, DEFAULT_BOOKING_SETTINGS, type BookingSettings } from '@/lib/bookingSettings';
+import { isValidEgyptianPhone, sanitizePhoneInput } from '@/lib/validation';
 
 interface Props { isAr: boolean; }
 
@@ -89,6 +90,10 @@ export default function ReservationSection({ isAr }: Props) {
 
   const handleSubmit = async () => {
     if (!form.name || !form.phone) { setError(isAr ? 'الاسم والهاتف مطلوبان' : 'Name and phone are required'); return; }
+    if (!isValidEgyptianPhone(form.phone)) {
+      setError(isAr ? 'يرجى إدخال رقم هاتف مصري صحيح (11 رقماً يبدأ بـ 010 أو 011 أو 012 أو 015)' : 'Please enter a valid 11-digit Egyptian phone number (e.g. 01012345678)');
+      return;
+    }
     if (!form.curtainType) { setError(isAr ? 'يرجى اختيار نوع الستائر' : 'Please select curtain type'); return; }
     setSubmitting(true); setError('');
 
@@ -98,7 +103,7 @@ export default function ReservationSection({ isAr }: Props) {
     }
     if (form.systemType !== 'manual') {
       const sysStr = form.systemType === 'smart_app' ? 'Smart App' : 'Remote Control';
-      const motorStr = form.motorBrand === 'somfy' ? 'Somfy' : 'Azzaro';
+      const motorStr = form.motorBrand === 'somfy' ? 'Somfy' : 'Azzurra';
       finalNotes = `[نظام ذكي: ${sysStr} | موتور: ${motorStr}]\n${finalNotes}`;
     }
 
@@ -185,14 +190,14 @@ export default function ReservationSection({ isAr }: Props) {
           
           {/* Visual Showcase Panel */}
           <div className="lg:col-span-5 flex flex-col gap-6 h-full">
-            <div className="relative flex-1 min-h-[320px] rounded-[2rem] overflow-hidden shadow-lg border border-[#3E2723]/10 group">
+            <div className="relative flex-1 min-h-[320px] rounded-[2rem] overflow-hidden border border-[#3E2723]/15 group">
               <img 
                 src="/photos for crystal/moa.jpg.jpeg" 
                 alt={isAr ? "احجز المعاينه مجانا" : "Book Free Measurement"} 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 absolute inset-0" 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 absolute inset-0" 
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#2B1B17]/95 via-[#2B1B17]/40 to-transparent flex flex-col justify-end p-8 text-white z-10">
-                <span className="text-[#3E2723]/80 uppercase tracking-widest text-[10px] font-bold mb-2">
+              <div className="absolute inset-0 bg-[#2B1B17]/85 flex flex-col justify-end p-8 text-white z-10">
+                <span className="text-[#d4af37] uppercase tracking-widest text-[10px] font-bold mb-2">
                   {isAr ? "دقة واحترافية" : "Precision & Care"}
                 </span>
                 <h3 className="font-headline text-2xl font-bold mb-2">
@@ -206,9 +211,8 @@ export default function ReservationSection({ isAr }: Props) {
               </div>
             </div>
 
-            <div className="bg-[#2B1B17] rounded-[2rem] p-6 text-white border border-[#3E2723]/10 shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
-              <h4 className="font-bold text-xs text-[#3E2723]/80 uppercase tracking-wider mb-3 border-b border-white/10 pb-2">
+            <div className="bg-[#2B1B17] rounded-[2rem] p-6 text-white border border-[#3E2723]/15 relative overflow-hidden">
+              <h4 className="font-bold text-xs text-[#d4af37] uppercase tracking-wider mb-3 border-b border-white/10 pb-2">
                 {isAr ? "ماذا تشمل المعاينة المجانية؟" : "What is included?"}
               </h4>
               <ul className="space-y-2.5 text-[11px] text-white/80">
@@ -229,7 +233,7 @@ export default function ReservationSection({ isAr }: Props) {
           </div>
 
           {/* Interactive Card */}
-          <div className="lg:col-span-7 bg-white border-2 border-[#3E2723]/10 rounded-[2.5rem] p-6 sm:p-10 shadow-[0_20px_50px_rgba(62,39,35,0.04)] hover:border-[#3E2723]/10 transition-all duration-300 flex flex-col justify-between">
+          <div className="lg:col-span-7 bg-white border border-[#3E2723]/15 rounded-[2.5rem] p-6 sm:p-10 transition-colors flex flex-col justify-between">
             
             {step === 1 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
@@ -384,7 +388,7 @@ export default function ReservationSection({ isAr }: Props) {
                       type="button"
                       disabled={!selectedDate || !selectedTime}
                       onClick={() => setStep(2)}
-                      className="w-full py-4 bg-[#3E2723] text-white rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#d4af37] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:transform-none shadow-[0_10px_25px_rgba(62,39,35,0.12)] flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-[#3E2723] text-white rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#d4af37] transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <span>{isAr ? 'التالي — أدخل بياناتك' : 'Next — Enter Details'}</span>
                       <span className={`material-symbols-outlined text-base ${isAr ? 'rotate-180' : ''}`}>arrow_forward</span>
@@ -399,7 +403,7 @@ export default function ReservationSection({ isAr }: Props) {
                 
                 {/* ── Left Column: Slot Summary Info Box (col-span-5) ── */}
                 <div className="md:col-span-5 flex flex-col h-full justify-between">
-                  <div className="relative bg-[#3E2723] bg-gradient-to-br from-[#3E2723] to-[#1c110f] border border-[#3E2723]/10 rounded-2xl p-6 text-[#FFFDFA] overflow-hidden flex flex-col justify-between min-h-[300px] shadow-md">
+                  <div className="relative bg-[#3E2723] border border-[#3E2723]/10 rounded-2xl p-6 text-[#FFFDFA] overflow-hidden flex flex-col justify-between min-h-[300px]">
                     {/* Decorative quote icon background */}
                     <div className={`absolute -bottom-6 ${isAr ? "-left-6" : "-right-6"} text-white/5 pointer-events-none select-none`}>
                       <span className="material-symbols-outlined text-[140px] font-bold">calendar_month</span>
@@ -504,7 +508,7 @@ export default function ReservationSection({ isAr }: Props) {
                         className={`bg-transparent border-b border-[#3E2723]/20 pb-3 text-[#3E2723] focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : 'text-left'}`}
                       >
                         <option value="somfy">{isAr ? 'سومفي (ضمان 10 سنوات)' : 'Somfy (10 Years Warranty)'}</option>
-                        <option value="azzaro">{isAr ? 'أزارو (ضمان 5 سنوات)' : 'Azzaro (5 Years Warranty)'}</option>
+                        <option value="azzurra">{isAr ? 'أزورا (ضمان 5 سنوات)' : 'Azzurra (5 Years Warranty)'}</option>
                       </select>
                       
                       {form.systemType === 'smart_app' && (
@@ -534,7 +538,8 @@ export default function ReservationSection({ isAr }: Props) {
                         dir={f.dir} 
                         value={form[f.key as keyof typeof form]} 
                         placeholder={f.ph}
-                        onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                        maxLength={f.key === 'phone' ? 15 : undefined}
+                        onChange={e => setForm(p => ({ ...p, [f.key]: f.key === 'phone' ? sanitizePhoneInput(e.target.value) : e.target.value }))}
                         className={`bg-transparent border-b border-[#3E2723]/20 pb-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm ${isAr ? 'text-right' : 'text-left'}`} 
                       />
                     </div>
@@ -546,7 +551,7 @@ export default function ReservationSection({ isAr }: Props) {
                     type="button"
                     onClick={handleSubmit} 
                     disabled={submitting}
-                    className="mt-4 py-4 bg-[#3E2723] text-white rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#d4af37] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:transform-none shadow-[0_10px_25px_rgba(62,39,35,0.12)] flex items-center justify-center gap-2"
+                    className="mt-4 py-4 bg-[#3E2723] text-white rounded-xl font-bold tracking-widest text-xs uppercase hover:bg-[#d4af37] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-base">calendar_add_on</span>
                     {submitting ? (isAr ? 'جاري الحجز...' : 'Booking...') : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}

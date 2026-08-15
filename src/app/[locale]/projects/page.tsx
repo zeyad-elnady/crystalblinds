@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ProjectsGallery from "./ProjectsGallery";
 import Link from "next/link";
 import PageHero from "../PageHero";
@@ -32,7 +33,9 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
       {/* ═══ Projects Gallery Section ═══ */}
       <section className="py-20 px-6 md:px-12 bg-[#FFFDFA]">
         <div className="max-w-7xl mx-auto">
-          <ProjectsGallery isAr={isAr} />
+          <Suspense fallback={<div className="text-center py-20 text-gray-400">{isAr ? 'جاري التحميل...' : 'Loading...'}</div>}>
+            <ProjectsGallery isAr={isAr} />
+          </Suspense>
         </div>
       </section>
 

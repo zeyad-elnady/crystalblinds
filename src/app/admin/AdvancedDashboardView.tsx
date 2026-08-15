@@ -12,6 +12,7 @@ interface AdvancedDashboardViewProps {
   expenses: any[];
   products: Product[];
   messages: ContactMessage[];
+  employees?: any[];
   unreadCount: number;
   userRole: string | null;
   userProfile: { name: string; email: string } | null;
@@ -32,6 +33,7 @@ export default function AdvancedDashboardView({
   expenses,
   products,
   messages,
+  employees = [],
   unreadCount,
   userRole,
   userProfile,
@@ -58,40 +60,67 @@ export default function AdvancedDashboardView({
 
   // 2. Metric calculations
   const todayAppts = useMemo(() => appointments.filter(a => a.appointment_date === today), [appointments, today]);
-  const pendingBills = useMemo(() => bills.filter(b => b.remaining_amount > 0), [bills]);
+  const pendingBills = useMemo(() => bills.filter(b => Number(b.remaining_amount) > 0), [bills]);
   const activeOrders = useMemo(() => orders.filter(o => o.status === 'pending' || o.status === 'shipped'), [orders]);
 
   const uniqueClientsCount = useMemo(() => {
-    const names = new Set([
-      ...appointments.map(a => a.client_name),
-      ...orders.map(o => o.client_name),
-      ...bills.map(b => b.client_name),
-    ]);
+    const names = new Set<string>();
+    appointments.forEach(a => { if (a.client_name?.trim()) names.add(a.client_name.trim().toLowerCase()); });
+    orders.forEach(o => { if (o.client_name?.trim()) names.add(o.client_name.trim().toLowerCase()); });
+    bills.forEach(b => { if (b.client_name?.trim()) names.add(b.client_name.trim().toLowerCase()); });
     return names.size;
   }, [appointments, orders, bills]);
 
-  const leadsCount = useMemo(() => {
-    return appointments.filter(a => a.status === 'pending').length;
+  const openWorkOrdersCount = useMemo(() => {
+    return appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
   }, [appointments]);
 
-  const confirmedCount = useMemo(() => {
-    return appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').length;
+  const completionRate = useMemo(() => {
+    const total = appointments.length;
+    if (total === 0) return 0;
+    const completed = appointments.filter(a => a.status === 'completed').length;
+    return Math.round((completed / total) * 100);
   }, [appointments]);
-
-  const inspectionsToday = useMemo(() => todayAppts.filter(a => a.appointment_type === 'inspection').length, [todayAppts]);
-  const installationsToday = useMemo(() => todayAppts.filter(a => a.appointment_type === 'installation').length, [todayAppts]);
-  const maintenanceToday = 0;
-
-  const dueBillsCount = pendingBills.length;
-  const dueBillsValue = useMemo(() => {
-    const totalRemaining = bills.reduce((sum, b) => sum + (Number(b.remaining_amount) || 0), 0);
-    return Math.round(totalRemaining);
-  }, [bills]);
 
   const totalRevenue = useMemo(() => {
     const totalBills = bills.reduce((sum, b) => sum + (Number(b.final_total) || 0), 0);
     return Math.round(totalBills);
   }, [bills]);
+
+  const currentMonthRevenue = useMemo(() => {
+    const now = new Date();
+    const m = now.getMonth();
+    const y = now.getFullYear();
+    return bills.reduce((sum, b) => {
+      const d = new Date(b.created_at || b.updated_at);
+      if (d.getMonth() === m && d.getFullYear() === y) {
+        return sum + (Number(b.final_total) || 0);
+      }
+      return sum;
+    }, 0);
+  }, [bills]);
+
+  const lastMonthRevenue = useMemo(() => {
+    const now = new Date();
+    const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const lastYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    return bills.reduce((sum, b) => {
+      const d = new Date(b.created_at || b.updated_at);
+      if (d.getMonth() === lastMonth && d.getFullYear() === lastYear) {
+        return sum + (Number(b.final_total) || 0);
+      }
+      return sum;
+    }, 0);
+  }, [bills]);
+
+  const revenueGrowthText = useMemo(() => {
+    if (lastMonthRevenue === 0) {
+      return currentMonthRevenue > 0 ? 'إيرادات هذا الشهر' : 'لا توجد فواتير هذا الشهر';
+    }
+    const diff = ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+    const sign = diff >= 0 ? '+' : '';
+    return `${sign}${Math.round(diff)}% عن الشهر الماضي`;
+  }, [currentMonthRevenue, lastMonthRevenue]);
 
   const totalExpenses = useMemo(() => {
     return expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -103,8 +132,8 @@ export default function AdvancedDashboardView({
   const defaultTasks = useMemo(() => {
     return todayAppts.map(a => ({
       id: a.id,
-      time: a.appointment_time?.slice(0, 5) || '10:00',
-      text: `${a.appointment_type === 'inspection' ? 'معاينة' : 'تركيب'} للعميل ${a.client_name} - ${a.client_address || 'القاهرة'}`,
+      time: a.appointment_time?.slice(0, 5) || '—',
+      text: `${a.appointment_type === 'inspection' ? 'معاينة' : a.appointment_type === 'installation' ? 'تركيب' : 'صيانة'} للعميل ${a.client_name}${a.client_address ? ` - ${a.client_address}` : ''}`,
     }));
   }, [todayAppts]);
 
@@ -118,33 +147,45 @@ export default function AdvancedDashboardView({
   const alerts = useMemo(() => {
     const list = [];
     if (todayAppts.length > 0) {
-      list.push({ text: `لديك ${todayAppts.length} مواعيد مجدولة اليوم.`, time: 'منذ دقائق', icon: 'calendar_today', color: '#b8922a' });
+      list.push({ text: `لديك ${todayAppts.length} مواعيد مجدولة اليوم.`, time: 'اليوم', icon: 'calendar_today', color: '#b8922a' });
     }
 
     if (pendingBills.length > 0) {
-      list.push({ text: `لديك ${pendingBills.length} فاتورة مستحقة الدفع.`, time: 'منذ 15 دقيقة', icon: 'payments', color: '#8D6E63' });
+      const remainingTotal = pendingBills.reduce((sum, b) => sum + (Number(b.remaining_amount) || 0), 0);
+      list.push({ text: `لديك ${pendingBills.length} فاتورة بها متبقي (${Math.round(remainingTotal).toLocaleString('ar-EG')} ج.م).`, time: 'تنبيه دفع', icon: 'payments', color: '#8D6E63' });
+    }
+
+    if (activeOrders.length > 0) {
+      list.push({ text: `لديك ${activeOrders.length} طلب شراء موقع نشط.`, time: 'الطلبات', icon: 'shopping_cart', color: '#d4af37' });
+    }
+
+    if (unreadCount > 0) {
+      list.push({ text: `لديك ${unreadCount} رسائل تواصل جديدة غير مقروءة.`, time: 'الرسائل', icon: 'mail', color: '#ef4444' });
     }
 
     return list;
-  }, [todayAppts, pendingBills]);
+  }, [todayAppts, pendingBills, activeOrders, unreadCount]);
 
   // 5. Service Performance Donut segmented percentages
   const donutPercentage = useMemo(() => {
     const totalApptsCount = appointments.length;
-    if (totalApptsCount === 0) return { inspect: 50, install: 50, maint: 0, follow: 0 };
+    if (totalApptsCount === 0) return { inspect: 0, install: 0, maint: 0, total: 0, inspectCount: 0, installCount: 0, maintCount: 0 };
     const inspectCount = appointments.filter(a => a.appointment_type === 'inspection').length;
     const installCount = appointments.filter(a => a.appointment_type === 'installation').length;
+    const maintCount = appointments.filter(a => a.appointment_type === 'maintenance').length;
     
     const inspectPct = Math.round((inspectCount / totalApptsCount) * 100);
     const installPct = Math.round((installCount / totalApptsCount) * 100);
-    const maintPct = 0;
-    const followPct = 100 - inspectPct - installPct;
+    const maintPct = Math.round((maintCount / totalApptsCount) * 100);
 
     return {
       inspect: inspectPct,
       install: installPct,
       maint: maintPct,
-      follow: followPct,
+      total: totalApptsCount,
+      inspectCount,
+      installCount,
+      maintCount,
     };
   }, [appointments]);
 
@@ -152,10 +193,10 @@ export default function AdvancedDashboardView({
   const donutSegments = useMemo(() => {
     const radius = 50;
     const circumference = 2 * Math.PI * radius;
-    const values = [donutPercentage.inspect, donutPercentage.install, donutPercentage.maint, donutPercentage.follow];
+    const values = [donutPercentage.inspect, donutPercentage.install, donutPercentage.maint];
     let currentOffset = 0;
 
-    return values.map((val, idx) => {
+    return values.map((val) => {
       const strokeDashoffset = circumference - (val / 100) * circumference;
       const rotation = (currentOffset / 100) * 360;
       currentOffset += val;
@@ -180,26 +221,11 @@ export default function AdvancedDashboardView({
       .slice(0, 5)
       .map(a => ({
         id: a.id,
-        time: a.appointment_time?.slice(0, 5) || '10:00',
+        time: a.appointment_time?.slice(0, 5) || '—',
         client: a.client_name,
         location: a.client_address || '—',
         status: a.status,
       }));
-  }, [appointments]);
-
-  const openWorkOrdersCount = useMemo(() => {
-    return appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
-  }, [appointments]);
-
-  const newClientsCount = useMemo(() => {
-    return appointments.filter(a => a.status === 'pending').length;
-  }, [appointments]);
-
-  const completionRate = useMemo(() => {
-    const total = appointments.length;
-    if (total === 0) return 100;
-    const completed = appointments.filter(a => a.status === 'completed').length;
-    return Math.round((completed / total) * 100);
   }, [appointments]);
 
   // 8. Monthly sales chart data points based on invoice dates
@@ -210,7 +236,7 @@ export default function AdvancedDashboardView({
 
     const sums = [0, 0, 0, 0, 0, 0];
     bills.forEach(b => {
-      const bDate = new Date(b.created_at);
+      const bDate = new Date(b.created_at || b.updated_at);
       if (bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
         const day = bDate.getDate();
         if (day <= 5) sums[0] += Number(b.final_total) || 0;
@@ -257,7 +283,7 @@ export default function AdvancedDashboardView({
     ];
 
     bills.forEach(b => {
-      const bDate = new Date(b.created_at);
+      const bDate = new Date(b.created_at || b.updated_at);
       if (bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
         const day = bDate.getDate();
         const amt = Number(b.final_total) || 0;
@@ -294,50 +320,46 @@ export default function AdvancedDashboardView({
     });
   }, [bills, expenses]);
 
-  // 10. Technician tasks grouping
+  // 10. Real Employee performance grouping
   const employeeStats = useMemo(() => {
-    const counts: Record<string, number> = {};
-    
-    appointments.forEach(a => {
-      let techName = 'م. أحمد خالد';
-      try {
-        const parsed = JSON.parse(a.notes || '{}');
-        if (parsed && parsed.tech) {
-          techName = parsed.tech;
-        } else if (a.notes?.includes('Tech:')) {
-          techName = a.notes.split('Tech:')[1]?.split(';')[0]?.trim() || 'م. أحمد خالد';
-        }
-      } catch {
-        if (a.notes?.includes('Tech:')) {
-          techName = a.notes.split('Tech:')[1]?.split(';')[0]?.trim() || 'م. أحمد خالد';
-        }
-      }
-      counts[techName] = (counts[techName] || 0) + 1;
-    });
-
-    const list = Object.entries(counts).map(([name, tasks]) => ({
-      name,
-      tasks,
-    }));
-
-    if (list.length === 0) {
-      return [
-        { name: 'م. أحمد خالد', tasks: 0, color: '#d4af37', pct: 0 },
-        { name: 'م. شريف مصطفى', tasks: 0, color: '#3E2723', pct: 0 },
-      ];
+    if (!employees || employees.length === 0) {
+      return [];
     }
+
+    const list = employees.map(emp => {
+      const empName = (emp.name || '').trim().toLowerCase();
+      if (!empName) return null;
+
+      const taskCount = appointments.filter(a => {
+        if (!a.notes) return false;
+        try {
+          const parsed = JSON.parse(a.notes);
+          if (parsed && parsed.tech && String(parsed.tech).trim().toLowerCase() === empName) {
+            return true;
+          }
+        } catch {}
+        return a.notes.toLowerCase().includes(empName);
+      }).length;
+
+      return {
+        name: emp.name,
+        tasks: taskCount,
+      };
+    }).filter(Boolean) as { name: string; tasks: number }[];
+
+    if (list.length === 0) return [];
 
     list.sort((a, b) => b.tasks - a.tasks);
     const maxTasks = Math.max(...list.map(l => l.tasks), 1);
+    const colors = ['#d4af37', '#3E2723', '#8D6E63', '#2E7D32', '#EF5350'];
 
-    const colors = ['#d4af37', '#3E2723', '#A1887F', '#2E7D32', '#EF5350'];
     return list.map((item, idx) => ({
       name: item.name,
       tasks: item.tasks,
       color: colors[idx % colors.length],
-      pct: Math.round((item.tasks / maxTasks) * 100),
+      pct: maxTasks > 0 && item.tasks > 0 ? Math.round((item.tasks / maxTasks) * 100) : 0,
     }));
-  }, [appointments]);
+  }, [appointments, employees]);
 
   return (
     <div className="flex flex-col gap-6 text-[#3E2723]" style={{ direction: 'rtl' }}>
@@ -450,8 +472,8 @@ export default function AdvancedDashboardView({
             </span>
           </div>
           <div className="mt-4">
-            <h2 className="text-xl font-bold text-[#3E2723]">{totalRevenue.toLocaleString('ar-EG')} ج.م</h2>
-            <p className="text-[10px] text-[#2E7D32] mt-1 font-semibold">12%+ عن الشهر الماضي</p>
+            <h2 className="text-xl font-bold text-[#3E2723]">{currentMonthRevenue.toLocaleString('ar-EG')} ج.م</h2>
+            <p className="text-[10px] text-[#2E7D32] mt-1 font-semibold">{revenueGrowthText}</p>
           </div>
         </div>
 
@@ -477,14 +499,14 @@ export default function AdvancedDashboardView({
           className="bg-white p-4 rounded-xl border border-[#3E2723]/10 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-md hover:border-[#d4af37]/40 cursor-pointer transition-all"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#3E2723]/60">👥 العملاء الجدد</span>
+            <span className="text-xs font-bold text-[#3E2723]/60">👥 العملاء</span>
             <span className="w-8 h-8 rounded-full bg-[#3E2723]/10 text-[#3E2723] flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-lg">group</span>
             </span>
           </div>
           <div className="mt-4">
-            <h2 className="text-xl font-bold text-[#3E2723]">{newClientsCount} عميل جديد</h2>
-            <p className="text-[10px] text-[#2E7D32] mt-1 font-semibold">نمو نشط</p>
+            <h2 className="text-xl font-bold text-[#3E2723]">{uniqueClientsCount} عميل</h2>
+            <p className="text-[10px] text-[#2E7D32] mt-1 font-semibold">إجمالي العملاء المسجلين</p>
           </div>
         </div>
 
@@ -500,7 +522,9 @@ export default function AdvancedDashboardView({
           </div>
           <div className="mt-4">
             <h2 className="text-xl font-bold text-[#d4af37]">{completionRate}%</h2>
-            <p className="text-[10px] text-[#2E7D32] mt-1 font-semibold">ممتاز ومستقر</p>
+            <p className="text-[10px] text-[#2E7D32] mt-1 font-semibold">
+              {completionRate > 75 ? 'ممتاز ومستقر' : completionRate > 40 ? 'جيد' : completionRate > 0 ? 'قيد الإنجاز' : 'لا توجد مهام مكتملة بعد'}
+            </p>
           </div>
         </div>
 
@@ -513,10 +537,7 @@ export default function AdvancedDashboardView({
         <div className="bg-white p-5 rounded-2xl border border-[#3E2723]/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-sm text-[#3E2723]">المبيعات الشهرية</h3>
-            <select className="text-xs border border-[#3E2723]/20 rounded-lg p-1 bg-[#fdfbf7] outline-none text-[#3E2723]">
-              <option>هذا الشهر</option>
-              <option>الشهر الماضي</option>
-            </select>
+            <span className="text-xs font-semibold text-[#d4af37]">هذا الشهر</span>
           </div>
           
           <div className="relative h-44 w-full flex items-center justify-center">
@@ -555,7 +576,7 @@ export default function AdvancedDashboardView({
             
             {/* Custom overlay tooltip exactly matching the layout */}
             <div className="absolute top-[3%] right-[10%] bg-[#3E2723] text-white text-[10px] font-bold px-2 py-1 rounded shadow-md border border-[#d4af37]/30">
-              {totalRevenue.toLocaleString('ar-EG')} ج.م
+              {currentMonthRevenue.toLocaleString('ar-EG')} ج.م
             </div>
           </div>
           
@@ -582,43 +603,41 @@ export default function AdvancedDashboardView({
             {/* SVG Donut */}
             <div className="relative w-32 h-32 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-                {/* Background Placeholder circle */}
+                {/* Background circle */}
                 <circle 
                   cx="60" cy="60" r="50" 
                   fill="transparent" stroke="#E5E7EB" strokeWidth="12" 
                 />
                 {/* Segment 1: Inspection */}
-                <circle 
-                  cx="60" cy="60" r="50" 
-                  fill="transparent" stroke="#d4af37" strokeWidth="12" 
-                  strokeDasharray={donutSegments[0].strokeDasharray} 
-                  strokeDashoffset={donutSegments[0].strokeDashoffset} 
-                  transform={`rotate(${donutSegments[0].rotation} 60 60)`}
-                />
+                {donutPercentage.total > 0 && donutSegments[0] && (
+                  <circle 
+                    cx="60" cy="60" r="50" 
+                    fill="transparent" stroke="#d4af37" strokeWidth="12" 
+                    strokeDasharray={donutSegments[0].strokeDasharray} 
+                    strokeDashoffset={donutSegments[0].strokeDashoffset} 
+                    transform={`rotate(${donutSegments[0].rotation} 60 60)`}
+                  />
+                )}
                 {/* Segment 2: Installation */}
-                <circle 
-                  cx="60" cy="60" r="50" 
-                  fill="transparent" stroke="#3E2723" strokeWidth="12" 
-                  strokeDasharray={donutSegments[1].strokeDasharray} 
-                  strokeDashoffset={donutSegments[1].strokeDashoffset} 
-                  transform={`rotate(${donutSegments[1].rotation} 60 60)`}
-                />
+                {donutPercentage.total > 0 && donutSegments[1] && (
+                  <circle 
+                    cx="60" cy="60" r="50" 
+                    fill="transparent" stroke="#3E2723" strokeWidth="12" 
+                    strokeDasharray={donutSegments[1].strokeDasharray} 
+                    strokeDashoffset={donutSegments[1].strokeDashoffset} 
+                    transform={`rotate(${donutSegments[1].rotation} 60 60)`}
+                  />
+                )}
                 {/* Segment 3: Maintenance */}
-                <circle 
-                  cx="60" cy="60" r="50" 
-                  fill="transparent" stroke="#A1887F" strokeWidth="12" 
-                  strokeDasharray={donutSegments[2].strokeDasharray} 
-                  strokeDashoffset={donutSegments[2].strokeDashoffset} 
-                  transform={`rotate(${donutSegments[2].rotation} 60 60)`}
-                />
-                {/* Segment 4: Followup */}
-                <circle 
-                  cx="60" cy="60" r="50" 
-                  fill="transparent" stroke="#2E7D32" strokeWidth="12" 
-                  strokeDasharray={donutSegments[3].strokeDasharray} 
-                  strokeDashoffset={donutSegments[3].strokeDashoffset} 
-                  transform={`rotate(${donutSegments[3].rotation} 60 60)`}
-                />
+                {donutPercentage.total > 0 && donutSegments[2] && (
+                  <circle 
+                    cx="60" cy="60" r="50" 
+                    fill="transparent" stroke="#A1887F" strokeWidth="12" 
+                    strokeDasharray={donutSegments[2].strokeDasharray} 
+                    strokeDashoffset={donutSegments[2].strokeDashoffset} 
+                    transform={`rotate(${donutSegments[2].rotation} 60 60)`}
+                  />
+                )}
               </svg>
               {/* Inner Circle content */}
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-full m-3 shadow-inner">
@@ -641,10 +660,6 @@ export default function AdvancedDashboardView({
                 <span className="flex items-center gap-1.5 font-medium"><span className="w-2.5 h-2.5 rounded-full bg-[#A1887F] block" />صيانة</span>
                 <span className="font-bold text-[#3E2723]/60">{donutPercentage.maint}%</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 font-medium"><span className="w-2.5 h-2.5 rounded-full bg-[#2E7D32] block" />متابعة</span>
-                <span className="font-bold text-[#3E2723]/60">{donutPercentage.follow}%</span>
-              </div>
             </div>
 
           </div>
@@ -654,10 +669,7 @@ export default function AdvancedDashboardView({
         <div className="bg-white p-5 rounded-2xl border border-[#3E2723]/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-sm text-[#3E2723]">الإيرادات مقابل المصروفات</h3>
-            <select className="text-xs border border-[#3E2723]/20 rounded-lg p-1 bg-[#fdfbf7] outline-none text-[#3E2723]">
-              <option>هذا الشهر</option>
-              <option>هذا الأسبوع</option>
-            </select>
+            <span className="text-xs font-semibold text-[#d4af37]">هذا الشهر</span>
           </div>
 
           <div className="h-32 w-full flex items-end justify-around relative pt-4">
@@ -712,23 +724,29 @@ export default function AdvancedDashboardView({
           </div>
 
           <div className="flex flex-col gap-3">
-            <span className="text-[10px] text-[#3E2723]/50 block mb-1">حسب عدد المهام المنجزة (معاينات + تركيب + صيانة)</span>
+            <span className="text-[10px] text-[#3E2723]/50 block mb-1">حسب عدد المهام المنجزة الفنية</span>
             
-            {employeeStats.map((emp, idx) => (
-              <div key={idx} className="flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-[#3E2723]">{emp.name}</span>
-                  <span className="text-[#3E2723]/60 text-[10px] font-semibold">{emp.tasks} مهمة</span>
+            {employeeStats.length > 0 ? (
+              employeeStats.map((emp, idx) => (
+                <div key={idx} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-[#3E2723]">{emp.name}</span>
+                    <span className="text-[#3E2723]/60 text-[10px] font-semibold">{emp.tasks} مهمة</span>
+                  </div>
+                  {/* Progress bar container */}
+                  <div className="w-full h-1.5 bg-[#3E2723]/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500" 
+                      style={{ width: `${emp.pct}%`, backgroundColor: emp.color }} 
+                    />
+                  </div>
                 </div>
-                {/* Progress bar container */}
-                <div className="w-full h-1.5 bg-[#3E2723]/5 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full rounded-full transition-all duration-500" 
-                    style={{ width: `${emp.pct}%`, backgroundColor: emp.color }} 
-                  />
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-6 text-xs text-[#3E2723]/50 font-medium">
+                لا توجد مهام مسندة لفنيين بعد
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -762,22 +780,30 @@ export default function AdvancedDashboardView({
                   </tr>
                 </thead>
                 <tbody>
-                  {upcomingTableList.map(item => (
-                    <tr key={item.id} className="border-b border-[#3E2723]/5 last:border-0 hover:bg-[#fdfbf7]/60 cursor-pointer" onClick={() => setActiveTab('appointments')}>
-                      <td className="py-3 font-semibold text-[#3E2723]/80">{item.time}</td>
-                      <td className="py-3 font-bold text-[#3E2723]">{item.client}</td>
-                      <td className="py-3 text-[#3E2723]/60 truncate max-w-[120px]">{item.location}</td>
-                      <td className="py-3 text-center">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                          item.status === 'confirmed' ? 'bg-green-500/10 text-green-700' :
-                          item.status === 'pending' ? 'bg-orange-500/10 text-orange-700' :
-                          'bg-blue-500/10 text-blue-700'
-                        }`}>
-                          {item.status === 'confirmed' ? 'مؤكد' : item.status === 'pending' ? 'قيد التنفيذ' : 'جديد'}
-                        </span>
+                  {upcomingTableList.length > 0 ? (
+                    upcomingTableList.map(item => (
+                      <tr key={item.id} className="border-b border-[#3E2723]/5 last:border-0 hover:bg-[#fdfbf7]/60 cursor-pointer" onClick={() => setActiveTab('appointments')}>
+                        <td className="py-3 font-semibold text-[#3E2723]/80">{item.time}</td>
+                        <td className="py-3 font-bold text-[#3E2723]">{item.client}</td>
+                        <td className="py-3 text-[#3E2723]/60 truncate max-w-[120px]">{item.location}</td>
+                        <td className="py-3 text-center">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                            item.status === 'confirmed' ? 'bg-green-500/10 text-green-700' :
+                            item.status === 'pending' ? 'bg-orange-500/10 text-orange-700' :
+                            'bg-blue-500/10 text-blue-700'
+                          }`}>
+                            {item.status === 'confirmed' ? 'مؤكد' : item.status === 'pending' ? 'قيد التنفيذ' : 'جديد'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="text-center py-8 text-xs text-[#3E2723]/50">
+                        لا توجد مواعيد قادمة مسجلة حالياً
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -793,37 +819,43 @@ export default function AdvancedDashboardView({
             </div>
 
             <div className="flex flex-col gap-3">
-              {defaultTasks.map(task => {
-                const isChecked = !!checkedTasks[task.id];
-                return (
-                  <div 
-                    key={task.id} 
-                    onClick={() => toggleTask(task.id)}
-                    className={`flex items-start gap-3 p-2.5 rounded-xl border cursor-pointer select-none transition-all duration-200 ${
-                      isChecked 
-                        ? 'bg-[#3E2723]/5 border-[#3E2723]/10 opacity-60' 
-                        : 'bg-white border-[#3E2723]/10 hover:border-[#d4af37]/50'
-                    }`}
-                  >
-                    <button 
-                      type="button"
-                      className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+              {defaultTasks.length > 0 ? (
+                defaultTasks.map(task => {
+                  const isChecked = !!checkedTasks[task.id];
+                  return (
+                    <div 
+                      key={task.id} 
+                      onClick={() => toggleTask(task.id)}
+                      className={`flex items-start gap-3 p-2.5 rounded-xl border cursor-pointer select-none transition-all duration-200 ${
                         isChecked 
-                          ? 'bg-[#3E2723] border-[#3E2723] text-white' 
-                          : 'border-[#3E2723]/35 bg-white text-transparent'
+                          ? 'bg-[#3E2723]/5 border-[#3E2723]/10 opacity-60' 
+                          : 'bg-white border-[#3E2723]/10 hover:border-[#d4af37]/50'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[14px] font-bold">check</span>
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs leading-relaxed truncate font-medium ${isChecked ? 'line-through text-[#3E2723]/60' : 'text-[#3E2723]'}`}>
-                        {task.text}
-                      </p>
-                      <span className="text-[10px] text-[#3E2723]/40 font-semibold">{task.time}</span>
+                      <button 
+                        type="button"
+                        className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+                          isChecked 
+                            ? 'bg-[#3E2723] border-[#3E2723] text-white' 
+                            : 'border-[#3E2723]/35 bg-white text-transparent'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[14px] font-bold">check</span>
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs leading-relaxed truncate font-medium ${isChecked ? 'line-through text-[#3E2723]/60' : 'text-[#3E2723]'}`}>
+                          {task.text}
+                        </p>
+                        <span className="text-[10px] text-[#3E2723]/40 font-semibold">{task.time}</span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-xs text-[#3E2723]/50 font-medium">
+                  لا توجد مواعيد مجدولة لهذا اليوم
+                </div>
+              )}
             </div>
           </div>
           
@@ -844,19 +876,25 @@ export default function AdvancedDashboardView({
             </div>
 
             <div className="flex flex-col gap-4">
-              {alerts.map((alert, idx) => (
-                <div key={idx} className="flex gap-2.5 items-start">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${alert.color}12`, color: alert.color }}>
-                    <span className="material-symbols-outlined text-base">{alert.icon}</span>
+              {alerts.length > 0 ? (
+                alerts.map((alert, idx) => (
+                  <div key={idx} className="flex gap-2.5 items-start">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${alert.color}12`, color: alert.color }}>
+                      <span className="material-symbols-outlined text-base">{alert.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold text-[#3E2723] leading-relaxed break-words">
+                        {alert.text}
+                      </p>
+                      <span className="text-[9px] text-[#3E2723]/40 font-semibold">{alert.time}</span>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-[#3E2723] leading-relaxed break-words">
-                      {alert.text}
-                    </p>
-                    <span className="text-[9px] text-[#3E2723]/40 font-semibold">{alert.time}</span>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-xs text-[#3E2723]/50 font-medium">
+                  لا توجد تنبيهات عاجلة حالياً
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -954,17 +992,6 @@ export default function AdvancedDashboardView({
             </span>
             <span className="text-[11px] font-bold text-[#3E2723]">الطلبات</span>
           </button>
-
-          <button 
-            onClick={() => setActiveTab('reports')}
-            className="bg-white p-4 rounded-xl border border-[#3E2723]/10 flex flex-col items-center justify-center gap-2 hover:border-[#d4af37] shadow-[0_2px_6px_rgba(0,0,0,0.01)] transition-all group"
-          >
-            <span className="w-10 h-10 rounded-xl bg-[#37474F]/10 text-[#37474F] flex items-center justify-center group-hover:bg-[#37474F] group-hover:text-white transition-all shrink-0">
-              <span className="material-symbols-outlined">assessment</span>
-            </span>
-            <span className="text-[11px] font-bold text-[#3E2723]">تقرير جديد</span>
-          </button>
-
         </div>
       </div>
 

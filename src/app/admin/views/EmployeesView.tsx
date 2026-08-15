@@ -121,23 +121,10 @@ export default function EmployeesView() {
           notes: a.notes || '',
         };
       }));
-    } catch {
-      // Mock Fallbacks
-      const mockEmps: Employee[] = [
-        { id: 'emp-1', name: 'أحمد خالد', job_title: 'فني معاينات وتركيبات', salary: 7500, phone: '01012345678', work_start_time: '09:00', work_end_time: '17:00', inspections_count: 24, installations_count: 18, maintenance_count: 5, rating: 4.9, commitment: 98 },
-        { id: 'emp-2', name: 'شريف مصطفى', job_title: 'فني صيانة وتركيبات', salary: 7000, phone: '01234567890', work_start_time: '09:00', work_end_time: '17:00', inspections_count: 12, installations_count: 22, maintenance_count: 14, rating: 4.7, commitment: 92 },
-        { id: 'emp-3', name: 'نهى أحمد', job_title: 'خدمة عملاء ومبيعات', salary: 5500, phone: '01111223344', work_start_time: '09:00', work_end_time: '17:00', inspections_count: 0, installations_count: 0, maintenance_count: 0, rating: 4.6, commitment: 96 },
-        { id: 'emp-4', name: 'كمال محمود', job_title: 'محاسب مالي', salary: 8500, phone: '01599887766', work_start_time: '09:00', work_end_time: '17:00', inspections_count: 0, installations_count: 0, maintenance_count: 0, rating: 4.8, commitment: 100 },
-      ];
-      setEmployees(mockEmps);
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      setAttendance([
-        { id: 'att-1', employee_id: 'emp-1', employee_name: 'أحمد خالد', check_in: '09:15 ص', check_out: '05:00 م', delay_minutes: 15, overtime_hours: 1.5, work_date: todayStr, working_hours: 7.75, notes: 'عمل إضافي لإكمال المعاينة' },
-        { id: 'att-2', employee_id: 'emp-2', employee_name: 'شريف مصطفى', check_in: '09:00 ص', check_out: '05:00 م', delay_minutes: 0, overtime_hours: 2, work_date: todayStr, working_hours: 8.0, notes: 'تركيبات إضافية' },
-        { id: 'att-3', employee_id: 'emp-3', employee_name: 'نهى أحمد', check_in: '09:05 ص', check_out: '05:00 م', delay_minutes: 5, overtime_hours: 0, work_date: todayStr, working_hours: 7.9, notes: '' },
-        { id: 'att-4', employee_id: 'emp-4', employee_name: 'كمال محمود', check_in: '08:58 ص', check_out: '05:00 م', delay_minutes: 0, overtime_hours: 0, work_date: todayStr, working_hours: 8.0, notes: 'تعديل جدول الحسابات' },
-      ]);
+    } catch (err: any) {
+      console.error('Error fetching employees:', err);
+      setEmployees([]);
+      setAttendance([]);
     } finally {
       setLoading(false);
     }

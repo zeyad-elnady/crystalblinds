@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 export interface MotorProduct {
   id: string;
-  brand: 'somfy' | 'azura';
+  brand: 'somfy' | 'azzurra' | 'azura';
   nameAr: string;
   nameEn: string;
   descAr: string;
@@ -15,13 +15,20 @@ export interface MotorProduct {
   created_at: string;
 }
 
-export async function getMotorProductsByBrand(brand: 'somfy' | 'azura'): Promise<MotorProduct[]> {
+export async function getMotorProductsByBrand(brand: 'somfy' | 'azzurra' | 'azura'): Promise<MotorProduct[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('motor_products')
       .select('*')
-      .eq('brand', brand)
-      .eq('is_active', true)
+      .eq('is_active', true);
+
+    if (brand === 'somfy') {
+      query = query.eq('brand', 'somfy');
+    } else {
+      query = query.in('brand', ['azzurra', 'azura']);
+    }
+
+    const { data, error } = await query
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });
 

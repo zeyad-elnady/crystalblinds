@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { type Product, type ProductCategory } from "@/lib/products";
 import CatalogModal from "@/components/CatalogModal";
 
@@ -13,23 +14,32 @@ function ProductCardItem({
   product: Product;
   isAr: boolean;
 }) {
+  const [hovered, setHovered] = useState(false);
+  const hasHoverImage = product.images.length > 1;
+
   return (
-    <div className="group flex flex-col bg-[#FFFDFA]/60 border border-white/50 rounded-xl overflow-hidden hover:bg-[#FFFDFA]/80 transition-all duration-500 hover:shadow-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] backdrop-blur-md">
+    <div
+      className="flex flex-col bg-[#FFFDFA]/60 border border-white/50 rounded-xl overflow-hidden hover:bg-[#FFFDFA]/80 transition-all duration-500 hover:shadow-xl shadow-[0_10px_30px_rgba(38,23,12,0.05)] backdrop-blur-md"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       {/* Image Swap */}
-      <div className="relative aspect-[4/3] overflow-hidden shrink-0 group/image">
+      <div className="relative aspect-[4/3] overflow-hidden shrink-0">
         {/* Main image */}
         <img
           src={product.images[0]}
           alt={product.alt}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${product.images.length > 1 ? 'group-hover:opacity-0' : ''}`}
+          className="w-full h-full object-cover transition-opacity duration-500"
+          style={{ opacity: hovered && hasHoverImage ? 0 : 1 }}
         />
 
         {/* Hover image */}
-        {product.images.length > 1 && (
+        {hasHoverImage && (
           <img
             src={product.images[1]}
             alt={`${product.alt} hover`}
-            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+            style={{ opacity: hovered ? 1 : 0 }}
           />
         )}
       </div>
@@ -54,7 +64,7 @@ function ProductCardItem({
         </p>
 
         <Link
-          href={`/${isAr ? 'ar' : 'en'}/products/${product.id}`}
+          href={`/${isAr ? 'ar' : 'en'}/products/${product.slug || product.id}`}
           className={`flex items-center gap-2 text-white bg-[#3E2723] px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-[#2C1D18] transition-colors mt-auto w-fit shadow-md ${isAr ? "mr-auto flex-row-reverse" : "ml-auto"}`}
         >
           <span>
@@ -70,18 +80,36 @@ function ProductCardItem({
 }
 
 export default function ProductCards({ isAr, products, categories, isBrief = false }: { isAr: boolean, products: Product[], categories: ProductCategory[], isBrief?: boolean }) {
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams ? searchParams.get("category") : null;
+
   const [activeCategory, setActiveCategory] = useState("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+
+  const allCategoryTab = { slug: "All", nameEn: "All", nameAr: "الكل" };
+  const displayCategories = [allCategoryTab, ...categories];
+
+  useEffect(() => {
+    if (categoryParam) {
+      const matched = displayCategories.find(
+        (cat) => cat.slug.toLowerCase() === categoryParam.toLowerCase()
+      );
+      if (matched) {
+        setActiveCategory(matched.slug);
+      } else {
+        setActiveCategory("All");
+      }
+    } else {
+      setActiveCategory("All");
+    }
+  }, [categoryParam, categories]);
 
   const filteredProducts = isBrief
     ? products.slice(0, 4)
     : activeCategory === "All"
     ? products
     : products.filter(p => p.category.toLowerCase() === activeCategory.toLowerCase());
-
-  const allCategoryTab = { slug: "All", nameEn: "All", nameAr: "الكل" };
-  const displayCategories = [allCategoryTab, ...categories];
 
   return (
     <div className="w-full flex flex-col items-center px-6 md:px-12 pb-16 pt-8">

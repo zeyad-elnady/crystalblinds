@@ -1,7 +1,6 @@
 import ReservationSection from "./ReservationSection";
 import ModernHero from "./ModernHero";
 import BlindTypes from "./BlindTypes";
-import ExecutedProjects from "./ExecutedProjects";
 import BeforeAfterSlider from "./BeforeAfterSlider";
 import AboutUs from "./AboutUs";
 import CurtainCalculator from "./CurtainCalculator";
@@ -31,11 +30,6 @@ export default async function HomePage({
       {/* ── Discover Blind Types Section ── */}
       <section className="relative z-20">
         <BlindTypes isAr={isAr} locale={locale} products={featuredProducts} />
-      </section>
-
-      {/* ── Executed Projects Portfolio Section ── */}
-      <section className="relative z-20 bg-[#FFFDFA]">
-        <ExecutedProjects isAr={isAr} />
       </section>
 
       {/* ── Before & After Slider Section ── */}

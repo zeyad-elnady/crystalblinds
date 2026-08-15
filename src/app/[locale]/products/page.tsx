@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ProductCards from "../ProductCards";
 import { getProducts, getCategories } from "@/lib/products";
 import PageHero from "../PageHero";
@@ -39,7 +40,9 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
           </p>
         </div>
         <div className="relative z-10 w-full">
-          <ProductCards isAr={isAr} products={products} categories={categories} />
+          <Suspense fallback={<div className="text-center py-20 text-gray-400">{isAr ? 'جاري التحميل...' : 'Loading...'}</div>}>
+            <ProductCards isAr={isAr} products={products} categories={categories} />
+          </Suspense>
         </div>
       </section>
 

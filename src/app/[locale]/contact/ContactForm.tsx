@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { submitContactMessage } from '@/lib/messages';
+import { isValidEgyptianPhone, sanitizePhoneInput } from '@/lib/validation';
 
 export default function ContactForm({ isAr }: { isAr: boolean }) {
   const [name, setName] = useState('');
@@ -17,6 +18,11 @@ export default function ContactForm({ isAr }: { isAr: boolean }) {
     e.preventDefault();
     if (!name.trim() || !phone.trim() || !message.trim()) {
       setError(isAr ? 'يرجى ملء جميع الحقول المطلوبة (*)' : 'Please fill in all required fields (*)');
+      return;
+    }
+
+    if (!isValidEgyptianPhone(phone.trim())) {
+      setError(isAr ? 'يرجى إدخال رقم هاتف مصري صحيح (11 رقماً يبدأ بـ 010 أو 011 أو 012 أو 015)' : 'Please enter a valid 11-digit Egyptian phone number (e.g. 01012345678)');
       return;
     }
 
@@ -49,53 +55,56 @@ export default function ContactForm({ isAr }: { isAr: boolean }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {success && (
-        <div className="bg-[#f0fdf4] border border-[#bbf7d0] text-[#065f46] p-4 rounded-xl text-sm text-center font-semibold transition-all">
+        <div className="bg-[#f0fdf4] border border-[#bbf7d0] text-[#065f46] p-4 rounded-2xl text-sm text-center font-medium transition-all shadow-sm">
           {isAr ? 'شكراً لتواصلك معنا! تم إرسال رسالتك بنجاح وسيتواصل معك فريقنا قريباً.' : 'Thank you! Your message has been sent successfully and our team will contact you soon.'}
         </div>
       )}
       
       {error && (
-        <div className="bg-[#fff5f5] border border-[#fecaca] text-[#b91c1c] p-4 rounded-xl text-sm text-center font-semibold transition-all">
+        <div className="bg-[#fff5f5] border border-[#fecaca] text-[#b91c1c] p-4 rounded-2xl text-sm text-center font-medium transition-all shadow-sm">
           {error}
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="cname" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-          {isAr ? 'الاسم الكامل *' : 'Full Name *'}
-        </label>
-        <input 
-          type="text" 
-          id="cname" 
-          required
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder={isAr ? 'أدخل اسمك الكامل' : 'Your full name'}
-          className="bg-transparent border-b border-[#3E2723]/10 pb-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm" 
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label htmlFor="cname" className="text-xs font-bold text-[#3E2723]/70">
+            {isAr ? 'الاسم الكامل *' : 'Full Name *'}
+          </label>
+          <input 
+            type="text" 
+            id="cname" 
+            required
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder={isAr ? 'أدخل اسمك الكامل' : 'Your full name'}
+            className="w-full bg-[#FFFDFA] border border-[#3E2723]/15 rounded-xl px-4 py-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/15 transition-all text-sm" 
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="cphone" className="text-xs font-bold text-[#3E2723]/70">
+            {isAr ? 'رقم الهاتف *' : 'Phone Number *'}
+          </label>
+          <input 
+            type="tel" 
+            id="cphone" 
+            required
+            value={phone}
+            maxLength={15}
+            onChange={e => setPhone(sanitizePhoneInput(e.target.value))}
+            dir="ltr" 
+            placeholder="01xxxxxxxxx"
+            className="w-full bg-[#FFFDFA] border border-[#3E2723]/15 rounded-xl px-4 py-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/15 transition-all text-sm" 
+          />
+        </div>
       </div>
       
-      <div className="flex flex-col gap-2">
-        <label htmlFor="cphone" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-          {isAr ? 'رقم الهاتف *' : 'Phone Number *'}
-        </label>
-        <input 
-          type="tel" 
-          id="cphone" 
-          required
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          dir="ltr" 
-          placeholder="+20 1X XXXX XXXX"
-          className="bg-transparent border-b border-[#3E2723]/10 pb-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm" 
-        />
-      </div>
-      
-      <div className="flex flex-col gap-2">
-        <label htmlFor="cemail" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-          {isAr ? 'البريد الإلكتروني' : 'Email Address'}
+      <div className="space-y-2">
+        <label htmlFor="cemail" className="text-xs font-bold text-[#3E2723]/70">
+          {isAr ? 'البريد الإلكتروني (اختياري)' : 'Email Address (Optional)'}
         </label>
         <input 
           type="email" 
@@ -103,14 +112,14 @@ export default function ContactForm({ isAr }: { isAr: boolean }) {
           value={email}
           onChange={e => setEmail(e.target.value)}
           dir="ltr" 
-          placeholder="email@example.com"
-          className="bg-transparent border-b border-[#3E2723]/10 pb-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm" 
+          placeholder="name@example.com"
+          className="w-full bg-[#FFFDFA] border border-[#3E2723]/15 rounded-xl px-4 py-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/15 transition-all text-sm" 
         />
       </div>
       
-      <div className="flex flex-col gap-2">
-        <label htmlFor="cmsg" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
-          {isAr ? 'رسالتك *' : 'Your Message *'}
+      <div className="space-y-2">
+        <label htmlFor="cmsg" className="text-xs font-bold text-[#3E2723]/70">
+          {isAr ? 'تفاصيل الرسالة أو الطلب *' : 'Message Details *'}
         </label>
         <textarea 
           id="cmsg" 
@@ -118,30 +127,32 @@ export default function ContactForm({ isAr }: { isAr: boolean }) {
           required
           value={message}
           onChange={e => setMessage(e.target.value)}
-          placeholder={isAr ? 'أخبرنا عن مشروعك...' : 'Tell us about your space and vision...'}
-          className="bg-transparent border-b border-[#3E2723]/10 pb-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] transition-colors text-sm resize-none" 
+          placeholder={isAr ? 'أخبرنا عن المساحة أو نوع الستائر التي تفضلها أو استفسارك...' : 'Tell us about your space, curtain preferences, or questions...'}
+          className="w-full bg-[#FFFDFA] border border-[#3E2723]/15 rounded-xl px-4 py-3 text-[#3E2723] placeholder:text-[#3E2723]/30 focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/15 transition-all text-sm resize-none" 
         />
       </div>
       
-      <button 
-        type="submit"
-        disabled={submitting}
-        className="mt-4 flex items-center justify-center gap-3 bg-[#3E2723] text-white py-4 rounded font-bold tracking-widest uppercase text-xs hover:bg-[#d4af37] transition-colors shadow-lg disabled:opacity-50 cursor-pointer"
-      >
-        <span>{submitting ? (isAr ? 'جاري الإرسال...' : 'Sending...') : (isAr ? 'إرسال الرسالة' : 'Send Message')}</span>
-        <span className={`material-symbols-outlined text-[16px] ${isAr ? 'rotate-180' : ''}`}>send</span>
-      </button>
+      <div className="pt-2">
+        <button 
+          type="submit"
+          disabled={submitting}
+          className="w-full flex items-center justify-center gap-3 bg-[#3E2723] hover:bg-[#2C1D18] text-white py-4 rounded-xl font-bold tracking-wider text-sm transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
+        >
+          <span>{submitting ? (isAr ? 'جاري الإرسال...' : 'Sending...') : (isAr ? 'إرسال الرسالة' : 'Send Message')}</span>
+          <span className={`material-symbols-outlined text-[18px] text-[#d4af37] ${isAr ? 'rotate-180' : ''}`}>send</span>
+        </button>
+      </div>
       
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', marginTop: '10px' }}>
-        <span style={{ fontSize: '11px', color: '#6b7280' }}>{isAr ? 'أو تواصل معنا فوراً عبر واتساب:' : 'Or chat with us instantly on WhatsApp:'}</span>
+      <div className="flex items-center justify-center gap-2 pt-2 border-t border-[#3E2723]/10 text-xs text-[#3E2723]/60">
+        <span>{isAr ? 'تحتاج استجابة فورية؟' : 'Need instant assistance?'}</span>
         <a 
           href="https://wa.me/201100080609"
           target="_blank" 
           rel="noopener noreferrer"
-          style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#25D366', fontWeight: 'bold', fontSize: '11px' }}
+          className="inline-flex items-center gap-1.5 font-bold text-[#25D366] hover:underline"
         >
-          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" style={{ width: '14px', height: '14px' }} alt="WA" />
-          واتساب
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-3.5 h-3.5" alt="WhatsApp" />
+          {isAr ? 'محادثة واتساب' : 'WhatsApp Chat'}
         </a>
       </div>
     </form>

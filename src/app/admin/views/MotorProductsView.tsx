@@ -10,8 +10,9 @@ interface Props {
 }
 
 const BRAND_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  somfy: { label: 'Somfy', color: '#E05206', bg: '#E05206' },
-  azura: { label: 'Azura', color: '#0066b2', bg: '#0066b2' },
+  somfy: { label: 'Somfy', color: '#d4af37', bg: '#d4af37' },
+  azzurra: { label: 'Azzurra', color: '#0066b2', bg: '#0066b2' },
+  azura: { label: 'Azzurra', color: '#0066b2', bg: '#0066b2' },
 };
 
 const CATEGORIES = ['zebra', 'sunscreen', 'sunlight', 'blackout', 'roman', 'dream', 'bamboo'];
@@ -26,7 +27,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const EMPTY_FORM = {
-  brand: 'somfy' as 'somfy' | 'azura',
+  brand: 'somfy' as 'somfy' | 'azzurra' | 'azura',
   name_ar: '',
   name_en: '',
   desc_ar: '',
@@ -41,7 +42,7 @@ const EMPTY_FORM = {
 export default function MotorProductsView({ userRole }: Props) {
   const [products, setProducts] = useState<MotorProduct[]>([]);
   const [loading, setLoading] = useState(false);
-  const [brandFilter, setBrandFilter] = useState<'all' | 'somfy' | 'azura'>('all');
+  const [brandFilter, setBrandFilter] = useState<'all' | 'somfy' | 'azzurra'>('all');
   const [catFilter, setCatFilter] = useState<string>('all');
 
   // Modal state
@@ -166,13 +167,16 @@ export default function MotorProductsView({ userRole }: Props) {
   };
 
   const filteredProducts = products.filter(p => {
-    if (brandFilter !== 'all' && p.brand !== brandFilter) return false;
+    if (brandFilter !== 'all') {
+      if (brandFilter === 'somfy' && p.brand !== 'somfy') return false;
+      if (brandFilter === 'azzurra' && p.brand !== 'azzurra' && p.brand !== 'azura') return false;
+    }
     if (catFilter !== 'all' && p.category !== catFilter) return false;
     return true;
   });
 
   const somfyCount = products.filter(p => p.brand === 'somfy').length;
-  const azuraCount = products.filter(p => p.brand === 'azura').length;
+  const azzurraCount = products.filter(p => p.brand === 'azzurra' || p.brand === 'azura').length;
 
   return (
     <div style={{ padding: '24px', direction: 'rtl' }}>
@@ -181,7 +185,7 @@ export default function MotorProductsView({ userRole }: Props) {
         <div>
           <h1 className={styles.headerTitle}>منتجات المحركات</h1>
           <p className={styles.headerSub}>
-            {products.length} منتج إجمالي · {somfyCount} Somfy · {azuraCount} Azura
+            {products.length} منتج إجمالي · {somfyCount} Somfy · {azzurraCount} Azzurra
           </p>
         </div>
         <div className={styles.headerActions}>
@@ -193,19 +197,19 @@ export default function MotorProductsView({ userRole }: Props) {
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px', alignItems: 'center' }}>
         {/* Brand filter */}
         <div style={{ display: 'flex', gap: '6px' }}>
-          {(['all', 'somfy', 'azura'] as const).map(b => (
+          {(['all', 'somfy', 'azzurra'] as const).map(b => (
             <button
               key={b}
               onClick={() => setBrandFilter(b)}
               style={{
                 padding: '6px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer',
                 border: '1.5px solid',
-                borderColor: brandFilter === b ? (b === 'somfy' ? '#E05206' : b === 'azura' ? '#0066b2' : '#d4af37') : '#e5e7eb',
-                background: brandFilter === b ? (b === 'somfy' ? '#E05206' : b === 'azura' ? '#0066b2' : '#d4af37') : 'white',
+                borderColor: brandFilter === b ? (b === 'somfy' ? '#d4af37' : b === 'azzurra' ? '#0066b2' : '#3E2723') : '#e5e7eb',
+                background: brandFilter === b ? (b === 'somfy' ? '#d4af37' : b === 'azzurra' ? '#0066b2' : '#3E2723') : 'white',
                 color: brandFilter === b ? 'white' : '#6b7280',
               }}
             >
-              {b === 'all' ? 'الكل' : b === 'somfy' ? 'Somfy' : 'Azura'}
+              {b === 'all' ? 'الكل' : b === 'somfy' ? 'Somfy' : 'Azzurra'}
             </button>
           ))}
         </div>
@@ -255,7 +259,7 @@ export default function MotorProductsView({ userRole }: Props) {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
           {filteredProducts.map(p => {
-            const brand = BRAND_LABELS[p.brand];
+            const brand = BRAND_LABELS[p.brand] || { label: p.brand, color: '#3E2723', bg: '#3E2723' };
             return (
               <div key={p.id} style={{
                 background: 'white', border: '1px solid #f3f4f6', borderRadius: '16px', overflow: 'hidden',
@@ -274,7 +278,7 @@ export default function MotorProductsView({ userRole }: Props) {
                   <span style={{
                     position: 'absolute', top: '10px', right: '10px', background: brand.bg, color: 'white',
                     fontSize: '9px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '999px', textTransform: 'uppercase',
-                  }}>{p.brand}</span>
+                  }}>{brand.label}</span>
                   {/* Inactive badge */}
                   {!p.is_active && (
                     <span style={{
@@ -358,7 +362,7 @@ export default function MotorProductsView({ userRole }: Props) {
                   <select value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value as any }))}
                     style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }}>
                     <option value="somfy">Somfy (فرنسية)</option>
-                    <option value="azura">Azura (تركية)</option>
+                    <option value="azzurra">Azzurra (إيطالية)</option>
                   </select>
                 </label>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>

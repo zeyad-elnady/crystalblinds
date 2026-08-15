@@ -32,7 +32,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
         subAr: p.descAr,
         subEn: p.descEn,
         image: p.images[0] || "/placeholder.jpg",
-        link: `/${locale}/products/${p.id}`,
+        link: p.category ? `/${locale}/products?category=${encodeURIComponent(p.category)}` : `/${locale}/products`,
         icon: getIconForProduct(p.id, p.category)
       }))
     : [
@@ -42,7 +42,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
           subAr: "تحكم ذكي بالضوء والخصوصية",
           subEn: "Smart light & privacy control",
           image: "/photos for crystal/ستائر زيبرا.jpeg",
-          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123404`,
+          link: `/${locale}/products?category=zebra`,
           icon: "window",
         },
         {
@@ -51,7 +51,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
           subAr: "بساطة وعصرية تناسب كل الغرف",
           subEn: "Simple & modern for all rooms",
           image: "/photos for crystal/printed_roller.png",
-          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123407`,
+          link: `/${locale}/products?category=sunscreen`,
           icon: "layers",
         },
         {
@@ -60,7 +60,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
           subAr: "عزل كامل للضوء والحرارة بنسبة 100%",
           subEn: "100% complete light & heat isolation",
           image: "/photos for crystal/ستائر رول بلاك أوت.jpeg",
-          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123401`,
+          link: `/${locale}/products?category=blackout`,
           icon: "dark_mode",
         },
         {
@@ -69,7 +69,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
           subAr: "حماية من الشمس مع الحفاظ على الرؤية",
           subEn: "Sun protection while keeping the view",
           image: "/photos for crystal/ستائر رول صن سكرين.jpeg",
-          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123402`,
+          link: `/${locale}/products?category=sunscreen`,
           icon: "sunny",
         },
         {
@@ -78,7 +78,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
           subAr: "تحكم تلقائي ذكي بالريموت والموبايل",
           subEn: "Automatic smart remote & app control",
           image: "/photos for crystal/ستائر دبل سيستم.jpeg",
-          link: `/${locale}/products/b301c238-1234-4567-8901-abcdef123406`,
+          link: `/${locale}/smart-curtains`,
           icon: "settings_remote",
         },
       ];
@@ -103,30 +103,30 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
             <Link
               href={item.link}
               key={i}
-              className="group relative h-96 rounded-2xl overflow-hidden border border-[#3E2723]/10 shadow-[0_10px_30px_rgba(62,39,35,0.02)] hover:border-white/40 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)] transition-all duration-500 flex flex-col justify-end"
+              className="group relative h-96 rounded-2xl overflow-hidden border border-[#3E2723]/15 hover:border-[#d4af37] transition-all duration-300 flex flex-col justify-end"
             >
               {/* Image */}
               <div className="absolute inset-0 z-0">
                 <img
                   src={item.image}
                   alt={isAr ? item.labelAr : item.labelEn}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                 />
-                {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+                {/* Flat Overlay */}
+                <div className="absolute inset-0 bg-black/60 z-10 transition-opacity duration-300" />
               </div>
 
               {/* Card Content */}
               <div className="relative z-20 p-6 flex flex-col items-center text-center text-white">
                 {/* Floating Icon */}
-                <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:bg-white group-hover:text-[#3E2723]">
+                <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105 group-hover:bg-white group-hover:text-[#3E2723]">
                   <span className="material-symbols-outlined text-xl">{item.icon}</span>
                 </div>
 
                 <h3 className="font-headline text-xl font-bold mb-2 group-hover:text-white transition-colors">
                   {isAr ? item.labelAr : item.labelEn}
                 </h3>
-                <p className="text-white/60 text-xs font-light leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 h-0 group-hover:h-auto overflow-hidden">
+                <p className="text-white/80 text-xs font-light leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-0 group-hover:h-auto overflow-hidden">
                   {isAr ? item.subAr : item.subEn}
                 </p>
               </div>
@@ -138,7 +138,7 @@ export default function BlindTypes({ isAr, locale, products }: { isAr: boolean; 
         <div className="flex justify-center mt-16">
           <Link
             href={`/${locale}/products`}
-            className="px-8 py-3.5 bg-transparent border-2 border-[#3E2723] text-[#3E2723] hover:bg-[#3E2723] hover:text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 shadow-md"
+            className="px-8 py-3.5 bg-transparent border-2 border-[#3E2723] text-[#3E2723] hover:bg-[#3E2723] hover:text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-colors"
           >
             {isAr ? "عرض جميع المنتجات" : "View All Products"}
           </Link>

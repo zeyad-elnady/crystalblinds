@@ -190,13 +190,13 @@ export default function Testimonials({ isAr }: { isAr: boolean }) {
                   ? "translateX(-420px) scale(0.85)"
                   : "translateX(420px) scale(0.85)",
                 zIndex: isCenter ? 10 : 1,
-                filter: isCenter ? "blur(0px)" : "blur(3px)",
+                filter: "none",
                 opacity: isCenter ? 1 : 0.45,
               }}
             >
               <div
-                className={`bg-white rounded-2xl px-8 py-7 shadow-[0_4px_30px_rgba(62,39,35,0.08)] border ${
-                  isCenter ? "border-[#3E2723]/15 shadow-[0_8px_40px_rgba(62,39,35,0.12)]" : "border-[#3E2723]/8"
+                className={`bg-white rounded-2xl px-8 py-7 border ${
+                  isCenter ? "border-[#3E2723]/30" : "border-[#3E2723]/10"
                 }`}
                 dir={isAr ? "rtl" : "ltr"}
               >
