@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 export default function BeforeAfterSlider({ isAr }: { isAr: boolean }) {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleMove = (clientX: number) => {
+  const handleMove = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
@@ -15,21 +15,21 @@ export default function BeforeAfterSlider({ isAr }: { isAr: boolean }) {
     if (percentage < 0) percentage = 0;
     if (percentage > 100) percentage = 100;
     setSliderPosition(percentage);
-  };
+  }, []);
 
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isDragging) return;
     handleMove(e.touches[0].clientX);
-  };
+  }, [isDragging, handleMove]);
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     handleMove(e.clientX);
-  };
+  }, [isDragging, handleMove]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (isDragging) {
@@ -45,70 +45,80 @@ export default function BeforeAfterSlider({ isAr }: { isAr: boolean }) {
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove]);
 
   return (
-    <section id="before-after" className="py-12 px-6 md:px-12 bg-[#FFFDFA] text-[#3E2723]">
-      <div className="max-w-6xl mx-auto bg-[#F5EFE6] rounded-[2rem] overflow-hidden flex flex-col md:flex-row items-stretch border border-[#3E2723]/10">
+    <section id="before-after" className="py-12 px-4 sm:px-6 md:px-12 bg-[#FFFDFA] text-[#3E2723]">
+      <div className="max-w-4xl mx-auto">
         
-        {/* Left Info Column */}
-        <div className="md:w-[35%] p-8 md:p-12 flex flex-col justify-center items-start text-right" style={{ direction: isAr ? "rtl" : "ltr" }}>
-          <h2 className="font-headline text-3xl md:text-4xl font-bold text-[#3E2723] mb-3">
+        {/* Section Header */}
+        <div className="text-center mb-6 md:mb-8" style={{ direction: isAr ? "rtl" : "ltr" }}>
+          <h2 className="font-headline text-2xl md:text-3xl font-bold text-[#3E2723] mb-2">
             {isAr ? "قبل و بعد" : "Before & After"}
           </h2>
-          <p className="text-[#3E2723]/80 font-light text-sm leading-relaxed">
+          <p className="text-[#3E2723]/70 text-xs md:text-sm font-light max-w-md mx-auto">
             {isAr
-              ? "شاهد الفرق الذي تحدثه ستائر كريستال"
-              : "Witness the difference made by Crystal Blinds"}
+              ? "اسحب المؤشر وشاهد الفرق الحقيقي الذي تحدثه ستائر كريستال"
+              : "Drag the slider to see the difference made by Crystal Blinds"}
           </p>
         </div>
 
-        {/* Right Slider Column */}
+        {/* Controlled Proportional Before & After Box */}
         <div
           ref={containerRef}
-          className="md:w-[65%] min-h-[350px] md:min-h-full relative overflow-hidden select-none cursor-ew-resize"
-          onMouseDown={() => setIsDragging(true)}
-          onTouchStart={() => setIsDragging(true)}
+          className="relative w-full h-[300px] sm:h-[380px] md:h-[420px] max-h-[440px] rounded-2xl md:rounded-3xl overflow-hidden select-none cursor-ew-resize border border-[#3E2723]/15 shadow-md bg-[#FAF8F5] mx-auto"
+          onMouseDown={(e) => {
+            setIsDragging(true);
+            handleMove(e.clientX);
+          }}
+          onTouchStart={(e) => {
+            setIsDragging(true);
+            handleMove(e.touches[0].clientX);
+          }}
         >
-          {/* Before Image (Background) */}
-          <div className="absolute inset-0 w-full h-full bg-black/5">
+          {/* 1. Before Image (Background) */}
+          <div className="absolute inset-0 w-full h-full">
             <img
               src="/photos for crystal/before.jpg.jpeg"
-              alt="Before"
-              className="w-full h-full object-contain pointer-events-none"
+              alt="Before installing blinds"
+              className="w-full h-full object-cover pointer-events-none"
+              draggable={false}
             />
-            {/* Label */}
-            <span className={`absolute top-4 ${isAr ? "right-4" : "left-4"} z-20 bg-black/60 text-white px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider backdrop-blur-sm`}>
+            {/* Before Badge */}
+            <span className={`absolute top-4 ${isAr ? "right-4" : "left-4"} z-10 bg-black/70 text-white border border-white/20 px-3 py-1 rounded-lg text-[11px] font-bold tracking-wider backdrop-blur-md shadow-md`}>
               {isAr ? "قبل" : "BEFORE"}
             </span>
           </div>
 
-          {/* After Image (Foreground, clipped) */}
+          {/* 2. After Image (Foreground, clipped cleanly with clip-path) */}
           <div
-            className="absolute inset-0 w-full h-full z-10 overflow-hidden bg-black/5"
-            style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }}
+            className="absolute inset-0 w-full h-full z-10 overflow-hidden pointer-events-none"
+            style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
           >
             <img
               src="/photos for crystal/after.jpg.jpeg"
-              alt="After"
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ width: containerRef.current?.getBoundingClientRect().width }}
+              alt="After installing blinds"
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              draggable={false}
             />
-            {/* Label */}
-            <span className={`absolute top-4 ${isAr ? "left-4" : "right-4"} z-20 bg-white/95 text-[#3E2723] border border-[#3E2723]/10 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider shadow`}>
+            {/* After Badge */}
+            <span className={`absolute top-4 ${isAr ? "left-4" : "right-4"} z-10 bg-[#3E2723] text-white border border-[#d4af37]/40 px-3 py-1 rounded-lg text-[11px] font-bold tracking-wider shadow-md`}>
               {isAr ? "بعد" : "AFTER"}
             </span>
           </div>
 
-          {/* Slider line & handle */}
+          {/* 3. Slider Divider Line & Draggable Knob */}
           <div
-            className="absolute top-0 bottom-0 z-20 w-[2px] bg-white cursor-ew-resize"
+            className="absolute top-0 bottom-0 z-30 w-0.5 bg-white shadow-[0_0_8px_rgba(0,0,0,0.5)] pointer-events-none transition-all duration-75"
             style={{ left: `${sliderPosition}%` }}
           >
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#3E2723] border border-white text-white flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95">
-              <span className="text-[10px] font-bold select-none leading-none">&lt; &gt;</span>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#3E2723] border-2 border-white text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 active:scale-95">
+              <span className="material-symbols-outlined text-base text-[#d4af37]">
+                compare_arrows
+              </span>
             </div>
           </div>
+
         </div>
 
       </div>

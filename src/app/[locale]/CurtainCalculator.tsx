@@ -235,7 +235,7 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
         </div>
 
         {/* Brown Container Box */}
-        <div className="bg-[#2B1B17] rounded-[2rem] p-6 md:p-10 border border-[#3E2723]/20 relative">
+        <div className="bg-[#3E2723] rounded-[2rem] p-6 md:p-10 border border-white/10 shadow-[0_12px_40px_rgba(62,39,35,0.2)] relative">
 
           {/* Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center" style={{ direction: isAr ? "rtl" : "ltr" }}>
@@ -360,7 +360,7 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
             {/* Result Block (col-span-4) */}
             <div className="lg:col-span-4 w-full flex flex-col items-center">
               {/* Clean crisp white/silver card */}
-              <div className="w-full border border-white/15 rounded-2xl p-5 bg-[#201310] flex items-center justify-between">
+              <div className="w-full border border-white/15 rounded-2xl p-5 bg-[#2C1D18] flex items-center justify-between shadow-inner">
                 <div className="flex flex-col items-start text-start">
                   <span className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
                     {isAr ? "السعر التقديري" : "Estimated Price"}
@@ -392,14 +392,14 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
           <div className="flex flex-col sm:flex-row justify-center mt-8 gap-4">
             <button
               onClick={handleAddToCart}
-              className="bg-[#2B1B17] hover:bg-[#d4af37] border border-[#d4af37] text-white px-8 py-3 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+              className="bg-[#3E2723] hover:bg-[#d4af37] hover:text-[#3E2723] border border-[#d4af37] text-white px-8 py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
               {isAr ? "أضف إلى السلة" : "Add to Cart"}
             </button>
             <a
               href="#reserve"
-              className="bg-[#d4af37] hover:bg-white text-[#2B1B17] border border-[#d4af37] px-8 py-3 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+              className="bg-[#d4af37] hover:bg-white text-[#3E2723] border border-[#d4af37] px-8 py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
             >
               {isAr ? "احجز موعد للمعاينة مجاناً" : "Book Free Measurement"}
             </a>

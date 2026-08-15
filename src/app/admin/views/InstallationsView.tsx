@@ -3,9 +3,20 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase, Appointment } from '@/lib/supabase';
 
-interface InstallationOrder extends Appointment {
+export interface InstallationDimension {
+  width: number;
+  height: number;
+  type: string;
+  notes?: string;
+}
+
+export interface InstallationOrder extends Appointment {
   technician_name?: string;
   products_list?: string[];
+  dimensions?: InstallationDimension[];
+  total_price?: number;
+  deposit?: number;
+  collection_amount?: number;
   execution_photos?: string[];
   signature_data?: string | null;
 }
@@ -35,6 +46,27 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
   const [editingTechName, setEditingTechName] = useState('');
   const [techSaving, setTechSaving] = useState(false);
 
+  // Modal: Add / Edit Order State
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<InstallationOrder | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+  
+  const [orderFormData, setOrderFormData] = useState({
+    client_name: '',
+    client_phone: '',
+    client_address: '',
+    appointment_date: new Date().toISOString().split('T')[0],
+    appointment_time: '12:00',
+    technician_name: '',
+    status: 'pending' as any,
+    total_price: 0,
+    deposit: 0,
+    collection_amount: 0,
+  });
+
+  const [productsInputList, setProductsInputList] = useState<string[]>(['']);
+  const [dimensionsList, setDimensionsList] = useState<InstallationDimension[]>([]);
+
   useEffect(() => {
     fetchInstallations();
     fetchTechnicians();
@@ -55,6 +87,13 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
       list = [];
     }
 
+    if (list.length === 0) {
+      list = [
+        { id: 't1', name: 'أحمد الفني' },
+        { id: 't2', name: 'محمود التركيبات' },
+        { id: 't3', name: 'إبراهيم الصيانة' }
+      ];
+    }
     setTechnicians(list);
   };
 
@@ -73,10 +112,6 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
 
     const updated = [...technicians, newTech];
     setTechnicians(updated);
-    try {
-      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(updated));
-    } catch (e) {}
-
     setNewTechName('');
     setTechSaving(false);
   };
@@ -94,10 +129,6 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
 
     const updated = technicians.map(t => (t.id === id ? { ...t, name: updatedName } : t));
     setTechnicians(updated);
-    try {
-      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(updated));
-    } catch (e) {}
-
     setEditingTechId(null);
     setEditingTechName('');
     setTechSaving(false);
@@ -119,10 +150,6 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
 
     const updated = technicians.filter(t => t.id !== id);
     setTechnicians(updated);
-    try {
-      localStorage.setItem('crystal_blinds_technicians', JSON.stringify(updated));
-    } catch (e) {}
-
     setTechSaving(false);
   };
 
@@ -133,6 +160,10 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
     const newNotes = JSON.stringify({
       tech: techName,
       products: order.products_list,
+      dimensions: order.dimensions || [],
+      total_price: order.total_price || 0,
+      deposit: order.deposit || 0,
+      collection_amount: order.collection_amount || 0,
       photos: order.execution_photos,
       signature: order.signature_data
     });
@@ -146,23 +177,6 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, technician_name: techName } : o));
   };
 
-  // Installation Order Create/Edit Modal state
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<InstallationOrder | null>(null);
-  const [savingOrder, setSavingOrder] = useState(false);
-  
-  const [orderFormData, setOrderFormData] = useState({
-    client_name: '',
-    client_phone: '',
-    client_address: '',
-    appointment_date: new Date().toISOString().split('T')[0],
-    appointment_time: '12:00',
-    technician_name: '',
-    status: 'pending' as any,
-  });
-
-  const [productsInputList, setProductsInputList] = useState<string[]>(['']);
-
   const handleOpenAddOrder = () => {
     setEditingOrder(null);
     setOrderFormData({
@@ -171,26 +185,71 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
       client_address: '',
       appointment_date: new Date().toISOString().split('T')[0],
       appointment_time: '12:00',
-      technician_name: technicians[0]?.name || '',
+      technician_name: technicians[0]?.name || 'فني التركيبات',
       status: 'pending',
+      total_price: 0,
+      deposit: 0,
+      collection_amount: 0,
     });
     setProductsInputList(['ستائر زيبرا']);
+    setDimensionsList([
+      { width: 1.8, height: 2.2, type: 'ستائر زيبرا', notes: 'ريسبشن' }
+    ]);
     setShowOrderModal(true);
   };
 
   const handleOpenEditOrder = (order: InstallationOrder) => {
     setEditingOrder(order);
+    const tot = order.total_price || 0;
+    const dep = order.deposit || 0;
+    const coll = order.collection_amount !== undefined ? order.collection_amount : Math.max(0, tot - dep);
+
     setOrderFormData({
       client_name: order.client_name || '',
       client_phone: order.client_phone || '',
       client_address: order.client_address || '',
       appointment_date: order.appointment_date || new Date().toISOString().split('T')[0],
       appointment_time: order.appointment_time || '12:00',
-      technician_name: order.technician_name || technicians[0]?.name || '',
+      technician_name: order.technician_name || technicians[0]?.name || 'فني التركيبات',
       status: order.status || 'pending',
+      total_price: tot,
+      deposit: dep,
+      collection_amount: coll,
     });
     setProductsInputList(order.products_list && order.products_list.length > 0 ? order.products_list : ['']);
+    setDimensionsList(order.dimensions && order.dimensions.length > 0 ? order.dimensions : []);
     setShowOrderModal(true);
+  };
+
+  const handleAddDimensionRow = () => {
+    setDimensionsList(prev => [
+      ...prev,
+      { width: 1.5, height: 2.0, type: 'ستائر رول', notes: '' }
+    ]);
+  };
+
+  const handleRemoveDimensionRow = (idx: number) => {
+    setDimensionsList(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleDimensionChange = (idx: number, field: keyof InstallationDimension, value: any) => {
+    setDimensionsList(prev => prev.map((dim, i) => {
+      if (i === idx) {
+        return { ...dim, [field]: value };
+      }
+      return dim;
+    }));
+  };
+
+  const handlePriceChange = (field: 'total_price' | 'deposit' | 'collection_amount', val: number) => {
+    setOrderFormData(prev => {
+      const updated = { ...prev, [field]: val };
+      if (field === 'total_price' || field === 'deposit') {
+        const remaining = Math.max(0, (field === 'total_price' ? val : prev.total_price) - (field === 'deposit' ? val : prev.deposit));
+        updated.collection_amount = remaining;
+      }
+      return updated;
+    });
   };
 
   const handleSaveOrder = async (e: React.FormEvent) => {
@@ -202,10 +261,15 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
     setSavingOrder(true);
 
     const validProducts = productsInputList.map(p => p.trim()).filter(Boolean);
+    const validDimensions = dimensionsList.filter(d => d.width > 0 && d.height > 0);
 
     const packedNotes = JSON.stringify({
       tech: orderFormData.technician_name,
-      products: validProducts.length > 0 ? validProducts : ['ستائر'],
+      products: validProducts.length > 0 ? validProducts : (validDimensions.length > 0 ? validDimensions.map(d => d.type) : ['ستائر']),
+      dimensions: validDimensions,
+      total_price: Number(orderFormData.total_price) || 0,
+      deposit: Number(orderFormData.deposit) || 0,
+      collection_amount: Number(orderFormData.collection_amount) || 0,
       photos: editingOrder?.execution_photos || [],
       signature: editingOrder?.signature_data || null
     });
@@ -228,7 +292,11 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
           ...o,
           ...payload,
           technician_name: orderFormData.technician_name,
-          products_list: validProducts
+          products_list: validProducts,
+          dimensions: validDimensions,
+          total_price: Number(orderFormData.total_price) || 0,
+          deposit: Number(orderFormData.deposit) || 0,
+          collection_amount: Number(orderFormData.collection_amount) || 0,
         } : o));
       } else {
         const { data, error } = await supabase.from('appointments').insert([payload]).select();
@@ -237,6 +305,10 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
             ...data[0],
             technician_name: orderFormData.technician_name,
             products_list: validProducts,
+            dimensions: validDimensions,
+            total_price: Number(orderFormData.total_price) || 0,
+            deposit: Number(orderFormData.deposit) || 0,
+            collection_amount: Number(orderFormData.collection_amount) || 0,
             execution_photos: [],
             signature_data: null
           };
@@ -254,6 +326,10 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
             status: orderFormData.status,
             technician_name: orderFormData.technician_name,
             products_list: validProducts,
+            dimensions: validDimensions,
+            total_price: Number(orderFormData.total_price) || 0,
+            deposit: Number(orderFormData.deposit) || 0,
+            collection_amount: Number(orderFormData.collection_amount) || 0,
             execution_photos: [],
             signature_data: null,
             curtain_type: '',
@@ -284,23 +360,43 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    let productsHtml = '';
-    if (order.products_list && order.products_list.length > 0) {
-      productsHtml = order.products_list.map((p, idx) => `
+    // Build Dimensions Table HTML
+    let dimensionsHtml = '';
+    if (order.dimensions && order.dimensions.length > 0) {
+      dimensionsHtml = order.dimensions.map((d, idx) => {
+        const area = (Number(d.width || 0) * Number(d.height || 0)).toFixed(2);
+        return `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${idx + 1}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${d.type || 'ستائر'}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; direction: ltr;">${d.width} م</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; direction: ltr;">${d.height} م</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: bold; background: #fdfbf7;">${area} م²</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${d.notes || '—'}</td>
+          </tr>
+        `;
+      }).join('');
+    } else if (order.products_list && order.products_list.length > 0) {
+      dimensionsHtml = order.products_list.map((p, idx) => `
         <tr>
           <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${idx + 1}</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${p}</td>
+          <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;" colspan="4">${p}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">قياسي</td>
         </tr>
       `).join('');
     } else {
-      productsHtml = `<tr><td colSpan="2" style="padding: 12px; text-align: center; color: #888;">لا توجد منتجات محددة</td></tr>`;
+      dimensionsHtml = `<tr><td colspan="6" style="padding: 12px; text-align: center; color: #888;">لا توجد مقاسات محددة</td></tr>`;
     }
+
+    const totalPrice = Number(order.total_price || 0);
+    const deposit = Number(order.deposit || 0);
+    const collectionAmount = order.collection_amount !== undefined ? Number(order.collection_amount) : Math.max(0, totalPrice - deposit);
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html dir="rtl" lang="ar">
         <head>
-          <title>أمر تركيب - ${order.client_name}</title>
+          <title>أمر تركيب وتسليم — ${order.client_name}</title>
           <style>
             body { font-family: 'Tajawal', Arial, sans-serif; padding: 20px; color: #2B1B17; }
             .header { text-align: center; border-bottom: 2px solid #3E2723; padding-bottom: 15px; margin-bottom: 20px; }
@@ -311,14 +407,27 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
             .info-box h3 { margin-top: 0; color: #3E2723; border-bottom: 1px solid #ddd; padding-bottom: 5px; font-size: 14px; }
             .info-box div { margin-bottom: 8px; font-size: 13px; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-            .title { font-weight: bold; color: #3E2723; font-size: 15px; margin-top: 20px; }
+            .title { font-weight: bold; color: #3E2723; font-size: 16px; margin-top: 25px; margin-bottom: 8px; }
+            .collection-box {
+              margin-top: 25px;
+              background: #fffbeb;
+              border: 2px solid #f59e0b;
+              border-radius: 10px;
+              padding: 16px 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .collection-title { font-size: 16px; font-weight: bold; color: #92400e; }
+            .collection-val { font-size: 22px; font-weight: 900; color: #b45309; }
+            .collection-breakdown { font-size: 12px; color: #78350f; margin-top: 4px; }
             @media print { .no-print { display: none; } }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>كريستال للستائر — أمر تركيب وتسليم</h1>
-            <p>Crystal Blinds — Installation & Handover Order</p>
+            <h1>كريستال للستائر — أمر تركيب وتحصيل</h1>
+            <p>Crystal Blinds — Installation & Collection Order</p>
           </div>
           
           <div class="grid">
@@ -326,44 +435,61 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
               <h3>بيانات العميل</h3>
               <div><b>اسم العميل:</b> ${order.client_name}</div>
               <div><b>الهاتف:</b> ${order.client_phone}</div>
-              <div><b>العنوان:</b> ${order.client_address}</div>
+              <div><b>العنوان بالتفصيل:</b> ${order.client_address || '—'}</div>
             </div>
             <div class="info-box">
               <h3>تفاصيل أمر التركيب</h3>
               <div><b>رقم أمر التركيب:</b> #${order.id.slice(0, 8)}</div>
               <div><b>الفني المسئول:</b> ${order.technician_name || 'غير محدد'}</div>
               <div><b>موعد التركيب:</b> ${order.appointment_date || ''} — ${order.appointment_time || ''}</div>
-              <div><b>ملاحظات:</b> ${order.notes || '—'}</div>
+              <div><b>الحالة:</b> ${order.status === 'completed' ? 'مكتمل' : 'قيد التنفيذ'}</div>
             </div>
           </div>
           
-          <div class="title">المنتجات المطلوب تركيبها</div>
+          <!-- جدول المقاسات والمواصفات -->
+          <div class="title">جدول المقاسات والمواصفات المطلوب تركيبها</div>
           <table>
             <thead>
               <tr style="background: #3E2723; color: white;">
-                <th style="padding: 8px; border: 1px solid #ddd; width: 50px;">م</th>
-                <th style="padding: 8px; border: 1px solid #ddd;">تفاصيل المنتج</th>
+                <th style="padding: 8px; border: 1px solid #ddd; width: 40px;">م</th>
+                <th style="padding: 8px; border: 1px solid #ddd;">نوع الستارة والموديل</th>
+                <th style="padding: 8px; border: 1px solid #ddd; width: 90px;">العرض (W)</th>
+                <th style="padding: 8px; border: 1px solid #ddd; width: 90px;">الارتفاع (H)</th>
+                <th style="padding: 8px; border: 1px solid #ddd; width: 90px;">المساحة</th>
+                <th style="padding: 8px; border: 1px solid #ddd;">مكان التركيب والملاحظات الفنية</th>
               </tr>
             </thead>
             <tbody>
-              ${productsHtml}
+              ${dimensionsHtml}
             </tbody>
           </table>
 
-          ${order.signature_data ? `
-            <div style="margin-top: 30px; border: 1px solid #22c55e; background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center;">
-              <div style="color: #15803d; font-weight: bold; margin-bottom: 10px;">تم توقيع العميل بالاستلام الإلكتروني</div>
-              <img src="${order.signature_data}" style="max-height: 80px; object-fit: contain;" />
+          <!-- صندوق فلوس التحصيل والحسابات -->
+          <div class="collection-box">
+            <div>
+              <div class="collection-title">المبلغ المطلوب تحصيله من العميل عند التركيب والتسليم</div>
+              <div class="collection-breakdown">
+                إجمالي قيمة الأمر: <b>${totalPrice.toLocaleString('ar-EG')} ج.م</b> | العربون المسدد: <b>${deposit.toLocaleString('ar-EG')} ج.م</b>
+              </div>
             </div>
-          ` : ''}
+            <div class="collection-val">
+              ${collectionAmount.toLocaleString('ar-EG')} ج.م
+            </div>
+          </div>
 
           <div style="margin-top: 60px; display: flex; justify-content: space-between;">
-            <div style="text-align: center;">توقيع الفني المنفذ: ___________________</div>
-            <div style="text-align: center;">توقيع العميل بالاستلام: ___________________</div>
+            <div style="text-align: center; font-size: 13px;">
+              <b>توقيع الفني المستلم للتحصيل والمنفذ:</b><br/><br/>
+              _________________________________
+            </div>
+            <div style="text-align: center; font-size: 13px;">
+              <b>توقيع العميل بالاستلام وسداد المبلغ:</b><br/><br/>
+              _________________________________
+            </div>
           </div>
 
           <div class="no-print" style="margin-top: 40px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; background: #d4af37; color: #2B1B17; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">إجراء الطباعة / حفظ PDF</button>
+            <button onclick="window.print()" style="padding: 10px 24px; background: #d4af37; color: #2B1B17; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">إجراء الطباعة / حفظ PDF</button>
           </div>
         </body>
       </html>
@@ -383,13 +509,26 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
       if (error) throw error;
 
       const mapped: InstallationOrder[] = (data || []).map((item: any) => {
-        let extra = { technician_name: '', products_list: item.curtain_type ? [item.curtain_type] : [], execution_photos: [], signature_data: null };
+        let extra = {
+          technician_name: '',
+          products_list: item.curtain_type ? [item.curtain_type] : [],
+          dimensions: [] as InstallationDimension[],
+          total_price: 0,
+          deposit: 0,
+          collection_amount: 0,
+          execution_photos: [],
+          signature_data: null
+        };
         try {
           const parsed = JSON.parse(item.notes || '{}');
           if (parsed && typeof parsed === 'object') {
             extra = {
               technician_name: parsed.tech || '',
               products_list: Array.isArray(parsed.products) ? parsed.products : item.curtain_type ? [item.curtain_type] : [],
+              dimensions: Array.isArray(parsed.dimensions) ? parsed.dimensions : [],
+              total_price: Number(parsed.total_price) || 0,
+              deposit: Number(parsed.deposit) || 0,
+              collection_amount: parsed.collection_amount !== undefined ? Number(parsed.collection_amount) : Math.max(0, (Number(parsed.total_price) || 0) - (Number(parsed.deposit) || 0)),
               execution_photos: Array.isArray(parsed.photos) ? parsed.photos : [],
               signature_data: parsed.signature || null
             };
@@ -473,46 +612,65 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
   };
 
   const saveSignature = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas || !activeSignOrder) return;
-    
-    const dataUrl = canvas.toDataURL('image/png');
-    
-    // Save signature into Database packed inside notes
-    const newNotes = JSON.stringify({
+    if (!activeSignOrder || !canvasRef.current) return;
+    const dataUrl = canvasRef.current.toDataURL('image/png');
+
+    const updatedNotes = JSON.stringify({
       tech: activeSignOrder.technician_name,
       products: activeSignOrder.products_list,
+      dimensions: activeSignOrder.dimensions || [],
+      total_price: activeSignOrder.total_price || 0,
+      deposit: activeSignOrder.deposit || 0,
+      collection_amount: activeSignOrder.collection_amount || 0,
       photos: activeSignOrder.execution_photos,
       signature: dataUrl
     });
 
     try {
-      await supabase.from('appointments').update({ notes: newNotes, status: 'completed' }).eq('id', activeSignOrder.id);
-      setOrders(prev => prev.map(o => o.id === activeSignOrder.id ? { ...o, signature_data: dataUrl, status: 'completed' } : o));
-    } catch {
-      setOrders(prev => prev.map(o => o.id === activeSignOrder.id ? { ...o, signature_data: dataUrl, status: 'completed' } : o));
+      await supabase.from('appointments').update({
+        notes: updatedNotes,
+        status: 'completed'
+      }).eq('id', activeSignOrder.id);
+
+      setOrders(prev => prev.map(o => o.id === activeSignOrder.id ? {
+        ...o,
+        signature_data: dataUrl,
+        status: 'completed'
+      } : o));
+    } catch (e) {
+      console.error(e);
     }
+
     setActiveSignOrder(null);
   };
 
-  // ──── Execution Photos Logic ────
-  const addExecutionPhoto = async () => {
-    if (!activePhotoOrder || !photoUrlInput) return;
-    
-    const updatedPhotos = [...(activePhotoOrder.execution_photos || []), photoUrlInput];
-    
-    const newNotes = JSON.stringify({
+  // ──── Photos Upload Logic ────
+  const handleAddPhoto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activePhotoOrder || !photoUrlInput.trim()) return;
+
+    const currentPhotos = activePhotoOrder.execution_photos || [];
+    const newPhotos = [...currentPhotos, photoUrlInput.trim()];
+
+    const updatedNotes = JSON.stringify({
       tech: activePhotoOrder.technician_name,
       products: activePhotoOrder.products_list,
-      photos: updatedPhotos,
+      dimensions: activePhotoOrder.dimensions || [],
+      total_price: activePhotoOrder.total_price || 0,
+      deposit: activePhotoOrder.deposit || 0,
+      collection_amount: activePhotoOrder.collection_amount || 0,
+      photos: newPhotos,
       signature: activePhotoOrder.signature_data
     });
 
     try {
-      await supabase.from('appointments').update({ notes: newNotes }).eq('id', activePhotoOrder.id);
-      setOrders(prev => prev.map(o => o.id === activePhotoOrder.id ? { ...o, execution_photos: updatedPhotos } : o));
-    } catch {
-      setOrders(prev => prev.map(o => o.id === activePhotoOrder.id ? { ...o, execution_photos: updatedPhotos } : o));
+      await supabase.from('appointments').update({ notes: updatedNotes }).eq('id', activePhotoOrder.id);
+      setOrders(prev => prev.map(o => o.id === activePhotoOrder.id ? {
+        ...o,
+        execution_photos: newPhotos
+      } : o));
+    } catch (e) {
+      console.error(e);
     }
 
     setPhotoUrlInput('');
@@ -521,210 +679,263 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
-      const matchStatus = filterStatus === 'all' || o.status === filterStatus;
-      const matchSearch = o.client_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          o.client_phone.includes(searchQuery) ||
-                          o.technician_name?.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchStatus && matchSearch;
+      const matchesSearch =
+        o.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.client_phone?.includes(searchQuery) ||
+        o.technician_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [orders, filterStatus, searchQuery]);
+  }, [orders, searchQuery, filterStatus]);
 
   return (
-    <div className="flex flex-col gap-6 text-[#3E2723]" style={{ direction: 'rtl' }}>
+    <div className="flex flex-col gap-6" dir="rtl">
       
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#3E2723]/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+      {/* Header View */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#FFFDFA] p-6 rounded-2xl border border-[#3E2723]/10 shadow-sm">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold mb-1">أوامر التركيب والتسليم</h1>
-          <p className="text-xs text-[#3E2723]/60">إجمالي أوامر التركيب الجارية: {orders.filter(o => o.status !== 'completed').length}</p>
+          <h2 className="text-xl font-bold text-[#3E2723]">أوامر التركيب والمقاسات والتحصيل</h2>
+          <p className="text-xs text-[#3E2723]/60 mt-1">
+            إدارة جداول التركيب، مواصفات ومقاسات الستائر، وفلوس التحصيل المطلوبة وتواقيع التسليم
+          </p>
         </div>
-        {userRole !== 'technician' && (
-          <div className="flex items-center gap-2">
-            <button 
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {userRole === 'admin' && (
+            <button
               onClick={() => setShowTechManagerModal(true)}
-              className="flex items-center gap-1.5 bg-[#FAF8F5] border border-[#3E2723]/20 text-[#3E2723] font-bold px-3.5 py-2 rounded-xl text-xs hover:bg-[#d4af37]/10 hover:border-[#d4af37] transition-all"
+              className="flex items-center gap-1.5 bg-[#FAF8F5] border border-[#d4af37] text-[#3E2723] hover:bg-[#d4af37] hover:text-[#2B1B17] px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
             >
-              <span className="material-symbols-outlined text-base text-[#b8922a]">engineering</span>
-              <span>إدارة قائمة الفنيين</span>
+              <span className="material-symbols-outlined text-base text-[#d4af37]">manage_accounts</span>
+              <span>إدارة الفنيين</span>
             </button>
-            <button 
-              onClick={handleOpenAddOrder}
-              className="flex items-center gap-2 bg-[#d4af37] text-[#2B1B17] font-bold px-4 py-2 rounded-xl text-xs hover:bg-[#b8922a] transition-all shadow-[0_2px_8px_rgba(212,175,55,0.25)]"
-            >
-              <span className="material-symbols-outlined text-base">build_circle</span>
-              <span>إنشاء أمر تركيب</span>
-            </button>
-          </div>
-        )}
+          )}
+
+          <button
+            onClick={handleOpenAddOrder}
+            className="flex items-center gap-1.5 bg-[#d4af37] text-[#2B1B17] hover:bg-[#b8922a] px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
+          >
+            <span className="material-symbols-outlined text-base">add_circle</span>
+            <span>+ إنشاء أمر تركيب</span>
+          </button>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#3E2723]/10">
-        <div className="flex flex-wrap gap-2">
-          {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map(status => (
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full md:w-80">
+          <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#3E2723]/40 text-lg">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="بحث باسم العميل، الهاتف، الفني..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-3 pr-9 py-2 border border-[#3E2723]/15 rounded-xl bg-white text-xs outline-none focus:border-[#d4af37]"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1">
+          {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map((st) => (
             <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                filterStatus === status 
-                  ? 'bg-[#3E2723] text-white border-[#3E2723]' 
-                  : 'bg-white text-[#3E2723]/70 border-[#3E2723]/10 hover:border-[#3E2723]/30'
+              key={st}
+              onClick={() => setFilterStatus(st)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+                filterStatus === st
+                  ? 'bg-[#3E2723] text-white'
+                  : 'bg-white border border-[#3E2723]/10 text-[#3E2723]/70 hover:bg-[#3E2723]/5'
               }`}
             >
-              {status === 'all' ? 'الكل' : 
-               status === 'pending' ? 'قيد الانتظار' :
-               status === 'confirmed' ? 'مؤكد' : 
-               status === 'completed' ? 'مكتمل' : 'ملغي'}
+              {st === 'all' ? 'الكل' : st === 'pending' ? 'قيد الانتظار' : st === 'confirmed' ? 'مؤكد' : st === 'completed' ? 'مكتمل' : 'ملغي'}
             </button>
           ))}
         </div>
-        <div className="w-full sm:w-64 relative">
-          <input
-            type="text"
-            placeholder="بحث بالعميل أو الفني..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-3 pr-9 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
-          />
-          <span className="material-symbols-outlined absolute right-3 top-2.5 text-[#3E2723]/40 text-sm">search</span>
-        </div>
       </div>
 
-      {/* Installation Cards list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredOrders.map(order => (
-          <div key={order.id} className="bg-white p-5 rounded-2xl border border-[#3E2723]/10 flex flex-col justify-between gap-4">
-            
-            <div className="flex justify-between items-start">
-              <div className="flex flex-col text-right">
-                <span className="text-[10px] text-[#3E2723]/50">رقم أمر التركيب</span>
-                <span className="font-extrabold text-sm text-[#3E2723]" dir="ltr">{order.id?.includes('-') ? order.id.split('-')[0] : order.id}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {userRole === 'admin' && (
+      {/* Orders Grid List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {loading ? (
+          <div className="col-span-full py-12 text-center text-xs text-[#3E2723]/40">جاري تحميل أوامر التركيب...</div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-dashed border-[#3E2723]/20">
+            <span className="material-symbols-outlined text-3xl text-[#3E2723]/30 mb-1">build</span>
+            <p className="text-xs text-[#3E2723]/60 font-bold">لا توجد أوامر تركيب مطابقة للبحث</p>
+          </div>
+        ) : filteredOrders.map(order => {
+          const tot = Number(order.total_price || 0);
+          const dep = Number(order.deposit || 0);
+          const coll = order.collection_amount !== undefined ? Number(order.collection_amount) : Math.max(0, tot - dep);
+
+          return (
+            <div
+              key={order.id}
+              className="bg-white border border-[#3E2723]/10 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3 relative"
+            >
+              <div>
+                <div className="flex items-center justify-between border-b border-[#3E2723]/5 pb-2 mb-2">
+                  <span className="text-[10px] font-extrabold text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-md">
+                    #{order.id.slice(0, 8)}
+                  </span>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEditOrder(order)}
-                      className="p-1 text-[#3E2723]/60 hover:text-[#b8922a] rounded-lg hover:bg-[#3E2723]/5 transition-colors"
-                      title="تعديل أمر التركيب"
+                      className="text-[#3E2723]/50 hover:text-[#d4af37] p-1"
+                      title="تعديل أمر التركيب والمقاسات"
                     >
-                      <span className="material-symbols-outlined text-base">edit</span>
+                      <span className="material-symbols-outlined text-sm">edit</span>
                     </button>
-                    <button
-                      onClick={() => handleDeleteOrder(order.id)}
-                      className="p-1 text-red-500/70 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                      title="حذف أمر التركيب"
-                    >
-                      <span className="material-symbols-outlined text-base">delete</span>
-                    </button>
+                    {userRole === 'admin' && (
+                      <button
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className="text-red-400 hover:text-red-600 p-1"
+                        title="حذف الأمر"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    )}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      order.status === 'completed'
+                        ? 'bg-green-100 text-green-800'
+                        : order.status === 'confirmed'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {order.status === 'completed' ? 'مكتمل' : order.status === 'confirmed' ? 'مؤكد' : 'قيد الانتظار'}
+                    </span>
                   </div>
-                )}
-                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${
-                  order.status === 'completed' ? 'bg-green-500/10 text-green-700' :
-                  order.status === 'confirmed' ? 'bg-blue-500/10 text-blue-700' :
-                  'bg-yellow-500/10 text-yellow-700'
-                }`}>
-                  {order.status === 'completed' ? 'مكتمل' : order.status === 'confirmed' ? 'مؤكد' : 'قيد الانتظار'}
-                </span>
-              </div>
-            </div>
+                </div>
 
-            <div className="flex flex-col gap-1.5 text-xs text-[#3E2723]/80">
-              <div><b>العميل:</b> {order.client_name}</div>
-              <div><b>الهاتف:</b> <span className="select-all">{order.client_phone}</span></div>
-              <div><b>العنوان:</b> {order.client_address}</div>
-              <div>
-                <b>الفني المسئول:</b>{' '}
-                {userRole === 'admin' ? (
-                  <select
-                    value={order.technician_name || ''}
-                    onChange={e => handleUpdateTechnician(order.id, e.target.value)}
-                    className="border border-[#3E2723]/20 rounded-lg px-2 py-0.5 bg-[#FAF8F5] text-xs font-bold text-[#b8922a] outline-none cursor-pointer"
-                  >
-                    {technicians.map(t => (
-                      <option key={t.id || t.name} value={t.name}>{t.name}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="font-bold text-[#b8922a]">{order.technician_name}</span>
-                )}
-              </div>
-              <div><b>موعد التركيب:</b> {order.appointment_date} في تمام {order.appointment_time}</div>
-              
-              {/* Products list */}
-              <div className="mt-2">
-                <span className="text-[10px] font-bold text-[#3E2723]/50 block mb-1">المنتجات المطلوب تركيبها:</span>
-                <ul className="list-disc list-inside bg-[#FAF8F5] p-2 rounded-lg border border-[#3E2723]/5">
-                  {order.products_list?.map((p, idx) => (
-                    <li key={idx} className="font-semibold text-[#3E2723]/90">{p}</li>
-                  ))}
-                </ul>
-              </div>
+                <div className="flex flex-col gap-1.5 text-xs text-[#3E2723]/80">
+                  <div><b>العميل:</b> {order.client_name}</div>
+                  <div><b>الهاتف:</b> <span className="select-all">{order.client_phone}</span></div>
+                  <div><b>العنوان:</b> {order.client_address || '—'}</div>
+                  <div>
+                    <b>الفني المسئول:</b>{' '}
+                    {userRole === 'admin' ? (
+                      <select
+                        value={order.technician_name || ''}
+                        onChange={e => handleUpdateTechnician(order.id, e.target.value)}
+                        className="border border-[#3E2723]/20 rounded-lg px-2 py-0.5 bg-[#FAF8F5] text-xs font-bold text-[#b8922a] outline-none cursor-pointer"
+                      >
+                        {technicians.map(t => (
+                          <option key={t.id || t.name} value={t.name}>{t.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="font-bold text-[#b8922a]">{order.technician_name}</span>
+                    )}
+                  </div>
+                  <div><b>موعد التركيب:</b> {order.appointment_date} في تمام {order.appointment_time}</div>
+                  
+                  {/* فلوس التحصيل Highlight Badge */}
+                  <div className="mt-2 bg-amber-50/80 border border-amber-300/60 rounded-xl p-2.5 flex items-center justify-between text-amber-950">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-amber-800">فلوس التحصيل المطلوبة:</span>
+                      <span className="text-xs text-amber-900/70 font-medium">
+                        إجمالي: {tot > 0 ? tot.toLocaleString('ar-EG') : '—'} ج.م | عربون: {dep > 0 ? dep.toLocaleString('ar-EG') : '—'} ج.م
+                      </span>
+                    </div>
+                    <span className="text-sm font-black text-amber-900 bg-amber-200/60 px-2 py-1 rounded-lg">
+                      {coll > 0 ? `${coll.toLocaleString('ar-EG')} ج.م` : 'خالص'}
+                    </span>
+                  </div>
 
-              {/* Uploaded Photos */}
-              {order.execution_photos && order.execution_photos.length > 0 && (
-                <div className="mt-2">
-                  <span className="text-[10px] font-bold text-[#3E2723]/50 block mb-1">صور التنفيذ الفني:</span>
-                  <div className="flex gap-2">
-                    {order.execution_photos.map((img, i) => (
-                      <div key={i} className="w-12 h-12 rounded-lg border border-[#3E2723]/10 overflow-hidden bg-gray-50">
-                        <img src={img} alt="Tansim" className="w-full h-full object-cover" />
+                  {/* جدول المقاسات / المنتجات Summary */}
+                  {order.dimensions && order.dimensions.length > 0 ? (
+                    <div className="mt-2 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#3E2723]/10">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-[10px] font-bold text-[#3E2723]/70">جدول المقاسات ({order.dimensions.length} ستائر):</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
+                        {order.dimensions.map((d, idx) => (
+                          <div key={idx} className="text-[11px] flex justify-between items-center border-b border-[#3E2723]/5 pb-0.5">
+                            <span className="font-bold text-[#3E2723]">{d.type}</span>
+                            <span className="text-[#3E2723]/60 font-mono text-[10px]" dir="ltr">
+                              {d.width}m × {d.height}m ({d.notes || '—'})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : order.products_list && order.products_list.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-[10px] font-bold text-[#3E2723]/50 block mb-1">المنتجات المطلوب تركيبها:</span>
+                      <ul className="list-disc list-inside bg-[#FAF8F5] p-2 rounded-lg border border-[#3E2723]/5">
+                        {order.products_list?.map((p, idx) => (
+                          <li key={idx} className="font-semibold text-[#3E2723]/90">{p}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-              {/* Customer Signature display */}
-              {order.signature_data && (
-                <div className="mt-2 bg-green-50/50 p-2.5 rounded-lg border border-green-500/10 flex items-center gap-3">
-                  <span className="material-symbols-outlined text-green-600 text-lg">verified</span>
-                  <div className="flex flex-col text-right">
-                    <span className="text-[9px] text-green-700 font-bold">تم توقيع العميل بالاستلام الإلكتروني</span>
-                    <img src={order.signature_data} alt="signature" className="h-6 object-contain filter grayscale" />
-                  </div>
-                </div>
-              )}
-            </div>
+                  {/* Uploaded Photos */}
+                  {order.execution_photos && order.execution_photos.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-[10px] font-bold text-[#3E2723]/50 block mb-1">صور التنفيذ الفني:</span>
+                      <div className="flex gap-2">
+                        {order.execution_photos.map((img, i) => (
+                          <div key={i} className="w-12 h-12 rounded-lg border border-[#3E2723]/10 overflow-hidden bg-gray-50">
+                            <img src={img} alt="Execution" className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-            {/* Actions Binds */}
-            <div className="flex items-center justify-between border-t border-[#3E2723]/5 pt-3 mt-2 flex-wrap gap-2">
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() => handlePrint(order)}
-                  className="flex items-center gap-1 bg-white border border-[#3E2723]/15 text-[#3E2723] hover:border-[#d4af37] px-2.5 py-1.5 rounded-xl text-[10px] font-bold"
-                >
-                  <span className="material-symbols-outlined text-sm">print</span>
-                  <span>طباعة</span>
-                </button>
-                
-                {!order.signature_data && (
+                  {/* Signature display */}
+                  {order.signature_data && (
+                    <div className="mt-2 bg-green-50/50 p-2 rounded-lg border border-green-500/10 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-green-600 text-base">verified</span>
+                        <span className="text-[10px] text-green-800 font-bold">تم توقيع العميل</span>
+                      </div>
+                      <img src={order.signature_data} alt="signature" className="h-5 object-contain filter grayscale" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between border-t border-[#3E2723]/5 pt-3 mt-2 flex-wrap gap-2">
+                <div className="flex gap-1.5">
                   <button
-                    onClick={() => openSignModal(order)}
-                    className="flex items-center gap-1 bg-[#d4af37]/10 border border-[#d4af37]/20 text-[#b8922a] hover:bg-[#d4af37]/20 px-2.5 py-1.5 rounded-xl text-[10px] font-bold"
+                    onClick={() => handlePrint(order)}
+                    className="flex items-center gap-1 bg-white border border-[#3E2723]/15 text-[#3E2723] hover:border-[#d4af37] px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all shadow-sm"
                   >
-                    <span className="material-symbols-outlined text-sm">draw</span>
-                    <span>توقيع واستلام العميل</span>
+                    <span className="material-symbols-outlined text-sm">print</span>
+                    <span>طباعة أمر التركيب</span>
                   </button>
+                  
+                  {!order.signature_data && (
+                    <button
+                      onClick={() => openSignModal(order)}
+                      className="flex items-center gap-1 bg-[#d4af37]/10 border border-[#d4af37]/20 text-[#b8922a] hover:bg-[#d4af37]/20 px-2.5 py-1.5 rounded-xl text-[10px] font-bold"
+                    >
+                      <span className="material-symbols-outlined text-sm">draw</span>
+                      <span>توقيع واستلام</span>
+                    </button>
+                  )}
+                </div>
+
+                {userRole === 'admin' && (
+                  <select
+                    value={order.status}
+                    onChange={e => handleUpdateStatus(order.id, e.target.value as any)}
+                    className="border border-[#3E2723]/25 rounded-lg px-2 py-1 bg-[#FAF8F5] text-[10px] font-bold outline-none cursor-pointer"
+                  >
+                    <option value="pending">🟡 قيد الانتظار</option>
+                    <option value="confirmed">🔵 مؤكد</option>
+                    <option value="completed">🟢 مكتمل</option>
+                    <option value="cancelled">🔴 ملغي</option>
+                  </select>
                 )}
               </div>
 
-              {userRole === 'admin' && (
-                <select
-                  value={order.status}
-                  onChange={e => handleUpdateStatus(order.id, e.target.value as any)}
-                  className="border border-[#3E2723]/25 rounded-lg px-2 py-1 bg-[#FAF8F5] text-[10px] font-bold outline-none"
-                >
-                  <option value="pending">🟡 قيد الانتظار</option>
-                  <option value="confirmed">🔵 مؤكد</option>
-                  <option value="completed">🟢 مكتمل</option>
-                  <option value="cancelled">🔴 ملغي</option>
-                </select>
-              )}
             </div>
-
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Signature Capture Modal */}
@@ -732,12 +943,12 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[2000]">
           <div className="bg-white rounded-2xl border border-[#3E2723]/15 w-full max-w-sm shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-[#3E2723] text-white p-4 flex items-center justify-between">
-              <h3 className="font-bold text-xs">توقيع العميل الإلكتروني بالاستلام</h3>
+              <h3 className="font-bold text-xs">توقيع العميل بالاستلام</h3>
               <button onClick={() => setActiveSignOrder(null)} className="text-white/60">✕</button>
             </div>
             
             <div className="p-4 flex flex-col gap-4">
-              <p className="text-[11px] text-[#3E2723]/60">يرجى من العميل التوقيع داخل الإطار أدناه لتأكيد اكتمال التركيب والرضا عن الخدمة:</p>
+              <p className="text-[11px] text-[#3E2723]/60">يرجى من العميل التوقيع داخل الإطار لتأكيد اكتمال التركيب والرضا عن الخدمة:</p>
               
               <canvas
                 ref={canvasRef}
@@ -755,13 +966,13 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
                   type="button" onClick={clearCanvas}
                   className="px-3 py-1.5 border border-[#3E2723]/20 rounded-lg text-[10px] font-bold hover:bg-[#3E2723]/5"
                 >
-                  مسح
+                  مسح التوقيع
                 </button>
                 <button
                   type="button" onClick={saveSignature}
-                  className="px-4 py-1.5 bg-[#d4af37] text-[#2B1B17] font-bold rounded-lg text-[10px] hover:bg-[#b8922a]"
+                  className="px-4 py-1.5 bg-[#d4af37] text-[#2B1B17] rounded-lg text-[10px] font-bold hover:bg-[#b8922a]"
                 >
-                  حفظ وتأكيد الاستلام
+                  اعتماد التوقيع
                 </button>
               </div>
             </div>
@@ -769,46 +980,10 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
         </div>
       )}
 
-      {/* Photo Url Upload Modal */}
-      {activePhotoOrder && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[2000]">
-          <div className="bg-white rounded-2xl border border-[#3E2723]/15 w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-[#3E2723] text-white p-4 flex items-center justify-between">
-              <h3 className="font-bold text-xs">رفع صور تنفيذ التركيب</h3>
-              <button onClick={() => setActivePhotoOrder(null)} className="text-white/60">✕</button>
-            </div>
-            <div className="p-4 flex flex-col gap-3">
-              <label className="text-[10px] font-bold text-[#3E2723]/60">رابط صورة التنفيذ</label>
-              <input
-                type="text"
-                placeholder="https://example.com/photo.jpg"
-                value={photoUrlInput}
-                onChange={e => setPhotoUrlInput(e.target.value)}
-                className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none"
-              />
-              <div className="flex gap-2 justify-end mt-2">
-                <button
-                  onClick={() => setActivePhotoOrder(null)}
-                  className="px-3 py-1.5 border border-[#3E2723]/20 rounded-lg text-[10px] font-bold"
-                >
-                  إلغاء
-                </button>
-                <button
-                  onClick={addExecutionPhoto}
-                  className="px-4 py-1.5 bg-[#d4af37] text-[#2B1B17] font-bold rounded-lg text-[10px] hover:bg-[#b8922a]"
-                >
-                  إضافة الصورة
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Technician Management */}
+      {/* Modal: Technicians Manager */}
       {showTechManagerModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#FFFDFA] border border-white/60 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+          <div className="bg-[#FFFDFA] border border-white/60 rounded-2xl p-6 w-full max-w-md shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#3E2723]/10">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#d4af37]">engineering</span>
@@ -823,36 +998,35 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
               </button>
             </div>
 
-            {/* Add New Technician */}
-            <div className="flex gap-2 mb-5">
+            {/* Add new Tech */}
+            <div className="flex gap-2 mb-4">
               <input
                 type="text"
                 value={newTechName}
                 onChange={e => setNewTechName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddTechnician(); } }}
-                placeholder="اسم الفني الجديد (مثال: م. محمود علي)"
+                placeholder="اسم الفني الجديد..."
                 className="flex-1 px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
               />
               <button
                 type="button"
-                onClick={handleAddTechnician}
                 disabled={techSaving || !newTechName.trim()}
-                className="px-3 py-2 bg-[#d4af37] hover:bg-[#b8922a] text-[#2B1B17] font-bold rounded-xl text-xs flex items-center gap-1 shrink-0 disabled:opacity-50 transition-colors"
+                onClick={handleAddTechnician}
+                className="px-4 py-2 bg-[#d4af37] text-[#2B1B17] font-bold text-xs rounded-xl hover:bg-[#b8922a] disabled:opacity-50 transition-colors"
               >
-                <span className="material-symbols-outlined text-sm">add</span>
-                <span>إضافة</span>
+                {techSaving ? '...' : '+ إضافة'}
               </button>
             </div>
 
-            {/* Current Technicians List */}
-            <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
+            {/* Tech list */}
+            <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
               {technicians.length === 0 ? (
-                <p className="text-center text-xs text-[#3E2723]/50 py-4">لا يوجد فنيين في القائمة</p>
+                <p className="text-xs text-[#3E2723]/40 text-center py-4">لا يوجد فنيين مسجلين</p>
               ) : (
-                technicians.map((t) => (
+                technicians.map(t => (
                   <div
                     key={t.id || t.name}
-                    className="flex items-center justify-between p-2.5 bg-[#FAF8F5] border border-[#3E2723]/10 rounded-xl hover:border-[#3E2723]/20 transition-all"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#3E2723]/10 hover:border-[#d4af37]/40 transition-colors"
                   >
                     {editingTechId === t.id ? (
                       <div className="flex items-center gap-2 flex-1 ml-2">
@@ -925,15 +1099,15 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
         </div>
       )}
 
-      {/* Modal: Create or Edit Installation Order */}
+      {/* Modal: Create or Edit Installation Order with Dimensions & Financial Collection */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#FFFDFA] border border-white/60 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#FFFDFA] border border-white/60 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#3E2723]/10">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#d4af37]">build_circle</span>
                 <h3 className="font-bold text-[#3E2723] text-sm">
-                  {editingOrder ? 'تعديل أمر التركيب' : 'إنشاء أمر تركيب جديد'}
+                  {editingOrder ? 'تعديل أمر التركيب والمقاسات' : 'إنشاء أمر تركيب ومقاسات جديد'}
                 </h3>
               </div>
               <button
@@ -945,8 +1119,10 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
               </button>
             </div>
 
-            <form onSubmit={handleSaveOrder} className="flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSaveOrder} className="flex flex-col gap-4">
+              
+              {/* Client Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold text-[#3E2723]/70">اسم العميل *</label>
                   <input
@@ -955,7 +1131,7 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
                     value={orderFormData.client_name}
                     onChange={e => setOrderFormData(prev => ({ ...prev, client_name: e.target.value }))}
                     className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
-                    placeholder="مثال: محمد السيد"
+                    placeholder="مثال: أحمد محمود"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -972,24 +1148,24 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-[#3E2723]/70">عنوان التركيب</label>
+                <label className="text-[10px] font-bold text-[#3E2723]/70">عنوان التركيب بالتفصيل</label>
                 <input
                   type="text"
                   value={orderFormData.client_address}
                   onChange={e => setOrderFormData(prev => ({ ...prev, client_address: e.target.value }))}
                   className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
-                  placeholder="مثال: التجمع الخامس - النرجس عمارة 15"
+                  placeholder="مثال: التجمع الخامس، الحي الأول، عمارة 42"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-[#3E2723]/70">التاريخ</label>
+                  <label className="text-[10px] font-bold text-[#3E2723]/70">تاريخ التركيب</label>
                   <input
                     type="date"
                     value={orderFormData.appointment_date}
                     onChange={e => setOrderFormData(prev => ({ ...prev, appointment_date: e.target.value }))}
-                    className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
+                    className="w-full px-2.5 py-1.5 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -998,18 +1174,15 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
                     type="time"
                     value={orderFormData.appointment_time}
                     onChange={e => setOrderFormData(prev => ({ ...prev, appointment_time: e.target.value }))}
-                    className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
+                    className="w-full px-2.5 py-1.5 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold text-[#3E2723]/70">الفني المسئول</label>
                   <select
                     value={orderFormData.technician_name}
                     onChange={e => setOrderFormData(prev => ({ ...prev, technician_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
+                    className="w-full px-2.5 py-1.5 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
                   >
                     {technicians.map(t => (
                       <option key={t.id || t.name} value={t.name}>{t.name}</option>
@@ -1021,7 +1194,7 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
                   <select
                     value={orderFormData.status}
                     onChange={e => setOrderFormData(prev => ({ ...prev, status: e.target.value as any }))}
-                    className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
+                    className="w-full px-2.5 py-1.5 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none focus:border-[#d4af37]"
                   >
                     <option value="pending">🟡 قيد الانتظار</option>
                     <option value="confirmed">🔵 مؤكد</option>
@@ -1031,45 +1204,151 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
                 </div>
               </div>
 
-              {/* Products list input */}
-              <div className="flex flex-col gap-2 border border-[#3E2723]/10 p-3 rounded-xl bg-[#FAF8F5]/30">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-[#3E2723]/70">المنتجات المطلوب تركيبها</label>
-                  <button
-                    type="button"
-                    onClick={() => setProductsInputList(prev => [...prev, ''])}
-                    className="text-[10px] font-bold text-[#d4af37] hover:text-[#b8922a] flex items-center gap-1 border border-[#d4af37]/20 px-2 py-0.5 rounded-lg bg-[#d4af37]/5 transition-colors"
-                  >
-                    + إضافة بند منتج
-                  </button>
+              {/* Financial Collection Section (فلوس التحصيل) */}
+              <div className="bg-amber-50/70 border border-amber-300/80 rounded-xl p-3.5 flex flex-col gap-2">
+                <div className="flex items-center gap-1.5 text-amber-950 font-bold text-xs">
+                  <span className="material-symbols-outlined text-base text-amber-600">payments</span>
+                  <span>بيانات الحسابات والتحصيل (فلوس التحصيل)</span>
                 </div>
-                <div className="flex flex-col gap-2 max-h-[140px] overflow-y-auto pr-1">
-                  {productsInputList.map((prodStr, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={prodStr}
-                        placeholder="مثال: 3 ستائر رول بلاك أوت"
-                        onChange={e => {
-                          const val = e.target.value;
-                          setProductsInputList(prev => prev.map((p, i) => i === idx ? val : p));
-                        }}
-                        className="flex-1 px-3 py-1.5 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-white focus:border-[#d4af37]"
-                      />
-                      <button
-                        type="button"
-                        disabled={productsInputList.length === 1}
-                        onClick={() => setProductsInputList(prev => prev.filter((_, i) => i !== idx))}
-                        className="text-red-500 hover:text-red-700 disabled:opacity-30 p-1"
-                      >
-                        <span className="material-symbols-outlined text-base">delete</span>
-                      </button>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-amber-900">إجمالي القيمة (ج.م)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={orderFormData.total_price || ''}
+                      onChange={e => handlePriceChange('total_price', parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-xs font-bold outline-none bg-white focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-amber-900">العربون المسدد (ج.م)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={orderFormData.deposit || ''}
+                      onChange={e => handlePriceChange('deposit', parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-xs font-bold outline-none bg-white focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-amber-950">المطلوب تحصيله (فلوس التحصيل ج.م)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={orderFormData.collection_amount !== undefined ? orderFormData.collection_amount : ''}
+                      onChange={e => handlePriceChange('collection_amount', parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-full px-3 py-1.5 border-2 border-amber-500 bg-amber-100/70 rounded-lg text-xs font-black text-amber-950 outline-none focus:border-amber-600"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-2.5 mt-3 justify-end">
+              {/* Dimensions Table Section (جدول المقاسات) */}
+              <div className="border border-[#3E2723]/15 rounded-xl p-3.5 bg-white flex flex-col gap-2.5">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base text-[#d4af37]">straighten</span>
+                    <span className="text-xs font-bold text-[#3E2723]">جدول المقاسات والمواصفات المطلوب تركيبها</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddDimensionRow}
+                    className="text-[10px] font-bold text-[#d4af37] hover:text-[#b8922a] border border-[#d4af37]/30 bg-[#d4af37]/10 px-2.5 py-1 rounded-lg transition-colors"
+                  >
+                    + إضافة مقاس ستارة
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#FAF8F5] text-[#3E2723]/70 border-b border-[#3E2723]/10">
+                        <th className="p-1.5 font-bold">نوع الستارة</th>
+                        <th className="p-1.5 font-bold w-20">العرض (م)</th>
+                        <th className="p-1.5 font-bold w-20">الارتفاع (م)</th>
+                        <th className="p-1.5 font-bold w-20">المساحة</th>
+                        <th className="p-1.5 font-bold">المكان والملاحظات</th>
+                        <th className="p-1.5 w-8"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dimensionsList.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-4 text-xs text-[#3E2723]/40">
+                            لا توجد مقاسات مسجلة. اضغط على "+ إضافة مقاس ستارة" لإضافة بنود المقاسات
+                          </td>
+                        </tr>
+                      ) : (
+                        dimensionsList.map((dim, idx) => {
+                          const area = ((Number(dim.width) || 0) * (Number(dim.height) || 0)).toFixed(2);
+                          return (
+                            <tr key={idx} className="border-b border-[#3E2723]/5">
+                              <td className="p-1">
+                                <input
+                                  type="text"
+                                  value={dim.type}
+                                  onChange={e => handleDimensionChange(idx, 'type', e.target.value)}
+                                  placeholder="مثال: ستائر زيبرا"
+                                  className="w-full px-2 py-1 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-[#FAF8F5] focus:border-[#d4af37]"
+                                />
+                              </td>
+                              <td className="p-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={dim.width || ''}
+                                  onChange={e => handleDimensionChange(idx, 'width', parseFloat(e.target.value) || 0)}
+                                  placeholder="1.5"
+                                  className="w-full px-1.5 py-1 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-[#FAF8F5] focus:border-[#d4af37] text-center font-mono"
+                                />
+                              </td>
+                              <td className="p-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={dim.height || ''}
+                                  onChange={e => handleDimensionChange(idx, 'height', parseFloat(e.target.value) || 0)}
+                                  placeholder="2.0"
+                                  className="w-full px-1.5 py-1 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-[#FAF8F5] focus:border-[#d4af37] text-center font-mono"
+                                />
+                              </td>
+                              <td className="p-1 text-center font-mono font-bold text-[11px] text-[#3E2723]">
+                                {area} م²
+                              </td>
+                              <td className="p-1">
+                                <input
+                                  type="text"
+                                  value={dim.notes || ''}
+                                  onChange={e => handleDimensionChange(idx, 'notes', e.target.value)}
+                                  placeholder="غرفة نوم / ريسبشن"
+                                  className="w-full px-2 py-1 border border-[#3E2723]/15 rounded-lg text-xs outline-none bg-[#FAF8F5] focus:border-[#d4af37]"
+                                />
+                              </td>
+                              <td className="p-1 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveDimensionRow(idx)}
+                                  className="text-red-400 hover:text-red-600 p-1"
+                                >
+                                  <span className="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex gap-2.5 mt-2 justify-end">
                 <button
                   type="button"
                   onClick={() => setShowOrderModal(false)}
@@ -1080,7 +1359,7 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
                 <button
                   type="submit"
                   disabled={savingOrder}
-                  className="px-5 py-2 bg-[#d4af37] text-[#2B1B17] font-bold rounded-xl text-xs hover:bg-[#b8922a] disabled:opacity-50"
+                  className="px-6 py-2 bg-[#d4af37] text-[#2B1B17] font-bold rounded-xl text-xs hover:bg-[#b8922a] disabled:opacity-50 shadow-sm"
                 >
                   {savingOrder ? 'جاري الحفظ...' : editingOrder ? 'حفظ التعديلات' : 'إنشاء أمر التركيب'}
                 </button>

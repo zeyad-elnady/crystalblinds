@@ -196,7 +196,7 @@ export default function ReservationSection({ isAr }: Props) {
                 alt={isAr ? "احجز المعاينه مجانا" : "Book Free Measurement"} 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 absolute inset-0" 
               />
-              <div className="absolute inset-0 bg-[#2B1B17]/85 flex flex-col justify-end p-8 text-white z-10">
+              <div className="absolute inset-0 bg-[#3E2723]/85 flex flex-col justify-end p-8 text-white z-10">
                 <span className="text-[#d4af37] uppercase tracking-widest text-[10px] font-bold mb-2">
                   {isAr ? "دقة واحترافية" : "Precision & Care"}
                 </span>
@@ -211,7 +211,7 @@ export default function ReservationSection({ isAr }: Props) {
               </div>
             </div>
 
-            <div className="bg-[#2B1B17] rounded-[2rem] p-6 text-white border border-[#3E2723]/15 relative overflow-hidden">
+            <div className="bg-[#3E2723] rounded-[2rem] p-6 text-white border border-[#3E2723]/15 relative overflow-hidden">
               <h4 className="font-bold text-xs text-[#d4af37] uppercase tracking-wider mb-3 border-b border-white/10 pb-2">
                 {isAr ? "ماذا تشمل المعاينة المجانية؟" : "What is included?"}
               </h4>
