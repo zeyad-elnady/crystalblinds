@@ -4,6 +4,14 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // If user accesses /ar/admin or /en/admin (or /ar/admin/login, etc.), redirect cleanly to /admin
+  if (pathname.startsWith('/ar/admin') || pathname.startsWith('/en/admin')) {
+    const cleanAdminPath = pathname.replace(/^\/(ar|en)/, '');
+    const url = request.nextUrl.clone();
+    url.pathname = cleanAdminPath;
+    return NextResponse.redirect(url);
+  }
+
   // Protect Admin Dashboard Routes
   if (pathname.startsWith('/admin')) {
     // Allow public access to login page and static assets
@@ -19,9 +27,6 @@ export function middleware(request: NextRequest) {
       cookie.name === 'supabase-auth-token'
     );
 
-    // Note: If accessing /admin and client relies on localStorage/session,
-    // the page client component performs immediate cryptographic validation.
-    // The middleware ensures the initial header security and baseline filtering.
     const response = NextResponse.next();
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     return response;
@@ -32,7 +37,12 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/admin',
     '/admin/:path*',
+    '/ar/admin',
+    '/ar/admin/:path*',
+    '/en/admin',
+    '/en/admin/:path*',
     '/api/:path*',
   ],
 };

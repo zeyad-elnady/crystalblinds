@@ -40,14 +40,53 @@ export default function ProductDetailsClient({
   const [selectedColor, setSelectedColor] = useState<string | null>(colors.length > 0 ? colors[0].id : null);
   const selectedColorObj = colors.find(c => c.id === selectedColor);
 
+  const sanitizeDimension = (val: string) => {
+    if (!val) return "";
+    let cleaned = val.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    let integerPart = parts[0] || "";
+    let decimalPart = parts.length > 1 ? parts.slice(1).join("") : null;
+
+    // Strip leading zeros (unless just "0")
+    if (integerPart.length > 1 && integerPart.startsWith("0")) {
+      integerPart = integerPart.replace(/^0+/, "") || "0";
+    }
+
+    // Allow at most 2 digits for meters, or 3 digits if typing cm (e.g. 150cm, 99m)
+    if (integerPart.length > 3) {
+      integerPart = integerPart.slice(0, 3);
+    }
+
+    if (decimalPart !== null) {
+      // Max 2 decimal digits for the fraction
+      decimalPart = decimalPart.slice(0, 2);
+      return `${integerPart}.${decimalPart}`;
+    }
+
+    return integerPart;
+  };
+
+  const handleWidthChange = (val: string) => {
+    setWidth(sanitizeDimension(val));
+  };
+
+  const handleHeightChange = (val: string) => {
+    setHeight(sanitizeDimension(val));
+  };
+
   const rawWidth = parseFloat(width) || 0;
   const rawHeight = parseFloat(height) || 0;
   
-  // Convert legacy cm input (>20) to meters seamlessly if typed
-  const widthVal = rawWidth > 20 ? rawWidth / 100 : rawWidth;
-  const heightVal = rawHeight > 20 ? rawHeight / 100 : rawHeight;
+  // Convert legacy cm input (>20, e.g. 150cm -> 1.5m) seamlessly if typed
+  const widthM = rawWidth > 20 ? Math.round((rawWidth / 100) * 100) / 100 : rawWidth;
+  const heightM = rawHeight > 20 ? Math.round((rawHeight / 100) * 100) / 100 : rawHeight;
 
-  const area = widthVal > 0 && heightVal > 0 ? widthVal * heightVal : 1;
+  // Max realistic single blind dimension cap (12m width, 8m height)
+  const widthVal = Math.min(12, Math.max(0, widthM));
+  const heightVal = Math.min(8, Math.max(0, heightM));
+
+  const rawArea = widthVal > 0 && heightVal > 0 ? widthVal * heightVal : 0;
+  const area = rawArea > 0 ? Math.max(2, Math.round(rawArea * 100) / 100) : 2;
   const totalPrice = Math.round(product.price * area);
 
   const handleAddToCart = () => {
@@ -211,24 +250,13 @@ export default function ProductDetailsClient({
           {/* Product Details & Customization Column (50% Split) */}
           <div className="lg:col-span-6 flex flex-col gap-6">
             
-            {/* Header: Title, Reviews, & Base Price Banner */}
+            {/* Header: Title & Base Price Banner */}
             <div className="bg-white rounded-2xl border border-[#3E2723]/10 p-6 md:p-7 shadow-xs flex flex-col gap-4">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
                   <h1 className="font-headline text-2xl md:text-3xl font-extrabold text-[#3E2723] leading-tight">
                     {isAr ? product.labelAr : product.labelEn}
                   </h1>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center text-[#d4af37]">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span key={star} className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
-                          star
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-xs font-bold text-[#3E2723]/70">(4.9/5)</span>
-                    <span className="text-xs text-[#3E2723]/40">• 24 {isAr ? "تقييم" : "reviews"}</span>
-                  </div>
                 </div>
 
                 <div className="bg-[#F7F4EF] border border-[#3E2723]/10 rounded-2xl px-4 py-3 flex flex-col items-end">
@@ -312,15 +340,15 @@ export default function ProductDetailsClient({
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-[#3E2723]/80 flex items-center justify-between">
                       <span>{isAr ? "العرض المطلوب (متر)" : "Width (meters)"}</span>
-                      <span className="text-[10px] font-normal text-[#3E2723]/50">(0.4 - 6.0 {isAr ? "متر" : "m"})</span>
+                      <span className="text-[10px] font-normal text-[#3E2723]/50">({isAr ? "مثال: 1.5" : "e.g. 1.5"})</span>
                     </label>
                     <div className="relative flex items-center">
                       <input 
-                        type="number" 
-                        step="0.1"
-                        placeholder={isAr ? "مثال: 1.5" : "e.g. 1.5"}
+                        type="text" 
+                        inputMode="decimal"
+                        placeholder="1.5"
                         value={width}
-                        onChange={(e) => setWidth(e.target.value)}
+                        onChange={(e) => handleWidthChange(e.target.value)}
                         className="w-full bg-white border border-[#3E2723]/20 rounded-xl px-4 py-3 text-sm font-bold text-[#3E2723] focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 transition-all"
                         dir="ltr"
                       />
@@ -333,15 +361,15 @@ export default function ProductDetailsClient({
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-[#3E2723]/80 flex items-center justify-between">
                       <span>{isAr ? "الارتفاع المطلوب (متر)" : "Height (meters)"}</span>
-                      <span className="text-[10px] font-normal text-[#3E2723]/50">(0.4 - 2.75 {isAr ? "متر" : "m"})</span>
+                      <span className="text-[10px] font-normal text-[#3E2723]/50">({isAr ? "مثال: 1.8" : "e.g. 1.8"})</span>
                     </label>
                     <div className="relative flex items-center">
                       <input 
-                        type="number" 
-                        step="0.1"
-                        placeholder={isAr ? "مثال: 1.8" : "e.g. 1.8"}
+                        type="text" 
+                        inputMode="decimal"
+                        placeholder="1.8"
                         value={height}
-                        onChange={(e) => setHeight(e.target.value)}
+                        onChange={(e) => handleHeightChange(e.target.value)}
                         className="w-full bg-white border border-[#3E2723]/20 rounded-xl px-4 py-3 text-sm font-bold text-[#3E2723] focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 transition-all"
                         dir="ltr"
                       />
@@ -350,6 +378,16 @@ export default function ProductDetailsClient({
                       </span>
                     </div>
                   </div>
+                </div>
+
+                {/* Minimum 2 m² Note */}
+                <div className="mt-3 flex items-center gap-2 bg-[#FAF8F5] border border-[#d4af37]/40 px-3.5 py-2.5 rounded-xl text-xs text-[#3E2723]">
+                  <span className="material-symbols-outlined text-[#d4af37] text-base shrink-0">info</span>
+                  <span className="font-semibold leading-relaxed">
+                    {isAr
+                      ? "الحد الأدنى لحساب مساحة الستارة هو 2 متر مربع (القطع الأقل من 2 م² تُحسب 2 م²)."
+                      : "Minimum billable area per blind is 2.0 m² (areas below 2 m² are calculated as 2 m²)."}
+                  </span>
                 </div>
 
                 {/* Helpful Measurement Links */}
@@ -378,11 +416,15 @@ export default function ProductDetailsClient({
                       <div className="w-8 h-8 rounded-full bg-[#FAF8F5] border border-[#3E2723]/15 flex items-center justify-center text-[#3E2723]">
                         <span className="material-symbols-outlined text-lg">palette</span>
                       </div>
-                      <h3 className="font-bold text-base text-[#3E2723]">{isAr ? "اختر اللون المناسب" : "Select Color"}</h3>
+                      <div>
+                        <h2 className="font-bold text-base text-[#3E2723]">
+                          {isAr ? "الألوان المتاحة" : "Available Colors"}
+                        </h2>
+                        <p className="text-[11px] text-[#3E2723]/60">
+                          {isAr ? "اختر اللون المناسب لديكور منزلك" : "Select the best color for your home decor"}
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-xs font-semibold text-[#3E2723]/60 bg-[#FAF8F5] px-3 py-1 rounded-full border border-[#3E2723]/10">
-                      {colors.length} {isAr ? "ألوان متوفرة" : "Colors available"}
-                    </span>
                   </div>
 
                   <div className="flex flex-wrap gap-3 pt-2">
@@ -442,11 +484,14 @@ export default function ProductDetailsClient({
                     </span>
                     <span className="text-white/80 font-bold text-base">{isAr ? "ج.م" : "EGP"}</span>
                   </div>
-                  <p className="text-[11px] text-white/50 mt-0.5">
+                  <p className="text-[11px] text-white/70 mt-0.5">
                     {isAr
-                      ? `${area.toFixed(2)} م² (بناءً على مقاساتك المحددة بالمتر)`
-                      : `${area.toFixed(2)} m² based on your custom size in meters`
-                    }
+                      ? rawArea > 0 && rawArea < 2
+                        ? `2.00 م² (الحد الأدنى للحساب 2 م² — المقاس الفعلي: ${rawArea.toFixed(2)} م²)`
+                        : `${area.toFixed(2)} م² (بناءً على مقاساتك المحددة بالمتر)`
+                      : rawArea > 0 && rawArea < 2
+                        ? `2.00 m² (minimum 2 m² applied — actual: ${rawArea.toFixed(2)} m²)`
+                        : `${area.toFixed(2)} m² based on your custom size in meters`}
                   </p>
                 </div>
 

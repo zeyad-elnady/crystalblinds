@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ProductCategory } from '@/lib/products';
+import { slugify } from '@/lib/slugs';
 import styles from '../admin.module.css';
 
 const EMPTY_FORM = {
@@ -18,6 +19,7 @@ export default function ProductCategoriesView() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
@@ -46,6 +48,7 @@ export default function ProductCategoriesView() {
   const openAdd = () => {
     setEditId(null);
     setForm({ ...EMPTY_FORM });
+    setIsSlugManuallyEdited(false);
     setModalError(null);
     setShowModal(true);
   };
@@ -58,22 +61,52 @@ export default function ProductCategoriesView() {
       name_en: cat.nameEn,
       sort_order: cat.sort_order,
     });
+    setIsSlugManuallyEdited(true);
     setModalError(null);
     setShowModal(true);
   };
 
+  const handleNameEnChange = (val: string) => {
+    setForm(f => {
+      const newSlug = !isSlugManuallyEdited ? slugify(val || f.name_ar) : f.slug;
+      return { ...f, name_en: val, slug: newSlug };
+    });
+  };
+
+  const handleNameArChange = (val: string) => {
+    setForm(f => {
+      const newSlug = !isSlugManuallyEdited && !f.name_en ? slugify(val) : f.slug;
+      return { ...f, name_ar: val, slug: newSlug };
+    });
+  };
+
+  const handleSlugChange = (val: string) => {
+    setIsSlugManuallyEdited(true);
+    setForm(f => ({ ...f, slug: slugify(val) }));
+  };
+
   const handleSave = async () => {
-    if (!form.name_ar.trim() || !form.name_en.trim() || !form.slug.trim()) {
-      setModalError('يرجى إدخال جميع الحقول المطلوبة (الاسم بالعربي، الاسم بالإنجليزي، والرمز)');
+    if (!form.name_ar.trim() && !form.name_en.trim()) {
+      setModalError('يرجى إدخال اسم القسم بالعربي أو بالإنجليزي على الأقل');
       return;
     }
+
+    const computedSlug = form.slug.trim()
+      ? slugify(form.slug)
+      : slugify(form.name_en.trim() || form.name_ar.trim() || 'category');
+
+    if (!computedSlug) {
+      setModalError('يرجى إدخال رمز (Slug) صالح للقسم');
+      return;
+    }
+
     setSaving(true);
     setModalError(null);
 
     const payload = {
-      slug: form.slug.trim(),
-      name_ar: form.name_ar.trim(),
-      name_en: form.name_en.trim(),
+      slug: computedSlug,
+      name_ar: form.name_ar.trim() || form.name_en.trim(),
+      name_en: form.name_en.trim() || form.name_ar.trim(),
       sort_order: Number(form.sort_order) || 0,
     };
 
@@ -88,7 +121,7 @@ export default function ProductCategoriesView() {
 
     setSaving(false);
     if (error) {
-      setModalError('خطأ أثناء الحفظ: ' + error.message);
+      setModalError('خطأ أثناء حفظ القسم: ' + error.message);
     } else {
       setShowModal(false);
       fetchCategories();
@@ -96,7 +129,7 @@ export default function ProductCategoriesView() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`هل تريد حذف القسم "${name}"؟\nملاحظة: هذا لن يحذف المنتجات التي تنتمي لهذا القسم، لكنها قد لا تظهر بشكل صحيح.`)) return;
+    if (!confirm('هل تريد حذف هذا القسم؟')) return;
     await supabase.from('product_categories').delete().eq('id', id);
     fetchCategories();
   };
@@ -106,7 +139,7 @@ export default function ProductCategoriesView() {
       <header className={styles.header}>
         <div>
           <h1 className={styles.headerTitle}>أقسام المنتجات</h1>
-          <p className={styles.headerSub}>إدارة الفئات التي تظهر في صفحة المنتجات</p>
+          <p className={styles.headerSub}>إدارة الفئات التي تظهر في صفحة المنتجات والروابط</p>
         </div>
         <div className={styles.headerActions}>
           <button className={styles.addBtn} onClick={openAdd}>+ إضافة قسم</button>
@@ -133,6 +166,7 @@ export default function ProductCategoriesView() {
               <tr>
                 <th>الترتيب</th>
                 <th>الرمز (Slug)</th>
+                <th>رابط القسم</th>
                 <th>الاسم (عربي)</th>
                 <th>الاسم (إنجليزي)</th>
                 <th>إجراءات</th>
@@ -142,8 +176,11 @@ export default function ProductCategoriesView() {
               {categories.map((c) => (
                 <tr key={c.id} className={styles.tableRow}>
                   <td>{c.sort_order}</td>
-                  <td dir="ltr" style={{ textAlign: 'right' }}>{c.slug}</td>
-                  <td>{c.nameAr}</td>
+                  <td dir="ltr" style={{ textAlign: 'right', fontWeight: 'bold', color: '#3E2723' }}>{c.slug}</td>
+                  <td dir="ltr" style={{ textAlign: 'right', color: '#6b7280', fontSize: '11px' }}>
+                    <code>/products?category={c.slug}</code>
+                  </td>
+                  <td style={{ fontWeight: '600' }}>{c.nameAr}</td>
                   <td>{c.nameEn}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -175,23 +212,50 @@ export default function ProductCategoriesView() {
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
               <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>
-                الرمز (Slug) - يجب أن يكون فريداً وباللغة الإنجليزية بدون مسافات
-                <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') }))} dir="ltr" placeholder="مثال: zebra" style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
+                الاسم (إنجليزي) *
+                <input
+                  value={form.name_en}
+                  onChange={e => handleNameEnChange(e.target.value)}
+                  dir="ltr"
+                  placeholder="e.g. Bamboo Blinds"
+                  style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }}
+                />
               </label>
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>
-                الاسم (عربي)
-                <input value={form.name_ar} onChange={e => setForm(f => ({ ...f, name_ar: e.target.value }))} dir="rtl" placeholder="مثال: ستائر زيبرا" style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
+                الاسم (عربي) *
+                <input
+                  value={form.name_ar}
+                  onChange={e => handleNameArChange(e.target.value)}
+                  dir="rtl"
+                  placeholder="مثال: ستائر بامبو خشبية"
+                  style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }}
+                />
               </label>
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>
-                الاسم (إنجليزي)
-                <input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} dir="ltr" placeholder="e.g. Zebra Blinds" style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
+                الرمز في الرابط (Slug) — يتم توليده تلقائياً
+                <input
+                  value={form.slug}
+                  onChange={e => handleSlugChange(e.target.value)}
+                  dir="ltr"
+                  placeholder="مثال: bamboo"
+                  style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace' }}
+                />
+                <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: 'normal', direction: 'ltr', textAlign: 'left' }}>
+                  Preview URL: <code>/products?category={form.slug || 'category-name'}</code>
+                </span>
               </label>
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>
                 ترتيب العرض
-                <input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))} placeholder="0" style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
+                <input
+                  type="number"
+                  value={form.sort_order || ''}
+                  onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))}
+                  placeholder="0"
+                  style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }}
+                />
               </label>
 
               {modalError && (

@@ -338,7 +338,8 @@ export default function ExpensesView() {
                   <label className="text-[10px] font-bold text-[#3E2723]/70">قيمة المصروف (ج.م) *</label>
                   <input
                     type="number" required
-                    value={formData.amount}
+                    value={formData.amount || ''}
+                    placeholder="0"
                     onChange={e => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                     className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none"
                   />

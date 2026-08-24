@@ -1238,7 +1238,7 @@ export default function InstallationsView({ userRole }: { userRole: string | nul
                     <input
                       type="number"
                       min="0"
-                      value={orderFormData.collection_amount !== undefined ? orderFormData.collection_amount : ''}
+                      value={orderFormData.collection_amount || ''}
                       onChange={e => handlePriceChange('collection_amount', parseFloat(e.target.value) || 0)}
                       placeholder="0"
                       className="w-full px-3 py-1.5 border-2 border-amber-500 bg-amber-100/70 rounded-lg text-xs font-black text-amber-950 outline-none focus:border-amber-600"

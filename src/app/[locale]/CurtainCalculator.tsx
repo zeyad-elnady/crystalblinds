@@ -154,10 +154,13 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
 
   useEffect(() => {
     if (!activeProduct) return;
-    const wNum = parseFloat(width) || 0;
-    const hNum = parseFloat(height) || 0;
+    const rawW = parseFloat(width) || 0;
+    const rawH = parseFloat(height) || 0;
+    const wNum = rawW > 20 ? rawW / 100 : rawW;
+    const hNum = rawH > 20 ? rawH / 100 : rawH;
     if (wNum > 0 && hNum > 0) {
-      const area = wNum * hNum;
+      const rawArea = wNum * hNum;
+      const area = Math.max(2, Math.round(rawArea * 100) / 100);
       const price = Math.round(activeProduct.price * area);
       setEstimatedPrice(price);
     } else {
@@ -165,36 +168,50 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
     }
   }, [activeProduct, width, height]);
 
-  const handleWidthChange = (val: string) => {
-    const cleaned = val.replace(/[^0-9.]/g, "");
+  const sanitizeDimension = (val: string) => {
+    if (!val) return "";
+    let cleaned = val.replace(/[^0-9.]/g, "");
     const parts = cleaned.split(".");
-    if (parts.length > 2) {
-      setWidth(parts[0] + "." + parts.slice(1).join(""));
-    } else {
-      setWidth(cleaned);
+    let integerPart = parts[0] || "";
+    let decimalPart = parts.length > 1 ? parts.slice(1).join("") : null;
+
+    // Strip leading zeros (unless just "0")
+    if (integerPart.length > 1 && integerPart.startsWith("0")) {
+      integerPart = integerPart.replace(/^0+/, "") || "0";
     }
+
+    // Allow at most 2 digits for meters, or 3 digits if typing cm (e.g. 150cm, 99m)
+    if (integerPart.length > 3) {
+      integerPart = integerPart.slice(0, 3);
+    }
+
+    if (decimalPart !== null) {
+      // Max 2 decimal digits for the fraction
+      decimalPart = decimalPart.slice(0, 2);
+      return `${integerPart}.${decimalPart}`;
+    }
+
+    return integerPart;
+  };
+
+  const handleWidthChange = (val: string) => {
+    setWidth(sanitizeDimension(val));
   };
 
   const handleHeightChange = (val: string) => {
-    const cleaned = val.replace(/[^0-9.]/g, "");
-    const parts = cleaned.split(".");
-    if (parts.length > 2) {
-      setHeight(parts[0] + "." + parts.slice(1).join(""));
-    } else {
-      setHeight(cleaned);
-    }
+    setHeight(sanitizeDimension(val));
   };
 
   const adjustWidth = (delta: number) => {
     const current = parseFloat(width) || 0;
     const next = Math.max(0, current + delta);
-    setWidth(next === 0 ? "" : next.toFixed(2));
+    setWidth(next === 0 ? "" : next.toFixed(1));
   };
 
   const adjustHeight = (delta: number) => {
     const current = parseFloat(height) || 0;
     const next = Math.max(0, current + delta);
-    setHeight(next === 0 ? "" : next.toFixed(2));
+    setHeight(next === 0 ? "" : next.toFixed(1));
   };
 
   const handleAddToCart = () => {
@@ -291,9 +308,14 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
 
                 {/* 2. Width (m) Stepper */}
                 <div className="w-full md:w-[30%]">
-                  <label className="text-[11px] font-bold text-[#3E2723]/60 mb-1.5 block text-start">
-                    {isAr ? "العرض (متر)" : "Width (m)"}
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-bold text-[#3E2723]/80">
+                      {isAr ? "العرض (متر)" : "Width (m)"}
+                    </label>
+                    <span className="text-[10px] font-bold text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-md border border-[#d4af37]/20">
+                      {isAr ? "مثال: 1.5" : "e.g. 1.5"}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between bg-[#FDFBF7] border border-[#3E2723]/15 rounded-xl p-1">
                     <button
                       type="button"
@@ -305,10 +327,10 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
                     <input
                       type="text"
                       inputMode="decimal"
-                      placeholder=""
+                      placeholder="1.5"
                       value={width}
                       onChange={(e) => handleWidthChange(e.target.value)}
-                      className="w-20 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none"
+                      className="w-20 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none placeholder:text-[#3E2723]/30"
                     />
                     <button
                       type="button"
@@ -325,9 +347,14 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
 
                 {/* 3. Height (m) Stepper */}
                 <div className="w-full md:w-[30%]">
-                  <label className="text-[11px] font-bold text-[#3E2723]/60 mb-1.5 block text-start">
-                    {isAr ? "الارتفاع (متر)" : "Height (m)"}
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-bold text-[#3E2723]/80">
+                      {isAr ? "الارتفاع (متر)" : "Height (m)"}
+                    </label>
+                    <span className="text-[10px] font-bold text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-md border border-[#d4af37]/20">
+                      {isAr ? "مثال: 1.8" : "e.g. 1.8"}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between bg-[#FDFBF7] border border-[#3E2723]/15 rounded-xl p-1">
                     <button
                       type="button"
@@ -339,10 +366,10 @@ export default function CurtainCalculator({ isAr, products = [] }: CurtainCalcul
                     <input
                       type="text"
                       inputMode="decimal"
-                      placeholder=""
+                      placeholder="1.8"
                       value={height}
                       onChange={(e) => handleHeightChange(e.target.value)}
-                      className="w-20 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none"
+                      className="w-20 text-center text-xs font-bold text-[#3E2723] bg-transparent focus:outline-none placeholder:text-[#3E2723]/30"
                     />
                     <button
                       type="button"

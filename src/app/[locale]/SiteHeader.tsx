@@ -19,6 +19,7 @@ export default function SiteHeader({
   const { items, toggleCart } = useCart();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expandedMobileMenus, setExpandedMobileMenus] = useState<Record<string, boolean>>({});
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -115,7 +116,7 @@ export default function SiteHeader({
         img: "/photos for crystal/hero1.jpeg",
         hoverImg: "/photos for crystal/somfy.png",
         items: [
-          { label: isAr ? "موتورات Somfy" : "Somfy Motors", href: `/${locale}/smart-curtains/somfy` },
+          { label: isAr ? "مواتير Somfy" : "Somfy Motors", href: `/${locale}/smart-curtains/somfy` },
           { label: isAr ? "تحكم صوتي" : "Voice Control", href: `/${locale}/smart-curtains/somfy` },
           { label: isAr ? "تطبيق الهاتف" : "Mobile App", href: `/${locale}/smart-curtains/somfy` },
         ],
@@ -126,7 +127,7 @@ export default function SiteHeader({
         img: "/photos for crystal/hero2.jpeg",
         hoverImg: "/photos for crystal/azzurra.png",
         items: [
-          { label: isAr ? "موتورات Azzurra" : "Azzurra Motors", href: `/${locale}/smart-curtains/azzurra` },
+          { label: isAr ? "مواتير Azzurra" : "Azzurra Motors", href: `/${locale}/smart-curtains/azzurra` },
           { label: isAr ? "أتمتة لاسلكية" : "Wireless Auto", href: `/${locale}/smart-curtains/azzurra` },
           { label: isAr ? "شحن بالطاقة الشمسية" : "Solar Charging", href: `/${locale}/smart-curtains/azzurra` },
         ],
@@ -416,24 +417,59 @@ export default function SiteHeader({
           <nav className="flex flex-col gap-1" dir={isAr ? "rtl" : "ltr"}>
             {navLinks.map((link) => {
               const menuData = getMenuData(link.label);
+              const isExpanded = !!expandedMobileMenus[link.label];
+
               return (
-                <div key={link.href}>
-                  <a
-                    href={link.href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex items-center justify-between px-4 py-4 rounded-xl text-xl font-bold text-white hover:text-white hover:bg-white/5 transition-colors ${isAr ? "flex-row-reverse" : "uppercase tracking-wider"}`}
-                  >
-                    {link.label}
-                    {menuData && <span className="material-symbols-outlined text-white/30 text-lg">chevron_right</span>}
-                  </a>
-                  {menuData && (
-                    <div className={`ml-4 pl-4 border-l-2 border-white/10 flex flex-col gap-1 mb-2 ${isAr ? "mr-4 pr-4 border-r-2 border-l-0 ml-0 pl-0" : ""}`}>
-                      {menuData.columns.flatMap(c => c.items).map((item, i) => (
+                <div key={link.href} className="border-b border-white/5 last:border-0">
+                  <div className="flex items-center justify-between px-2 py-3">
+                    <a
+                      href={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      className={`text-lg font-bold text-white hover:text-[#d4af37] transition-colors ${
+                        isAr ? "" : "uppercase tracking-wider"
+                      }`}
+                    >
+                      {link.label}
+                    </a>
+                    {menuData && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setExpandedMobileMenus((prev) => ({
+                            ...prev,
+                            [link.label]: !prev[link.label],
+                          }));
+                        }}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-[#d4af37]/20 text-white/60 hover:text-[#d4af37] transition-all cursor-pointer"
+                        aria-label={`Toggle ${link.label} subpages`}
+                      >
+                        <span
+                          className={`material-symbols-outlined text-xl transition-transform duration-300 ${
+                            isExpanded ? (isAr ? "-rotate-90 text-[#d4af37]" : "rotate-90 text-[#d4af37]") : ""
+                          }`}
+                        >
+                          {isAr ? "chevron_left" : "chevron_right"}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  {menuData && isExpanded && (
+                    <div
+                      className={`py-2 flex flex-col gap-1 mb-2 animate-in fade-in slide-in-from-top-2 duration-200 ${
+                        isAr
+                          ? "mr-4 pr-3 border-r-2 border-[#d4af37]/40"
+                          : "ml-4 pl-3 border-l-2 border-[#d4af37]/40"
+                      }`}
+                    >
+                      {menuData.columns.flatMap((c) => c.items).map((item, i) => (
                         <a
                           key={i}
                           href={item.href}
                           onClick={() => setMenuOpen(false)}
-                          className="px-3 py-2 text-sm text-white/55 hover:text-white transition-colors"
+                          className="px-3 py-2 text-sm font-medium text-white/70 hover:text-[#d4af37] hover:bg-white/5 rounded-lg transition-colors"
                         >
                           {item.label}
                         </a>

@@ -32,7 +32,7 @@ export const DEFAULT_CATALOGS: CatalogItem[] = [
     id: "cat-2",
     titleAr: "كتالوج الستائر الذكية وأجهزة الموتور",
     titleEn: "Smart Blinds & Automation Catalog",
-    descAr: "حلول الأتمتة الحديثة، موتورات Somfy و Azzurra، والتحكم الذكي",
+    descAr: "حلول الأتمتة الحديثة، مواتير Somfy و Azzurra، والتحكم الذكي",
     descEn: "Modern automation solutions, Somfy & Azzurra motors, and smart control",
     categoryAr: "الستائر الذكية",
     categoryEn: "Smart Curtains",

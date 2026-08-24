@@ -393,7 +393,8 @@ export default function MaintenanceView({ userRole }: { userRole: string | null 
                   <label className="text-[10px] font-bold text-[#3E2723]/70">تكلفة الصيانة (ج.م)</label>
                   <input
                     type="number"
-                    value={formData.cost}
+                    value={formData.cost || ''}
+                    placeholder="0"
                     onChange={e => setFormData(prev => ({ ...prev, cost: Number(e.target.value) }))}
                     className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none"
                   />

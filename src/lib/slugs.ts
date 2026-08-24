@@ -25,8 +25,8 @@ export function slugify(text: string): string {
 }
 
 /**
- * Derives a clean SEO slug for a product.
- * Prefers product's explicit slug, then labelEn, then labelAr, then id.
+ * Derives a clean, unique SEO slug for a product.
+ * Prefers explicit slug with submodel disambiguation, then labelEn + model, then labelAr, then id.
  */
 export function getProductSlug(product: {
   slug?: string | null;
@@ -36,20 +36,32 @@ export function getProductSlug(product: {
   label_ar?: string | null;
   id?: string | null;
 }): string {
-  if (product.slug && typeof product.slug === 'string' && product.slug.trim()) {
-    return slugify(product.slug);
+  const explicitSlug = (product.slug || '').trim();
+  const labelEn = (product.labelEn || product.label_en || '').trim();
+  const labelAr = (product.labelAr || product.label_ar || '').trim();
+
+  // Extract model code or distinguishing English alphanumeric tokens from labelAr
+  const latinTokens = (labelAr.match(/[A-Za-z0-9]+/g) || []).join('-').toLowerCase();
+
+  if (explicitSlug) {
+    const cleanExplicit = slugify(explicitSlug);
+    // If explicit slug is generic (e.g. "zebra-blinds" or "wooden-blinds") but labelAr has a distinguishing model
+    if (latinTokens && !cleanExplicit.includes(latinTokens)) {
+      return `${cleanExplicit}-${latinTokens}`;
+    }
+    return cleanExplicit;
   }
 
-  const enName = product.labelEn || product.label_en;
-  if (enName && enName.trim()) {
-    const slug = slugify(enName);
-    if (slug) return slug;
+  if (labelEn) {
+    const cleanEn = slugify(labelEn);
+    if (latinTokens && !cleanEn.includes(latinTokens)) {
+      return `${cleanEn}-${latinTokens}`;
+    }
+    return cleanEn;
   }
 
-  const arName = product.labelAr || product.label_ar;
-  if (arName && arName.trim()) {
-    const slug = slugify(arName);
-    if (slug) return slug;
+  if (labelAr) {
+    return slugify(labelAr);
   }
 
   return product.id ? slugify(product.id) : '';

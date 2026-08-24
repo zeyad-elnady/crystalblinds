@@ -52,6 +52,7 @@ export interface Bill {
   remaining_amount: number;
   final_total: number;
   notes: string | null;
+  sales_rep?: string | null;
   created_at: string;
   updated_at: string;
 }

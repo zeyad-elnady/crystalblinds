@@ -390,13 +390,17 @@ export default function CheckoutClient({ isAr, locale }: { isAr: boolean; locale
                     <select
                       required
                       value={selectedGovId}
-                      onChange={(e) => setSelectedGovId(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedGovId(val);
+                        cart.setGovernorate(val);
+                      }}
                       className="w-full bg-[#FAF8F5] border border-[#3E2723]/20 rounded-xl p-3.5 text-sm font-semibold focus:border-[#d4af37] focus:bg-white focus:outline-none transition-all"
                     >
                       <option value="">{isAr ? "اختر المحافظة" : "Select Governorate"}</option>
                       {governorates.map((gov) => (
                         <option key={gov.id} value={gov.id}>
-                          {isAr ? gov.nameAr : gov.nameEn} ({gov.fee} {isAr ? "ج.م" : "EGP"})
+                          {isAr ? gov.nameAr : gov.nameEn}
                         </option>
                       ))}
                     </select>
@@ -505,6 +509,32 @@ export default function CheckoutClient({ isAr, locale }: { isAr: boolean; locale
                       </div>
                     </label>
                   </div>
+
+                  {paymentMethod === 'cod' && (
+                    <div className="mt-4 p-4 bg-[#FAF8F5] rounded-xl border border-[#d4af37]/40 space-y-2.5 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2 text-[#3E2723] font-bold text-xs">
+                        <span className="material-symbols-outlined text-[#d4af37] text-base">info</span>
+                        <span>{isAr ? "شروط تأكيد حجز الطلب (عربون 30%):" : "Order Confirmation Deposit (30%):"}</span>
+                      </div>
+                      <p className="text-[11px] text-[#3E2723]/80 leading-relaxed">
+                        {isAr
+                          ? "نظراً لأن الستائر تُصنع خصيصاً وفق مقاساتك المحددة، يتم سداد 30% من قيمة الطلب كدفعة مقدمة لتأكيد الحجز وبدء التصنيع، ويُسدد المتبقي (70%) عند الاستلام والتركيب."
+                          : "As blinds are custom made to your exact measurements, a 30% advance deposit is required to begin manufacturing. The remaining 70% is paid upon delivery."}
+                      </p>
+                      <div className="bg-white p-3 rounded-lg border border-[#3E2723]/10 flex items-center justify-between text-xs font-bold">
+                        <span className="text-[#3E2723]/70">{isAr ? "مبلغ تأكيد الحجز (30%):" : "Required Deposit (30%):"}</span>
+                        <span className="text-[#b45309] font-black text-sm">
+                          {Math.round(finalTotal * 0.3).toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] px-1 text-[#3E2723]/60 font-semibold">
+                        <span>{isAr ? "المتبقي عند الاستلام (70%):" : "Remaining on Delivery (70%):"}</span>
+                        <span className="font-bold text-[#3E2723]">
+                          {(finalTotal - Math.round(finalTotal * 0.3)).toLocaleString(isAr ? 'ar-EG' : 'en-US')} {isAr ? "ج.م" : "EGP"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {paymentMethod === 'wallet_instapay' && (
                     <div className="mt-4 p-4 bg-[#FAF8F5] rounded-xl border border-[#d4af37]/30 space-y-4 animate-in fade-in duration-200">

@@ -582,7 +582,7 @@ export default function EmployeesView() {
                   <label className="text-[10px] font-bold text-[#3E2723]/70">الراتب الأساسي (ج.م)</label>
                   <input
                     type="number"
-                    value={employeeFormData.salary}
+                    value={employeeFormData.salary || ''}
                     onChange={e => setEmployeeFormData(prev => ({ ...prev, salary: e.target.value }))}
                     className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none"
                   />
@@ -720,9 +720,9 @@ export default function EmployeesView() {
                     type="number"
                     step="0.5"
                     min="0"
-                    value={attendanceFormData.overtime_hours}
+                    value={attendanceFormData.overtime_hours || ''}
                     onChange={e => setAttendanceFormData(prev => ({ ...prev, overtime_hours: e.target.value }))}
-                    placeholder="مثال: 1.5"
+                    placeholder="0"
                     className="w-full px-3 py-2 border border-[#3E2723]/20 rounded-xl bg-[#FAF8F5] text-xs outline-none font-bold text-indigo-700"
                   />
                 </div>

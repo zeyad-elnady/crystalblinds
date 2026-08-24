@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { type Product, type ProductCategory } from "@/lib/products";
 import CatalogModal from "@/components/CatalogModal";
-
 
 function ProductCardItem({
   product,
@@ -79,37 +78,128 @@ function ProductCardItem({
   );
 }
 
-export default function ProductCards({ isAr, products, categories, isBrief = false }: { isAr: boolean, products: Product[], categories: ProductCategory[], isBrief?: boolean }) {
-  const searchParams = useSearchParams();
-  const categoryParam = searchParams ? searchParams.get("category") : null;
+const cleanStr = (s: string) => s.trim().toLowerCase().replace(/[-_\s]+/g, '');
 
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+export default function ProductCards({
+  isAr,
+  products,
+  categories,
+  isBrief = false
+}: {
+  isAr: boolean;
+  products: Product[];
+  categories: ProductCategory[];
+  isBrief?: boolean;
+}) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const categoryParam = searchParams ? searchParams.get("category") : null;
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
 
-  const allCategoryTab = { slug: "All", nameEn: "All", nameAr: "الكل" };
-  const displayCategories = [allCategoryTab, ...categories];
+  const allCategoryTab: ProductCategory = { id: "all", slug: "all", nameEn: "All", nameAr: "الكل", sort_order: 0 };
 
-  useEffect(() => {
-    if (categoryParam) {
-      const matched = displayCategories.find(
-        (cat) => cat.slug.toLowerCase() === categoryParam.toLowerCase()
-      );
-      if (matched) {
-        setActiveCategory(matched.slug);
-      } else {
-        setActiveCategory("All");
+  // Combine categories and ensure unique tabs
+  const displayCategories = useMemo(() => {
+    const list: ProductCategory[] = [allCategoryTab];
+    const seen = new Set<string>(['all']);
+
+    (categories || []).forEach(cat => {
+      const key = cleanStr(cat.slug || cat.nameEn || '');
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        list.push({
+          ...cat,
+          slug: cat.slug || key
+        });
       }
-    } else {
-      setActiveCategory("All");
+    });
+
+    // Also include any product categories not in list
+    (products || []).forEach(p => {
+      if (p.category) {
+        const key = cleanStr(p.category);
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          list.push({
+            id: `cat-${key}`,
+            slug: key,
+            nameEn: p.category,
+            nameAr: p.category,
+            sort_order: 99
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [categories, products]);
+
+  // Synchronize state when URL category query param changes (e.g. initial load or browser back/forward)
+  useEffect(() => {
+    if (!categoryParam || cleanStr(categoryParam) === 'all' || cleanStr(categoryParam) === 'الكل') {
+      setActiveCategory("all");
+      return;
     }
-  }, [categoryParam, categories]);
+
+    const cleanParam = cleanStr(categoryParam);
+    const matched = displayCategories.find(
+      (cat) =>
+        cleanStr(cat.slug) === cleanParam ||
+        cleanStr(cat.nameEn) === cleanParam ||
+        cleanStr(cat.nameAr) === cleanParam
+    );
+
+    if (matched) {
+      setActiveCategory(matched.slug);
+    } else {
+      setActiveCategory(categoryParam);
+    }
+  }, [categoryParam, displayCategories]);
+
+  // Handle clicking a category tab: updates state and pushes new URL query param
+  const handleCategorySelect = (cat: ProductCategory) => {
+    const isAll = cleanStr(cat.slug) === 'all';
+    setActiveCategory(isAll ? "all" : cat.slug);
+
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+    if (isAll) {
+      params.delete('category');
+    } else {
+      params.set('category', cat.slug.toLowerCase());
+    }
+
+    const query = params.toString();
+    const targetUrl = query ? `${pathname}?${query}` : pathname;
+    router.push(targetUrl, { scroll: false });
+  };
+
+  const isMatch = (productCategory: string, selectedSlug: string) => {
+    if (!selectedSlug || cleanStr(selectedSlug) === 'all') return true;
+    const cleanSelected = cleanStr(selectedSlug);
+    const cleanProduct = cleanStr(productCategory);
+    if (cleanProduct === cleanSelected) return true;
+
+    const matchedCat = displayCategories.find(c =>
+      cleanStr(c.slug) === cleanSelected ||
+      cleanStr(c.nameEn) === cleanSelected ||
+      cleanStr(c.nameAr) === cleanSelected
+    );
+
+    if (matchedCat) {
+      if (cleanProduct === cleanStr(matchedCat.slug)) return true;
+      if (cleanProduct === cleanStr(matchedCat.nameEn)) return true;
+      if (cleanProduct === cleanStr(matchedCat.nameAr)) return true;
+    }
+
+    return false;
+  };
 
   const filteredProducts = isBrief
     ? products.slice(0, 4)
-    : activeCategory === "All"
-    ? products
-    : products.filter(p => p.category.toLowerCase() === activeCategory.toLowerCase());
+    : products.filter(p => isMatch(p.category, activeCategory));
 
   return (
     <div className="w-full flex flex-col items-center px-6 md:px-12 pb-16 pt-8">
@@ -135,14 +225,11 @@ export default function ProductCards({ isAr, products, categories, isBrief = fal
           <div className="w-[1px] h-6 bg-[#3E2723]/15 hidden sm:block my-auto" />
 
           {displayCategories.map((cat) => {
-            const isActive = activeCategory === cat.slug;
+            const isActive = cleanStr(activeCategory) === cleanStr(cat.slug);
             return (
               <button
                 key={cat.slug}
-                onClick={() => {
-                  setActiveCategory(cat.slug);
-                  setExpandedId(null);
-                }}
+                onClick={() => handleCategorySelect(cat)}
                 className={`px-5 md:px-7 py-2.5 md:py-3 rounded-full text-xs md:text-sm font-bold border transition-all duration-300 shadow-sm
                   ${isActive
                     ? "bg-[#3E2723] text-white border-[#3E2723] shadow-md scale-105"
@@ -157,15 +244,33 @@ export default function ProductCards({ isAr, products, categories, isBrief = fal
       )}
 
       {/* Grid of Cards */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-7xl items-start ${isAr ? "rtl text-right" : "ltr text-left"}`}>
-        {filteredProducts.map((product) => (
-          <ProductCardItem
-            key={product.id}
-            product={product}
-            isAr={isAr}
-          />
-        ))}
-      </div>
+      {filteredProducts.length > 0 ? (
+        <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-7xl items-start ${isAr ? "rtl text-right" : "ltr text-left"}`}>
+          {filteredProducts.map((product) => (
+            <ProductCardItem
+              key={product.id}
+              product={product}
+              isAr={isAr}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16 px-6 max-w-md mx-auto bg-white/80 border border-[#3E2723]/10 rounded-2xl shadow-sm">
+          <span className="material-symbols-outlined text-5xl text-[#3E2723]/40 mb-3">inventory_2</span>
+          <h3 className="text-lg font-bold text-[#3E2723] mb-2">
+            {isAr ? "لا توجد منتجات متوفرة حالياً في هذا القسم" : "No products found in this category"}
+          </h3>
+          <p className="text-sm text-[#3E2723]/60 mb-6">
+            {isAr ? "يمكنك استعراض باقي الأقسام أو الرجوع لكافة المنتجات" : "You can browse other categories or view all products"}
+          </p>
+          <button
+            onClick={() => handleCategorySelect(allCategoryTab)}
+            className="px-6 py-2.5 bg-[#3E2723] text-white text-xs font-bold rounded-lg hover:bg-[#2B1B17] transition-colors"
+          >
+            {isAr ? "عرض جميع المنتجات" : "View All Products"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

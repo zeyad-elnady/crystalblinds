@@ -6,7 +6,7 @@ import { WebsiteAsset } from '@/lib/images';
 import { Product } from '@/lib/products';
 import { Partner } from '@/lib/partners';
 import { ContactMessage } from '@/lib/messages';
-import { getDeliveryFees, updateDeliveryFeeInDb, type Governorate } from '@/lib/deliveryFees';
+import { getDeliveryFees, updateDeliveryFeeInDb, resetAllDeliveryFeesInDb, type Governorate } from '@/lib/deliveryFees';
 import { slugify } from '@/lib/slugs';
 import styles from './admin.module.css';
 import AdvancedDashboardView from './AdvancedDashboardView';
@@ -62,11 +62,11 @@ type FilterType = 'all' | AppointmentType;
 
 const ROLE_TABS: Record<string, string[]> = {
   admin: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'product_categories', 'expenses', 'employees', 'messages', 'website_edit', 'users', 'motor_products', 'testimonials', 'catalogs', 'projects'],
-  customer_service: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'messages'],
-  sales: ['dashboard', 'clients', 'orders', 'products', 'bills', 'installations', 'maintenance', 'motor_products'],
-  accountant: ['dashboard', 'bills', 'expenses'],
-  technician: ['inspections', 'installations', 'maintenance'],
-  employee: ['appointments', 'messages'],
+  customer_service: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'messages'],
+  sales: ['dashboard', 'clients', 'orders', 'appointments', 'inspections', 'installations', 'maintenance', 'bills', 'products', 'messages', 'motor_products'],
+  accountant: ['dashboard', 'bills', 'expenses', 'orders', 'clients'],
+  technician: ['inspections', 'installations', 'maintenance', 'appointments'],
+  employee: ['clients', 'appointments', 'installations', 'maintenance', 'orders', 'bills', 'messages'],
 };
 
 export default function AdminDashboard() {
@@ -146,6 +146,7 @@ export default function AdminDashboard() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loadingBills, setLoadingBills] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
+  const [billFormSubmitted, setBillFormSubmitted] = useState(false);
   const [selectedBill, setSelectedBill] = useState<Partial<Bill> | null>(null);
   const [selectedBillForPrint, setSelectedBillForPrint] = useState<Bill | null>(null);
   const [billsSearch, setBillsSearch] = useState('');
@@ -374,6 +375,19 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleResetDeliveryFees = async () => {
+    if (!confirm('هل تريد إعادة تعيين جميع مصاريف الشحن لأسعار المحافظات القياسية الافتراضية؟')) return;
+    setSaving(true);
+    const success = await resetAllDeliveryFeesInDb();
+    setSaving(false);
+    if (success) {
+      alert('تمت إعادة تعيين جميع مصاريف الشحن لأسعار المحافظات القياسية بنجاح');
+      fetchDeliveryFees();
+    } else {
+      alert('فشلت إعادة التعيين');
+    }
+  };
+
   const fetchProducts = useCallback(async () => {
     setLoadingProducts(true);
     const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
@@ -445,6 +459,7 @@ export default function AdminDashboard() {
 
   const openNewBillModal = () => {
     setBillCreationMode('manual');
+    setBillFormSubmitted(false);
     const nextNum = bills.length + 1;
     const invNum = `INV-${new Date().getFullYear()}-${String(nextNum).padStart(4, '0')}`;
     setSelectedBill({
@@ -452,6 +467,7 @@ export default function AdminDashboard() {
       client_name: '',
       client_phone: '',
       client_address: '',
+      sales_rep: '',
       order_number: '',
       payment_method: 'نقدي',
       delivery_date: '',
@@ -467,43 +483,109 @@ export default function AdminDashboard() {
     setShowBillModal(true);
   };
 
+  const getBillMissingFields = (bill: Partial<Bill> | null): string[] => {
+    if (!bill) return ['لم يتم تحديد الفاتورة'];
+    const missing: string[] = [];
+
+    if (!bill.client_name || !bill.client_name.trim()) {
+      missing.push('اسم العميل (Customer Name)');
+    }
+    if (!bill.client_phone || !bill.client_phone.trim()) {
+      missing.push('رقم هاتف العميل (Phone)');
+    }
+    if (!bill.client_address || !bill.client_address.trim()) {
+      missing.push('عنوان العميل (Address)');
+    }
+    if (!bill.invoice_number || !bill.invoice_number.trim()) {
+      missing.push('رقم الفاتورة / عرض السعر (Quotation No.)');
+    }
+
+    if (!bill.items || bill.items.length === 0) {
+      missing.push('إضافة بند واحد على الأقل في الفاتورة (Items)');
+    } else {
+      bill.items.forEach((item, idx) => {
+        const itemNum = idx + 1;
+        if (!item.name || !item.name.trim()) {
+          missing.push(`اسم المنتج / الصنف في البند (#${itemNum})`);
+        }
+        if (item.calcType !== 'unit') {
+          if (!item.width || Number(item.width) <= 0) {
+            missing.push(`العرض بالمتر في البند (#${itemNum})`);
+          }
+          if (!item.height || Number(item.height) <= 0) {
+            missing.push(`الارتفاع بالمتر في البند (#${itemNum})`);
+          }
+        }
+        if (!item.quantity || Number(item.quantity) <= 0) {
+          missing.push(`الكمية / العدد في البند (#${itemNum})`);
+        }
+        if (!item.price || Number(item.price) <= 0) {
+          missing.push(`سعر المتر أو الوحدة في البند (#${itemNum})`);
+        }
+      });
+    }
+
+    return missing;
+  };
+
   const handleSaveBill = async () => {
-    if (!selectedBill || !selectedBill.client_name) {
-      alert('يرجى إدخال اسم العميل'); return;
+    setBillFormSubmitted(true);
+    const missing = getBillMissingFields(selectedBill);
+    if (missing.length > 0) {
+      alert(`يرجى استكمال البيانات الناقصة التالية قبل حفظ الفاتورة:\n\n• ${missing.join('\n• ')}`);
+      return;
     }
-    if (!selectedBill.items || selectedBill.items.length === 0) {
-      alert('يرجى إضافة بند واحد على الأقل في الفاتورة'); return;
-    }
+
     setSaving(true);
 
-    const items = selectedBill.items || [];
-    const cleanedItems = items.map(item => ({
-      name: item.name || '',
-      calcType: item.calcType || 'square_meter',
-      width: item.width === '' ? 0 : (Number(item.width) || 0),
-      height: item.height === '' ? 0 : (Number(item.height) || 0),
-      quantity: item.quantity === '' ? 0 : (Number(item.quantity) || 0),
-      price: item.price === '' ? 0 : (Number(item.price) || 0),
-      total: item.total === '' ? 0 : (Number(item.total) || 0)
-    }));
+    const items = selectedBill?.items || [];
+    const cleanedItems = items.map(item => {
+      const w = item.width === '' ? 0 : (Number(item.width) || 0);
+      const h = item.height === '' ? 0 : (Number(item.height) || 0);
+      const qty = item.quantity === '' ? 1 : (Number(item.quantity) || 1);
+      const p = item.price === '' ? 0 : (Number(item.price) || 0);
+      const mode = item.calcType || 'square_meter';
+
+      let computedTotal = 0;
+      if (mode === 'square_meter') {
+        const pieceArea = (w > 0 && h > 0) ? Math.max(2, w * h) : (w * h);
+        computedTotal = Math.round((pieceArea * qty * p) * 100) / 100;
+      } else if (mode === 'linear_width') {
+        computedTotal = Math.round((w * qty * p) * 100) / 100;
+      } else if (mode === 'linear_height') {
+        computedTotal = Math.round((h * qty * p) * 100) / 100;
+      } else {
+        computedTotal = Math.round((qty * p) * 100) / 100;
+      }
+
+      return {
+        name: item.name || '',
+        calcType: mode,
+        width: w,
+        height: h,
+        quantity: qty,
+        price: p,
+        total: computedTotal
+      };
+    });
 
     const totalItemsPrice = cleanedItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
-    const discount = Number(selectedBill.discount) || 0;
-    const installation = Number(selectedBill.installation_cost) || 0;
-    const transport = Number(selectedBill.transport_cost) || 0;
-    const deposit = Number(selectedBill.deposit) || 0;
+    const discount = Number(selectedBill?.discount) || 0;
+    const installation = Number(selectedBill?.installation_cost) || 0;
+    const transport = Number(selectedBill?.transport_cost) || 0;
+    const deposit = Number(selectedBill?.deposit) || 0;
 
-    const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
-    const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
+    const finalTotal = Math.max(0, Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100);
+    const remainingAmount = Math.max(0, Math.round((finalTotal - deposit) * 100) / 100);
 
     const payload = {
-      invoice_number: selectedBill.invoice_number,
-      client_name: selectedBill.client_name,
-      client_phone: selectedBill.client_phone || null,
-      client_address: selectedBill.client_address || null,
-      order_number: selectedBill.order_number || null,
-      payment_method: selectedBill.payment_method || 'نقدي',
-      delivery_date: selectedBill.delivery_date || null,
+      invoice_number: selectedBill?.invoice_number,
+      client_name: selectedBill?.client_name,
+      client_phone: selectedBill?.client_phone || null,
+      client_address: selectedBill?.client_address || null,
+      order_number: selectedBill?.order_number || null,
+      payment_method: selectedBill?.payment_method || 'نقدي',
+      delivery_date: selectedBill?.delivery_date || null,
       items: cleanedItems,
       total_items_price: totalItemsPrice,
       discount: discount,
@@ -512,12 +594,13 @@ export default function AdminDashboard() {
       deposit: deposit,
       remaining_amount: remainingAmount,
       final_total: finalTotal,
-      notes: selectedBill.notes || null,
+      sales_rep: selectedBill?.sales_rep || '',
+      notes: selectedBill?.notes || null,
       updated_at: new Date().toISOString()
     };
 
     let error;
-    if (selectedBill.id) {
+    if (selectedBill?.id) {
       const res = await supabase.from('bills').update(payload).eq('id', selectedBill.id);
       error = res.error;
     } else {
@@ -529,7 +612,7 @@ export default function AdminDashboard() {
     if (error) {
       alert('خطأ أثناء حفظ الفاتورة: ' + error.message);
     } else {
-      alert('تم حفظ الفاتورة بنجاح');
+      alert('تم حفظ الفاتورة وعرض السعر بنجاح');
       setShowBillModal(false);
       fetchBills();
     }
@@ -563,8 +646,8 @@ export default function AdminDashboard() {
     const transport = Number(updatedBill.transport_cost) || 0;
     const deposit = Number(updatedBill.deposit) || 0;
 
-    const finalTotal = Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100;
-    const remainingAmount = Math.round((finalTotal - deposit) * 100) / 100;
+    const finalTotal = Math.max(0, Math.round((totalItemsPrice - discount + installation + transport) * 100) / 100);
+    const remainingAmount = Math.max(0, Math.round((finalTotal - deposit) * 100) / 100);
 
     setSelectedBill({
       ...updatedBill,
@@ -731,7 +814,8 @@ export default function AdminDashboard() {
     const mode = item.calcType;
 
     if (mode === 'square_meter') {
-      item.total = Math.round((qty * w * h * p) * 100) / 100;
+      const pieceArea = (w > 0 && h > 0) ? Math.max(2, w * h) : (w * h);
+      item.total = Math.round((qty * pieceArea * p) * 100) / 100;
     } else if (mode === 'linear_width') {
       item.total = Math.round((qty * w * p) * 100) / 100;
     } else if (mode === 'linear_height') {
@@ -761,10 +845,61 @@ export default function AdminDashboard() {
     });
   };
 
+  const sanitizeBillDimension = (val: string): string => {
+    if (!val) return '';
+    let cleaned = String(val).replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    const [intPart, decPart] = cleaned.split('.');
+    let trimmedInt = intPart.replace(/^0+(?=\d)/, '');
+    if (trimmedInt.length > 2) {
+      trimmedInt = trimmedInt.slice(0, 2);
+    }
+    if (decPart !== undefined) {
+      return `${trimmedInt}.${decPart.slice(0, 2)}`;
+    }
+    return trimmedInt;
+  };
+
+  const sanitizeBillQuantity = (val: string): string => {
+    if (!val) return '';
+    let cleaned = String(val).replace(/\D/g, '');
+    let trimmed = cleaned.replace(/^0+(?=\d)/, '');
+    if (trimmed.length > 4) trimmed = trimmed.slice(0, 4);
+    return trimmed;
+  };
+
+  const sanitizeBillPrice = (val: string): string => {
+    if (!val) return '';
+    let cleaned = String(val).replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    const [intPart, decPart] = cleaned.split('.');
+    let trimmedInt = intPart.replace(/^0+(?=\d)/, '');
+    if (trimmedInt.length > 6) trimmedInt = trimmedInt.slice(0, 6);
+    if (decPart !== undefined) {
+      return `${trimmedInt}.${decPart.slice(0, 2)}`;
+    }
+    return trimmedInt;
+  };
+
   const updateBillItemField = (index: number, field: string, value: any) => {
     if (!selectedBill || !selectedBill.items) return;
     const newItems = [...selectedBill.items];
-    const item = { ...newItems[index], [field]: value };
+    let sanitizedValue = value;
+    if (field === 'width' || field === 'height') {
+      sanitizedValue = sanitizeBillDimension(String(value));
+    } else if (field === 'quantity') {
+      sanitizedValue = sanitizeBillQuantity(String(value));
+    } else if (field === 'price') {
+      sanitizedValue = sanitizeBillPrice(String(value));
+    }
+
+    const item = { ...newItems[index], [field]: sanitizedValue };
 
     if (['width', 'height', 'quantity', 'price', 'calcType'].includes(field)) {
       const qtyStr = item.quantity;
@@ -780,7 +915,8 @@ export default function AdminDashboard() {
         const mode = item.calcType;
 
         if (mode === 'square_meter') {
-          item.total = Math.round((qty * w * h * p) * 100) / 100;
+          const pieceArea = (w > 0 && h > 0) ? Math.max(2, w * h) : (w * h);
+          item.total = Math.round((qty * pieceArea * p) * 100) / 100;
         } else if (mode === 'linear_width') {
           item.total = Math.round((qty * w * p) * 100) / 100;
         } else if (mode === 'linear_height') {
@@ -999,6 +1135,30 @@ export default function AdminDashboard() {
       if (selectedOrder && (selectedOrder.actual_ids ? selectedOrder.actual_ids.includes(selectedOrder.id) : idsArray.includes(selectedOrder.id))) {
         setSelectedOrder((prev: any) => prev ? { ...prev, status } : null);
       }
+    }
+    setSaving(false);
+  };
+
+  const handleCancelOrder = async (id: string | string[]) => {
+    if (!window.confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
+    await updateOrderStatus(id, 'cancelled');
+    alert('تم إلغاء الطلب بنجاح');
+  };
+
+  const handleDeleteOrder = async (id: string | string[]) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا الطلب نهائياً؟ لا يمكن التراجع عن هذه الخطوة.')) return;
+    setSaving(true);
+    const idsArray = Array.isArray(id) ? id : [id];
+    const { error } = await supabase.from('orders').delete().in('id', idsArray);
+    if (!error) {
+      setOrders(prev => prev.filter(o => !idsArray.includes(o.id)));
+      if (selectedOrder) {
+        setShowOrderModal(false);
+        setSelectedOrder(null);
+      }
+      alert('تم حذف الطلب بنجاح');
+    } else {
+      alert('حدث خطأ أثناء حذف الطلب: ' + error.message);
     }
     setSaving(false);
   };
@@ -1795,9 +1955,20 @@ export default function AdminDashboard() {
                   <div className={styles.loadingBox}><span className={styles.spinner} />جاري تحميل مصاريف الشحن...</div>
                 ) : (
                   <>
-                    <div className={styles.filtersRow} style={{ justifyContent: 'space-between', width: '100%', marginBottom: '1rem' }}>
-                      <strong style={{ color: '#3E2723' }}>مصاريف شحن المحافظات ({deliveryFees.length})</strong>
-                      <span className="text-xs text-gray-500">انقر فوق حقل السعر لتغييره، ثم انقر على "حفظ" لتحديثه بقاعدة البيانات</span>
+                    <div className={styles.filtersRow} style={{ justifyContent: 'space-between', width: '100%', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
+                      <div className="flex items-center gap-3">
+                        <strong style={{ color: '#3E2723' }}>مصاريف شحن المحافظات ({deliveryFees.length})</strong>
+                        <span className="text-xs text-gray-500">انقر فوق حقل السعر لتغييره، ثم انقر على "حفظ" لتحديثه فوراً بقاعدة البيانات</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleResetDeliveryFees}
+                        className={styles.addBtn}
+                        style={{ background: '#f59e0b', fontSize: '0.8rem', padding: '6px 14px' }}
+                        disabled={saving}
+                      >
+                        ⚡ إعادة ضبط الأسعار القياسية لجميع المحافظات
+                      </button>
                     </div>
                     <div className={styles.tableWrapper}>
                       <table className={styles.table}>
@@ -1867,19 +2038,49 @@ export default function AdminDashboard() {
                   <table className={styles.table}>
                     <thead>
                       <tr>
-                        <th>الصورة</th><th>الاسم (عربي)</th><th>القسم</th><th>السعر</th><th>إجراءات</th>
+                        <th>الصورة</th>
+                        <th>اسم المنتج</th>
+                        <th>الرمز في الرابط (Slug)</th>
+                        <th>القسم</th>
+                        <th>السعر</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
                       </tr>
                     </thead>
                     <tbody>
                       {products.map(p => (
                         <tr key={p.id} className={styles.tableRow}>
-                          <td>{p.images && p.images[0] && <img src={p.images[0]} alt="img" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />}</td>
-                          <td>{p.labelAr}</td>
-                          <td>{p.category}</td>
-                          <td>{p.price} ج.م</td>
+                          <td>{p.images && p.images[0] && <img src={p.images[0]} alt="img" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6 }} />}</td>
                           <td>
-                            <button onClick={() => { setSelectedProduct(p); setShowProductModal(true); }} className={styles.refreshBtn} style={{ marginRight: 8, padding: '4px 8px' }}>تعديل</button>
-                            <button onClick={() => handleDeleteProduct(p.id)} className={styles.deleteBtn} style={{ padding: '4px 8px' }}>حذف</button>
+                            <div style={{ fontWeight: 'bold', color: '#3E2723' }}>{p.labelAr}</div>
+                            <div style={{ fontSize: '12px', color: '#6b7280' }} dir="ltr">{p.labelEn}</div>
+                          </td>
+                          <td dir="ltr" style={{ textAlign: 'right' }}>
+                            <code style={{ fontSize: '11px', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', color: '#3E2723' }}>
+                              {p.slug || slugify(p.labelEn || p.labelAr || p.id)}
+                            </code>
+                          </td>
+                          <td>
+                            <span style={{ background: '#fef3c7', color: '#92400e', padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}>
+                              {p.category}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 'bold', color: '#15803d' }}>{p.price.toLocaleString('ar-EG')} ج.م</td>
+                          <td>
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              background: p.is_active !== false ? '#dcfce7' : '#fee2e2',
+                              color: p.is_active !== false ? '#166534' : '#991b1b'
+                            }}>
+                              {p.is_active !== false ? 'نشط' : 'معطل'}
+                            </span>
+                          </td>
+                          <td>
+                            <button onClick={() => { setSelectedProduct(p); setShowProductModal(true); }} className={styles.refreshBtn} style={{ marginRight: 8, padding: '4px 10px', fontWeight: 'bold' }}>تعديل</button>
+                            <button onClick={() => handleDeleteProduct(p.id)} className={styles.deleteBtn} style={{ padding: '4px 10px' }}>حذف</button>
                           </td>
                         </tr>
                       ))}
@@ -1994,8 +2195,26 @@ export default function AdminDashboard() {
                               <option value="cancelled">🔴 ملغي</option>
                             </select>
                           </td>
-                          <td>
-                            <button className={styles.refreshBtn} style={{ padding: '4px 8px' }} onClick={(e) => { e.stopPropagation(); setSelectedOrder(o); setShowOrderModal(true); }}>عرض</button>
+                          <td onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                              <button className={styles.refreshBtn} style={{ padding: '4px 8px' }} onClick={() => { setSelectedOrder(o); setShowOrderModal(true); }}>عرض</button>
+                              {o.status !== 'cancelled' && (
+                                <button
+                                  className={styles.deleteBtn}
+                                  style={{ padding: '4px 8px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5' }}
+                                  onClick={() => handleCancelOrder(o.actual_ids || o.id)}
+                                >
+                                  إلغاء
+                                </button>
+                              )}
+                              <button
+                                className={styles.deleteBtn}
+                                style={{ padding: '4px 8px' }}
+                                onClick={() => handleDeleteOrder(o.actual_ids || o.id)}
+                              >
+                                حذف
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -2040,7 +2259,10 @@ export default function AdminDashboard() {
                         <th>اسم العميل</th>
                         <th>رقم الهاتف</th>
                         <th>تاريخ الفاتورة</th>
-                        <th>الإجمالي</th>
+                        <th>القطع / البنود</th>
+                        <th>العربون المدفوع</th>
+                        <th>المتبقي للدفع</th>
+                        <th>الإجمالي النهائي</th>
                         <th>إجراءات</th>
                       </tr>
                     </thead>
@@ -2052,20 +2274,33 @@ export default function AdminDashboard() {
                           b.invoice_number.toLowerCase().includes(q) ||
                           (b.client_phone && b.client_phone.includes(q));
                       }).map(b => (
-                        <tr key={b.id} className={styles.tableRow} onClick={() => { setSelectedBill(b); setShowBillModal(true); }}>
-                          <td dir="ltr" style={{ fontWeight: 'bold' }}>{b.invoice_number}</td>
-                          <td>{b.client_name}</td>
+                        <tr key={b.id} className={styles.tableRow} onClick={() => { setSelectedBill(b); setBillFormSubmitted(false); setShowBillModal(true); }}>
+                          <td dir="ltr" style={{ fontWeight: 'bold', color: '#3E2723' }}>
+                            {b.invoice_number.startsWith('Q-') ? b.invoice_number : `Q-${b.invoice_number.replace(/^#/, '')}`}
+                          </td>
+                          <td style={{ fontWeight: 'bold' }}>{b.client_name}</td>
                           <td dir="ltr">{b.client_phone || '—'}</td>
-                          <td>{new Date(b.created_at || b.updated_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
-                          <td style={{ color: '#b45309', fontWeight: 'bold' }}>{b.final_total} ج.م</td>
+                          <td>{new Date(b.created_at || b.updated_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ background: '#f3f4f6', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                              {(b.items || []).length} بند
+                            </span>
+                          </td>
+                          <td style={{ color: '#15803d', fontWeight: 'bold' }}>{Number(b.deposit || 0).toLocaleString('ar-EG')} ج.م</td>
+                          <td style={{ color: Number(b.remaining_amount || 0) > 0 ? '#d97706' : '#6b7280', fontWeight: 'bold' }}>
+                            {Number(b.remaining_amount || 0).toLocaleString('ar-EG')} ج.م
+                          </td>
+                          <td style={{ color: '#3E2723', fontWeight: '900', fontSize: '0.95rem' }}>
+                            {Number(b.final_total || 0).toLocaleString('ar-EG')} ج.م
+                          </td>
                           <td onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={() => handlePrint(b)} className={styles.refreshBtn} style={{ padding: '4px 8px', margin: 0 }}>طباعة</button>
-                            <button onClick={() => handleDeleteBill(b.id)} className={styles.deleteBtn} style={{ padding: '4px 8px', margin: 0 }}>حذف</button>
+                            <button onClick={() => handlePrint(b)} className={styles.refreshBtn} style={{ padding: '4px 10px', margin: 0, fontWeight: 'bold' }}>طباعة</button>
+                            <button onClick={() => handleDeleteBill(b.id)} className={styles.deleteBtn} style={{ padding: '4px 10px', margin: 0 }}>حذف</button>
                           </td>
                         </tr>
                       ))}
                       {bills.length === 0 && (
-                        <tr><td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>لا توجد فواتير بعد.</td></tr>
+                        <tr><td colSpan={9} style={{ textAlign: 'center', padding: '20px' }}>لا توجد فواتير بعد.</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -2255,11 +2490,61 @@ export default function AdminDashboard() {
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>الاسم (عربي) *</label>
-                    <input className={styles.formInput} value={selectedProduct.labelAr || ''} onChange={e => setSelectedProduct({ ...selectedProduct, labelAr: e.target.value })} />
+                    <input
+                      className={styles.formInput}
+                      value={selectedProduct.labelAr || ''}
+                      onChange={e => {
+                        const newAr = e.target.value;
+                        setSelectedProduct(prev => {
+                          if (!prev) return null;
+                          const currentAuto = slugify(prev.labelEn || prev.labelAr || '');
+                          const isAuto = !prev.slug || prev.slug === currentAuto;
+                          return {
+                            ...prev,
+                            labelAr: newAr,
+                            slug: isAuto ? slugify(prev.labelEn || newAr) : prev.slug
+                          };
+                        });
+                      }}
+                    />
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>الاسم (إنجليزي) *</label>
-                    <input className={styles.formInput} dir="ltr" value={selectedProduct.labelEn || ''} onChange={e => setSelectedProduct({ ...selectedProduct, labelEn: e.target.value })} />
+                    <input
+                      className={styles.formInput}
+                      dir="ltr"
+                      value={selectedProduct.labelEn || ''}
+                      onChange={e => {
+                        const newEn = e.target.value;
+                        setSelectedProduct(prev => {
+                          if (!prev) return null;
+                          const currentAuto = slugify(prev.labelEn || prev.labelAr || '');
+                          const isAuto = !prev.slug || prev.slug === currentAuto;
+                          return {
+                            ...prev,
+                            labelEn: newEn,
+                            slug: isAuto ? slugify(newEn || prev.labelAr || '') : prev.slug
+                          };
+                        });
+                      }}
+                    />
+                  </div>
+
+                  <div className={`${styles.formGroup} ${styles.formFull}`}>
+                    <label className={styles.formLabel}>
+                      الرمز في الرابط (Slug) — يتم توليده تلقائياً ويمكن تخصيصه
+                    </label>
+                    <input
+                      className={styles.formInput}
+                      dir="ltr"
+                      value={selectedProduct.slug || ''}
+                      onChange={e => setSelectedProduct(prev => prev ? { ...prev, slug: slugify(e.target.value) } : null)}
+                      placeholder="مثال: zebra-blinds-z11648"
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                    <span style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px', direction: 'ltr', textAlign: 'left', display: 'block' }}>
+                      Product URL: <code>/products/{selectedProduct.slug || slugify(selectedProduct.labelEn || selectedProduct.labelAr || 'product-slug')}</code>
+                    </span>
                   </div>
 
                   <div className={styles.formGroup}>
@@ -2604,6 +2889,24 @@ export default function AdminDashboard() {
                     )}
                   </>
                 )}
+                {/* Cancel and Delete Order actions */}
+                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', marginRight: selectedOrder.payment_method === 'wallet_instapay' ? '8px' : 'auto' }}>
+                  {selectedOrder.status !== 'cancelled' && (
+                    <button
+                      className={styles.rejectPayBtn}
+                      style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5' }}
+                      onClick={() => handleCancelOrder(selectedOrder.actual_ids || selectedOrder.id)}
+                    >
+                      إلغاء الطلب
+                    </button>
+                  )}
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={() => handleDeleteOrder(selectedOrder.actual_ids || selectedOrder.id)}
+                  >
+                    حذف الطلب
+                  </button>
+                </div>
                 <button className={styles.cancelBtn} onClick={() => setShowOrderModal(false)}>إغلاق</button>
               </div>
             </div>
@@ -2815,146 +3118,210 @@ export default function AdminDashboard() {
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>رقم الفاتورة *</label>
-                    <input className={styles.formInput} value={selectedBill.invoice_number || ''} onChange={e => updateBillField('invoice_number', e.target.value)} />
+                    <input
+                      className={`${styles.formInput} ${billFormSubmitted && !selectedBill.invoice_number ? styles.inputError : ''}`}
+                      value={selectedBill.invoice_number || ''}
+                      onChange={e => updateBillField('invoice_number', e.target.value)}
+                    />
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>اسم العميل *</label>
-                    <input className={styles.formInput} value={selectedBill.client_name || ''} onChange={e => updateBillField('client_name', e.target.value)} />
+                    <input
+                      className={`${styles.formInput} ${billFormSubmitted && !selectedBill.client_name ? styles.inputError : ''}`}
+                      value={selectedBill.client_name || ''}
+                      onChange={e => updateBillField('client_name', e.target.value)}
+                      placeholder="أدخل اسم العميل بالكامل"
+                    />
                   </div>
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>رقم الهاتف</label>
-                    <input className={styles.formInput} dir="ltr" value={selectedBill.client_phone || ''} onChange={e => updateBillField('client_phone', e.target.value)} placeholder="01xxxxxxxxx" />
+                    <label className={styles.formLabel}>رقم الهاتف *</label>
+                    <input
+                      className={`${styles.formInput} ${billFormSubmitted && !selectedBill.client_phone ? styles.inputError : ''}`}
+                      dir="ltr"
+                      value={selectedBill.client_phone || ''}
+                      onChange={e => updateBillField('client_phone', e.target.value)}
+                      placeholder="01xxxxxxxxx"
+                    />
                   </div>
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>العنوان</label>
-                    <input className={styles.formInput} value={selectedBill.client_address || ''} onChange={e => updateBillField('client_address', e.target.value)} />
+                    <label className={styles.formLabel}>العنوان بالتفصيل *</label>
+                    <input
+                      className={`${styles.formInput} ${billFormSubmitted && !selectedBill.client_address ? styles.inputError : ''}`}
+                      value={selectedBill.client_address || ''}
+                      onChange={e => updateBillField('client_address', e.target.value)}
+                      placeholder="المدينة، الحي، الشارع، رقم العمارة/الشقة"
+                    />
                   </div>
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>رقم الطلب</label>
-                    <input className={styles.formInput} value={selectedBill.order_number || ''} onChange={e => updateBillField('order_number', e.target.value)} />
+                    <label className={styles.formLabel}>رقم الطلب / الموعد</label>
+                    <input className={styles.formInput} value={selectedBill.order_number || ''} onChange={e => updateBillField('order_number', e.target.value)} placeholder="اختياري" />
                   </div>
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>طريقة الدفع</label>
+                    <label className={styles.formLabel}>شروط / طريقة الدفع</label>
                     <select className={styles.formInput} value={selectedBill.payment_method || 'نقدي'} onChange={e => updateBillField('payment_method', e.target.value)}>
-                      <option value="نقدي">نقدي</option>
-                      <option value="فيزا">فيزا</option>
-                      <option value="شيك">شيك</option>
-                      <option value="أخرى">أخرى</option>
+                      <option value="نقدي">نقدي (Cash)</option>
+                      <option value="فيزا">فيزا (Visa/Card)</option>
+                      <option value="تحويل بنكي">تحويل بنكي (Bank Transfer)</option>
+                      <option value="فودافون كاش">فودافون كاش (Vodafone Cash)</option>
+                      <option value="شيك">شيك (Cheque)</option>
+                      <option value="As Agreed">حسب الاتفاق (As Agreed)</option>
                     </select>
                   </div>
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>موعد التسليم</label>
+                    <label className={styles.formLabel}>موعد التسليم المتوقع</label>
                     <input className={styles.formInput} type="date" value={selectedBill.delivery_date || ''} onChange={e => updateBillField('delivery_date', e.target.value)} />
                   </div>
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>ملاحظات</label>
-                    <input className={styles.formInput} value={selectedBill.notes || ''} onChange={e => updateBillField('notes', e.target.value)} placeholder="ملاحظات إضافية للفاتورة" />
+                    <label className={styles.formLabel}>مسؤول المبيعات (Sales Rep) *</label>
+                    <input
+                      className={styles.formInput}
+                      value={selectedBill.sales_rep || ''}
+                      onChange={e => updateBillField('sales_rep', e.target.value)}
+                      placeholder="مثال: هناء عبدالله"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>ملاحظات الفاتورة</label>
+                    <input className={styles.formInput} value={selectedBill.notes || ''} onChange={e => updateBillField('notes', e.target.value)} placeholder="ملاحظات أو مواصفات إضافية" />
                   </div>
                 </div>
 
                 {/* Items Section */}
                 <div style={{ marginTop: '20px' }}>
-                  <h3 className={styles.modalTitle} style={{ marginBottom: '10px' }}>بنود الفاتورة</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <h3 className={styles.modalTitle} style={{ margin: 0 }}>بنود الفاتورة والمقاسات (Items)</h3>
+                    <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                      عدد البنود: {(selectedBill.items || []).length}
+                    </span>
+                  </div>
 
                   <div style={{ overflowX: 'auto' }}>
                     <table className={styles.billItemsTable}>
                       <thead>
                         <tr>
-                          <th style={{ width: '25%' }}>الصنف / النوع</th>
-                          <th style={{ width: '18%' }}>طريقة الحساب</th>
-                          <th style={{ width: '10%' }}>العرض (م)</th>
-                          <th style={{ width: '10%' }}>الطول (م)</th>
-                          <th style={{ width: '8%' }}>العدد</th>
-                          <th style={{ width: '12%' }}>السعر (ج.م)</th>
-                          <th style={{ width: '12%' }}>الإجمالي (ج.م)</th>
-                          <th style={{ width: '5%' }}>حذف</th>
+                          <th style={{ width: '4%' }}>#</th>
+                          <th style={{ width: '22%' }}>الصنف / المنتج *</th>
+                          <th style={{ width: '13%' }}>طريقة الحساب</th>
+                          <th style={{ width: '9%' }}>العرض (م)</th>
+                          <th style={{ width: '9%' }}>الارتفاع (م)</th>
+                          <th style={{ width: '7%' }}>العدد *</th>
+                          <th style={{ width: '10%' }}>المساحة (م²)</th>
+                          <th style={{ width: '11%' }}>سعر المتر/الوحدة *</th>
+                          <th style={{ width: '11%' }}>الإجمالي (ج.م)</th>
+                          <th style={{ width: '4%' }}>حذف</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {(selectedBill.items || []).map((item, index) => (
-                          <tr key={index}>
-                            <td>
-                              <select
-                                value={item.name}
-                                onChange={e => handleProductSelect(index, e.target.value)}
-                                className={styles.formInput}
-                                style={{ width: '100%', padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', outline: 'none', background: 'white', textAlign: 'right' }}
-                              >
-                                <option value="">-- اختر المنتج --</option>
-                                {products.map(p => (
-                                  <option key={p.id} value={p.labelAr}>
-                                    {p.labelAr}
-                                  </option>
-                                ))}
-                                {item.name && !products.some(p => p.labelAr === item.name) && (
-                                  <option value={item.name}>{item.name}</option>
-                                )}
-                              </select>
-                            </td>
-                            <td>
-                              <select
-                                value={item.calcType}
-                                onChange={e => updateBillItemField(index, 'calcType', e.target.value)}
-                              >
-                                <option value="square_meter">متر مربع</option>
-                                <option value="linear_width">طولي (عرض)</option>
-                                <option value="linear_height">طولي (ارتفاع)</option>
-                                <option value="unit">بالقطعة</option>
-                              </select>
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.width}
-                                onChange={e => updateBillItemField(index, 'width', e.target.value)}
-                                disabled={item.calcType === 'unit' || item.calcType === 'linear_height'}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.height}
-                                onChange={e => updateBillItemField(index, 'height', e.target.value)}
-                                disabled={item.calcType === 'unit' || item.calcType === 'linear_width'}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                value={item.quantity}
-                                onChange={e => updateBillItemField(index, 'quantity', e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                value={item.price}
-                                onChange={e => updateBillItemField(index, 'price', e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                value={item.total}
-                                onChange={e => updateBillItemField(index, 'total', e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <button
-                                onClick={() => removeBillItem(index)}
-                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem' }}
-                              >
-                                ✕
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {(selectedBill.items || []).map((item, index) => {
+                          const w = Number(item.width) || 0;
+                          const h = Number(item.height) || 0;
+                          const qty = Number(item.quantity) || 1;
+                          const mode = item.calcType || 'square_meter';
+                          let area = 0;
+                          if (mode === 'square_meter') {
+                            const pieceArea = (w > 0 && h > 0) ? Math.max(2, w * h) : (w * h);
+                            area = pieceArea * qty;
+                          } else if (mode === 'linear_width') area = w * qty;
+                          else if (mode === 'linear_height') area = h * qty;
+                          else area = qty;
+
+                          return (
+                            <tr key={index}>
+                              <td style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.8rem' }}>{index + 1}</td>
+                              <td>
+                                <select
+                                  value={item.name}
+                                  onChange={e => handleProductSelect(index, e.target.value)}
+                                  className={`${styles.formInput} ${billFormSubmitted && !item.name ? styles.inputError : ''}`}
+                                  style={{ width: '100%', padding: '4px 8px', borderRadius: '6px', outline: 'none', background: 'white', textAlign: 'right' }}
+                                >
+                                  <option value="">-- اختر المنتج أو اكتبه --</option>
+                                  {products.map(p => (
+                                    <option key={p.id} value={p.labelAr}>
+                                      {p.labelAr}
+                                    </option>
+                                  ))}
+                                  {item.name && !products.some(p => p.labelAr === item.name) && (
+                                    <option value={item.name}>{item.name}</option>
+                                  )}
+                                </select>
+                              </td>
+                              <td>
+                                <select
+                                  value={item.calcType}
+                                  onChange={e => updateBillItemField(index, 'calcType', e.target.value)}
+                                  style={{ width: '100%', padding: '4px', borderRadius: '6px' }}
+                                >
+                                  <option value="square_meter">متر مربع (عرض × طول × عدد)</option>
+                                  <option value="linear_width">طولي عرض (عرض × عدد)</option>
+                                  <option value="linear_height">طولي ارتفاع (طول × عدد)</option>
+                                  <option value="unit">بالقطعة (عدد)</option>
+                                </select>
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={item.width || ''}
+                                  onChange={e => updateBillItemField(index, 'width', e.target.value)}
+                                  disabled={item.calcType === 'unit' || item.calcType === 'linear_height'}
+                                  placeholder="1.5"
+                                  className={billFormSubmitted && item.calcType !== 'unit' && (!item.width || Number(item.width) <= 0) ? styles.inputError : ''}
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={item.height || ''}
+                                  onChange={e => updateBillItemField(index, 'height', e.target.value)}
+                                  disabled={item.calcType === 'unit' || item.calcType === 'linear_width'}
+                                  placeholder="2.0"
+                                  className={billFormSubmitted && item.calcType !== 'unit' && (!item.height || Number(item.height) <= 0) ? styles.inputError : ''}
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={item.quantity || ''}
+                                  onChange={e => updateBillItemField(index, 'quantity', e.target.value)}
+                                  placeholder="1"
+                                  className={billFormSubmitted && (!item.quantity || Number(item.quantity) <= 0) ? styles.inputError : ''}
+                                />
+                              </td>
+                              <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#3E2723', fontSize: '0.85rem' }}>
+                                {area.toFixed(2)} {mode === 'unit' ? 'قطع' : 'م²'}
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={item.price || ''}
+                                  onChange={e => updateBillItemField(index, 'price', e.target.value)}
+                                  placeholder="0"
+                                  className={billFormSubmitted && (!item.price || Number(item.price) <= 0) ? styles.inputError : ''}
+                                />
+                              </td>
+                              <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#15803d', fontSize: '0.85rem' }}>
+                                {Number(item.total || 0).toFixed(2)} ج.م
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                <button
+                                  onClick={() => removeBillItem(index)}
+                                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem' }}
+                                  title="حذف هذا البند"
+                                >
+                                  ✕
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                         {(selectedBill.items || []).length === 0 && (
                           <tr>
-                            <td colSpan={8} style={{ color: '#9ca3af', padding: '15px' }}>
-                              لا توجد بنود بعد. اضغط على "إضافة بند" في الأسفل.
+                            <td colSpan={10} style={{ color: '#ef4444', padding: '15px', textAlign: 'center', background: '#fef2f2' }}>
+                              ⚠️ لا توجد بنود بعد. اضغط على "+ إضافة بند جديد" لإدخال المنتجات والمقاسات.
                             </td>
                           </tr>
                         )}
@@ -2964,9 +3331,9 @@ export default function AdminDashboard() {
 
                   <button
                     onClick={addItemToBill}
-                    style={{ background: '#3E2723', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                    style={{ background: '#3E2723', color: 'white', border: 'none', padding: '8px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                   >
-                    + إضافة بند جديد
+                    <span>+</span> إضافة بند ستارة جديد
                   </button>
                 </div>
 
@@ -2974,42 +3341,48 @@ export default function AdminDashboard() {
                 <div className={styles.totalsGrid}>
                   <div className={styles.totalsCol}>
                     <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>الخصم (ج.م)</label>
-                      <input type="number" className={styles.formInput} value={selectedBill.discount || 0} onChange={e => updateBillField('discount', e.target.value)} />
+                      <label className={styles.formLabel}>قيمة الخصم (ج.م)</label>
+                      <input type="number" className={styles.formInput} placeholder="0" value={selectedBill.discount || ''} onChange={e => updateBillField('discount', e.target.value)} />
                     </div>
                     <div className={styles.formGroup}>
                       <label className={styles.formLabel}>تكلفة التركيب (ج.م)</label>
-                      <input type="number" className={styles.formInput} value={selectedBill.installation_cost || 0} onChange={e => updateBillField('installation_cost', e.target.value)} />
+                      <input type="number" className={styles.formInput} placeholder="0" value={selectedBill.installation_cost || ''} onChange={e => updateBillField('installation_cost', e.target.value)} />
                     </div>
                   </div>
 
                   <div className={styles.totalsCol}>
                     <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>تكلفة النقل (ج.م)</label>
-                      <input type="number" className={styles.formInput} value={selectedBill.transport_cost || 0} onChange={e => updateBillField('transport_cost', e.target.value)} />
+                      <label className={styles.formLabel}>مصاريف النقل والشحن (ج.م)</label>
+                      <input type="number" className={styles.formInput} placeholder="0" value={selectedBill.transport_cost || ''} onChange={e => updateBillField('transport_cost', e.target.value)} />
                     </div>
                     <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>المدفوع / العربون (ج.م)</label>
-                      <input type="number" className={styles.formInput} value={selectedBill.deposit || 0} onChange={e => updateBillField('deposit', e.target.value)} />
+                      <label className={styles.formLabel}>الدفعة المقدمة / العربون (ج.م)</label>
+                      <input type="number" className={styles.formInput} placeholder="0" value={selectedBill.deposit || ''} onChange={e => updateBillField('deposit', e.target.value)} />
                     </div>
                   </div>
 
                   <div className={styles.totalsCol} style={{ justifyContent: 'center', borderRight: '1px solid #e5e7eb', paddingRight: '20px' }}>
                     <div className={styles.totalsRow}>
                       <span>إجمالي الأصناف:</span>
-                      <span>{Number(selectedBill.total_items_price || 0).toFixed(2)} ج.م</span>
+                      <span style={{ fontWeight: 'bold' }}>{Number(selectedBill.total_items_price || 0).toFixed(2)} ج.م</span>
+                    </div>
+                    {Number(selectedBill.discount || 0) > 0 && (
+                      <div className={styles.totalsRow} style={{ color: '#dc2626' }}>
+                        <span>قيمة الخصم:</span>
+                        <span>- {Number(selectedBill.discount || 0).toFixed(2)} ج.م</span>
+                      </div>
+                    )}
+                    <div className={`${styles.totalsRow} ${styles.totalsRowStrong}`}>
+                      <span>الإجمالي النهائي (Grand Total):</span>
+                      <span style={{ color: '#3E2723', fontSize: '1.05rem' }}>{Number(selectedBill.final_total || 0).toFixed(2)} ج.م</span>
                     </div>
                     <div className={styles.totalsRow}>
-                      <span>المدفوع / العربون:</span>
-                      <span>{Number(selectedBill.deposit || 0).toFixed(2)} ج.م</span>
+                      <span>المدفوع / العربون (Advance):</span>
+                      <span style={{ color: '#15803d', fontWeight: 'bold' }}>{Number(selectedBill.deposit || 0).toFixed(2)} ج.م</span>
                     </div>
-                    <div className={`${styles.totalsRow} ${styles.totalsRowStrong}`}>
-                      <span>الإجمالي النهائي:</span>
-                      <span>{Number(selectedBill.final_total || 0).toFixed(2)} ج.م</span>
-                    </div>
-                    <div className={`${styles.totalsRow} ${styles.totalsRowStrong}`} style={{ color: '#d4af37' }}>
-                      <span>المتبقي:</span>
-                      <span>{Number(selectedBill.remaining_amount || 0).toFixed(2)} ج.م</span>
+                    <div className={`${styles.totalsRow} ${styles.totalsRowStrong}`} style={{ color: '#d97706', borderTop: '1px dashed #cbd5e1', paddingTop: '6px' }}>
+                      <span>المتبقي للدفع (Remaining):</span>
+                      <span style={{ fontSize: '1.1rem' }}>{Number(selectedBill.remaining_amount || 0).toFixed(2)} ج.م</span>
                     </div>
                   </div>
                 </div>
@@ -3025,10 +3398,10 @@ export default function AdminDashboard() {
                     }}
                     style={{ marginLeft: 'auto', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                   >
-                    طباعة وتحميل PDF
+                    طباعة وتحميل عرض السعر (PDF)
                   </button>
                 )}
-                <button className={styles.saveBtn} onClick={handleSaveBill} disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ الفاتورة'}</button>
+                <button className={styles.saveBtn} onClick={handleSaveBill} disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ الفاتورة وعرض السعر'}</button>
                 <button className={styles.cancelBtn} onClick={() => setShowBillModal(false)}>إلغاء</button>
               </div>
             </div>
@@ -3055,7 +3428,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>الترتيب *</label>
-                    <input className={styles.formInput} type="number" value={selectedPartner.sort_order ?? 0} onChange={e => setSelectedPartner({ ...selectedPartner, sort_order: Number(e.target.value) })} />
+                    <input className={styles.formInput} type="number" placeholder="0" value={selectedPartner.sort_order || ''} onChange={e => setSelectedPartner({ ...selectedPartner, sort_order: Number(e.target.value) })} />
                   </div>
                   <div className={`${styles.formGroup} ${styles.formFull}`}>
                     <label className={styles.formLabel}>شعار الشريك (الصورة) *</label>
@@ -3424,242 +3797,285 @@ export default function AdminDashboard() {
 
 
 
-      {/* ── Fancy Print Invoice Area (Outside .shell for print formatting) ── */}
+      {/* ── Official Crystal Blinds Quotation Print Sheet (Matches attached official template) ── */}
       {selectedBillForPrint && (
-        <div className={styles.printInvoiceArea} dir="rtl">
-          {/* Top Header Section with Luxury Styling */}
-          <div className={styles.invoiceHeaderNew}>
-            {/* Right: Company details from Contact Page */}
-            <div className={styles.companyInfoBlock} dir="rtl">
-              <h2 className={styles.companyNameAr}>كريستال بليندز مصر للستائر</h2>
-              <p className={styles.companySubNameEn}>CRYSTAL BLINDS EGYPT</p>
-              <div className={styles.contactDetailsList}>
-                <p className={styles.companyAddressEn}>
-                  <b>العنوان:</b> شبرآ الخيمة، 74 شارع 15 مايو، أمام مجمع الصوالحة الإسلامي
-                </p>
-                <p className={styles.companyPhoneEn} dir="ltr">
-                  <b>Tel:</b> 01100080609 &nbsp;|&nbsp; 01020909498 &nbsp;|&nbsp; <b>WhatsApp:</b> +20 1100080609
-                </p>
-                <p className={styles.companyEmailEn} dir="ltr">
-                  <b>Email:</b> sales@crystalblinds.com &nbsp;|&nbsp; <b>Web:</b> www.crystalblinds-eg.com
-                </p>
+        <div className={styles.printInvoiceArea}>
+          <div className={styles.quotationSheet} dir="ltr">
+            {/* Top Header */}
+            <div className={styles.qHeader}>
+              {/* Left: Full Brand Logo & Identity */}
+              <div className={styles.qBrandBlock}>
+                <div className={styles.qLogoRow}>
+                  <img src="/logo.png" alt="Crystal Blinds" className={styles.qLogoImg} />
+                  <div className={styles.qBrandText}>
+                    <span className={styles.qBrandTitle}>CRYSTAL BLINDS</span>
+                    <span className={styles.qBrandSubtitle}>LUXURY CURTAINS & BLINDS</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: INVOICE Title & Meta */}
+              <div className={styles.qDocTitleBlock}>
+                <h1 className={styles.qDocTitle}>INVOICE</h1>
+                <div className={styles.qDocMetaTable}>
+                  <div className={styles.qDocMetaRow}>
+                    <span className={styles.qDocMetaKey}>Invoice No.</span>
+                    <span className={styles.qDocMetaColon}>:</span>
+                    <span className={styles.qDocMetaVal}>
+                      {selectedBillForPrint.invoice_number.startsWith('INV-') || selectedBillForPrint.invoice_number.startsWith('Q-')
+                        ? selectedBillForPrint.invoice_number
+                        : `INV-${selectedBillForPrint.invoice_number.replace(/^#/, '')}`}
+                    </span>
+                  </div>
+                  <div className={styles.qDocMetaRow}>
+                    <span className={styles.qDocMetaKey}>Date</span>
+                    <span className={styles.qDocMetaColon}>:</span>
+                    <span className={styles.qDocMetaVal}>
+                      {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at || Date.now()).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Left: Brand Logo */}
-            <div className={styles.logoBlock}>
-              <div className={styles.logoWrapper}>
-                <img src="/logo.png" className={styles.brandLogoNew} alt="Crystal Blinds Logo" />
-              </div>
-            </div>
-          </div>
+            {/* Divider Line */}
+            <div className={styles.qDivider} />
 
-          {/* Decorative Gold & Brown Divider */}
-          <div className={styles.headerDecorativeWave} />
-
-          {/* Title Block */}
-          <div className={styles.titleContainer}>
-            <div className={styles.titleLeftAr}>
-              <span>فاتورة أمر توريد وتركيب ستائر</span>
-            </div>
-            <div className={styles.titleRightEn}>
-              <span className={styles.titleProforma}>PROFORMA INVOICE</span>{' '}
-              <span className={styles.titleInvoiceNum}>#{selectedBillForPrint.invoice_number}</span>
-            </div>
-          </div>
-
-          {/* Metadata Pill Box */}
-          <div className={styles.metaPillBox}>
-            <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>تاريخ الفاتورة</span>
-              <span className={styles.metaVal}>
-                {new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('ar-EG')}
-              </span>
-            </div>
-            <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>تاريخ التسليم المتوقع</span>
-              <span className={styles.metaVal}>
-                {selectedBillForPrint.delivery_date
-                  ? new Date(selectedBillForPrint.delivery_date).toLocaleDateString('ar-EG')
-                  : new Date(selectedBillForPrint.created_at || selectedBillForPrint.updated_at).toLocaleDateString('ar-EG')}
-              </span>
-            </div>
-            <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>رقم الموعد / الطلب</span>
-              <span className={styles.metaVal}>{selectedBillForPrint.order_number || 'S03978'}</span>
-            </div>
-            <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>عدد الستائر</span>
-              <span className={styles.metaVal}>
-                {selectedBillForPrint.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)} ستائر
-              </span>
-            </div>
-            <div className={styles.metaPillCol}>
-              <span className={styles.metaLabel}>إجمالي المساحة (م²)</span>
-              <span className={styles.metaVal}>
-                {selectedBillForPrint.items.reduce((sum, item) => {
-                  const itemQty = item.calcType === 'unit'
-                    ? Number(item.quantity)
-                    : (Number(item.width || 0) * Number(item.height || 0) * Number(item.quantity || 1));
-                  return sum + itemQty;
-                }, 0).toFixed(2)} م²
-              </span>
-            </div>
-          </div>
-
-          {/* Client details Card */}
-          <div className={styles.clientDetailsCard}>
-            <div className={styles.clientDetailsHeader}>
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>person</span>
-              بيانات العميل المستلم
-            </div>
-            <div className={styles.clientDetailsBody}>
-              <div><b>اسم العميل:</b> {selectedBillForPrint.client_name}</div>
-              <div><b>رقم الهاتف:</b> {selectedBillForPrint.client_phone || '—'}</div>
-              <div>
-                <b>العنوان بالتفصيل:</b> {selectedBillForPrint.client_address ||
-                  orders.find((o: any) => o.client_name === selectedBillForPrint.client_name || (o.client_phone && o.client_phone === selectedBillForPrint.client_phone))?.client_address ||
-                  appointments.find((a: any) => a.client_name === selectedBillForPrint.client_name || (a.client_phone && a.client_phone === selectedBillForPrint.client_phone))?.client_address ||
-                  '—'}
-              </div>
-              {selectedBillForPrint.notes && <div><b>ملاحظات الفاتورة:</b> {selectedBillForPrint.notes}</div>}
-            </div>
-          </div>
-
-          {/* Items Table */}
-          <table className={styles.premiumInvoiceTable}>
-            <thead>
-              <tr>
-                <th style={{ width: '4%' }}>#</th>
-                <th style={{ width: '22%' }}>بيان المنتج / الستارة</th>
-                <th style={{ width: '10%' }}>اللون / الكود</th>
-                <th style={{ width: '6%' }}>العدد</th>
-                <th style={{ width: '9%' }}>العرض (سم)</th>
-                <th style={{ width: '9%' }}>الارتفاع (سم)</th>
-                <th style={{ width: '10%' }}>الكمية (م²)</th>
-                <th style={{ width: '10%' }}>سعر المتر</th>
-                <th style={{ width: '8%' }}>الخصم</th>
-                <th style={{ width: '12%' }}>الإجمالي (ج.م)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedBillForPrint.items.map((item, idx) => {
-                const qty = item.calcType === 'unit'
-                  ? Number(item.quantity)
-                  : (Number(item.width || 0) * Number(item.height || 0) * Number(item.quantity || 1));
-                const discountPct = selectedBillForPrint.discount && selectedBillForPrint.total_items_price
-                  ? Math.round((Number(selectedBillForPrint.discount) / Number(selectedBillForPrint.total_items_price)) * 100)
-                  : 0;
-
-                return (
-                  <tr key={idx}>
-                    <td>{idx + 1}</td>
-                    <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{item.name}</td>
-                    <td>{selectedBillForPrint.notes ? selectedBillForPrint.notes.slice(0, 15) : 'قياسي'}</td>
-                    <td>{item.quantity}</td>
-                    <td>{item.calcType === 'unit' || item.calcType === 'linear_height' ? '—' : Number(item.width || 0).toFixed(0)}</td>
-                    <td>{item.calcType === 'unit' || item.calcType === 'linear_width' ? '—' : Number(item.height || 0).toFixed(0)}</td>
-                    <td>{qty.toFixed(2)} م²</td>
-                    <td>{Number(item.price || 0).toLocaleString('ar-EG')} ج.م</td>
-                    <td>{discountPct > 0 ? `${discountPct}%` : '0%'}</td>
-                    <td style={{ fontWeight: 'bold', color: '#3E2723' }}>
-                      {Number(item.total || 0).toLocaleString('ar-EG')} ج.م
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {/* Bottom Section (Summary + Terms) */}
-          <div className={styles.premiumFooterLayout}>
-            {/* Terms & Conditions (Left) */}
-            <div className={styles.premiumTermsBox}>
-              <div className={styles.paymentComm}>
-                <b>رقم المرجعية والتأكيد:</b> {selectedBillForPrint.invoice_number}
+            {/* 2-Column Meta Section */}
+            <div className={styles.qCustomerGrid}>
+              {/* Left: Customer Info */}
+              <div className={styles.qCustomerCol}>
+                <div className={styles.qFieldRow}>
+                  <span className={styles.qFieldLabel}>Customer Name</span>
+                  <span className={styles.qFieldColon}>:</span>
+                  <span className={styles.qFieldValue}>{selectedBillForPrint.client_name || '—'}</span>
+                </div>
+                <div className={styles.qFieldRow}>
+                  <span className={styles.qFieldLabel}>Phone</span>
+                  <span className={styles.qFieldColon}>:</span>
+                  <span className={styles.qFieldValue}>{selectedBillForPrint.client_phone || '—'}</span>
+                </div>
+                <div className={styles.qFieldRow}>
+                  <span className={styles.qFieldLabel}>Address</span>
+                  <span className={styles.qFieldColon}>:</span>
+                  <span className={styles.qFieldValue}>
+                    {selectedBillForPrint.client_address ||
+                      orders.find((o: any) => o.client_name === selectedBillForPrint.client_name || (o.client_phone && o.client_phone === selectedBillForPrint.client_phone))?.client_address ||
+                      appointments.find((a: any) => a.client_name === selectedBillForPrint.client_name || (a.client_phone && a.client_phone === selectedBillForPrint.client_phone))?.client_address ||
+                      '—'}
+                  </span>
+                </div>
               </div>
 
-              <div className={styles.termsSection}>
-                <span className={styles.termsSectionTitle}>الشروط والأحكام العامة:</span>
-                <ul className={styles.termsSectionList}>
-                  <li>جميع الأسعار بالجنيه المصري (EGP) وغير شاملة ضريبة القيمة المضافة.</li>
-                  <li>شروط الدفع: 80% دفعة مقدمة عند التعاقد و 20% قبل التركيب.</li>
-                  <li>الستارة التي تقل مساحتها الإجمالية عن 2 متر مربع تحسب 2 متر مربع.</li>
-                  <li>مدة التوريد والتركيب 7 - 14 يوم عمل من تاريخ اعتماد أمر التوريد.</li>
-                </ul>
-              </div>
-
-              <div className={styles.termsSection}>
-                <span className={styles.termsSectionTitle}>شهادة الضمان المعتمدة (3 سنوات):</span>
-                <p className={styles.termsSectionText}>
-                  تقدم كريستال بليندز لعملائها الكرام شهادة ضمان سارية لمدة <b>ثلاث سنوات كاملة</b> من تاريخ التركيب ضد عيوب الصناعة تشمل الستارة، الموتور، والمحتويات. تتضمن خدمة ما بعد البيع الإصلاح والصيانة الفورية مجاناً.
-                </p>
+              {/* Right: Sales & Delivery Terms */}
+              <div className={styles.qCustomerCol}>
+                <div className={styles.qFieldRow}>
+                  <span className={styles.qFieldLabel}>Sales Representative</span>
+                  <span className={styles.qFieldColon}>:</span>
+                  <span className={styles.qFieldValue}>{selectedBillForPrint.sales_rep || userProfile?.name || 'هناء عبدالله'}</span>
+                </div>
+                <div className={styles.qFieldRow}>
+                  <span className={styles.qFieldLabel}>Payment Terms</span>
+                  <span className={styles.qFieldColon}>:</span>
+                  <span className={styles.qFieldValue}>{selectedBillForPrint.payment_method || 'As Agreed'}</span>
+                </div>
+                <div className={styles.qFieldRow}>
+                  <span className={styles.qFieldLabel}>Delivery Date</span>
+                  <span className={styles.qFieldColon}>:</span>
+                  <span className={styles.qFieldValue}>
+                    {selectedBillForPrint.delivery_date
+                      ? new Date(selectedBillForPrint.delivery_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : 'As Agreed'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Totals table (Right) */}
-            <div className={styles.premiumTotalsBox}>
-              <table className={styles.premiumTotalsTable}>
-                <tbody>
-                  <tr>
-                    <td>إجمالي المنتجات (قبل الخصم)</td>
-                    <td>{Number(selectedBillForPrint.total_items_price || 0).toLocaleString('ar-EG')} ج.م</td>
-                  </tr>
-                  {Number(selectedBillForPrint.discount || 0) > 0 && (
-                    <tr>
-                      <td>قيمة الخصم</td>
-                      <td style={{ color: '#b91c1c', fontWeight: 'bold' }}>
-                        - {Number(selectedBillForPrint.discount || 0).toLocaleString('ar-EG')} ج.م
-                      </td>
-                    </tr>
-                  )}
-                  {Number(selectedBillForPrint.installation_cost || 0) > 0 && (
-                    <tr>
-                      <td>تكلفة التركيب</td>
-                      <td>{Number(selectedBillForPrint.installation_cost || 0).toLocaleString('ar-EG')} ج.م</td>
-                    </tr>
-                  )}
-                  {Number(selectedBillForPrint.transport_cost || 0) > 0 && (
-                    <tr>
-                      <td>مصاريف الشحن والنقل</td>
-                      <td>{Number(selectedBillForPrint.transport_cost || 0).toLocaleString('ar-EG')} ج.م</td>
-                    </tr>
-                  )}
-                  <tr className={styles.premiumFinalRow}>
-                    <td>الإجمالي النهائي (Total)</td>
-                    <td>{Number(selectedBillForPrint.final_total || 0).toLocaleString('ar-EG')} ج.م</td>
-                  </tr>
-                  {Number(selectedBillForPrint.deposit || 0) > 0 && (
-                    <tr>
-                      <td>الدفعة المقدمة / العربون</td>
-                      <td style={{ color: '#15803d', fontWeight: 'bold' }}>
-                        {Number(selectedBillForPrint.deposit || 0).toLocaleString('ar-EG')} ج.م
-                      </td>
-                    </tr>
-                  )}
-                  <tr className={styles.premiumRemainingRow}>
-                    <td>المبلغ المتبقي للدفع</td>
-                    <td>{Number(selectedBillForPrint.remaining_amount || 0).toLocaleString('ar-EG')} ج.م</td>
-                  </tr>
-                </tbody>
-              </table>
+            {/* Items Table */}
+            {(() => {
+              const actualItems = selectedBillForPrint.items || [];
+              const minRows = 4;
+              const paddedRowsCount = Math.max(minRows, actualItems.length);
+              const rowsToRender = Array.from({ length: paddedRowsCount }, (_, i) => actualItems[i] || null);
 
-              <div className={styles.signatureBlockNew}>
-                <div className={styles.signatureTitleNew}>توقيع العميل بالاعتماد والاطلاع</div>
-                <div className={styles.signatureLineNew}>____________________________________</div>
-              </div>
-            </div>
-          </div>
+              const subtotal = Number(selectedBillForPrint.total_items_price) || actualItems.reduce((s, it) => s + (Number(it.total) || 0), 0);
+              const discountAmt = Number(selectedBillForPrint.discount) || 0;
+              const discountPct = subtotal > 0 && discountAmt > 0 ? Math.round((discountAmt / subtotal) * 100) : 0;
+              const deposit = Number(selectedBillForPrint.deposit) || 0;
+              const finalTotal = Number(selectedBillForPrint.final_total) || Math.max(0, subtotal - discountAmt);
+              const remainingBalance = Number(selectedBillForPrint.remaining_amount) || Math.max(0, finalTotal - deposit);
 
-          {/* Footer Contact Bar */}
-          <div className={styles.printContactFooter}>
-            <span>العنوان: شبرا الخيمة، 74 شارع 15 مايو، أمام مجمع الصوالحة الإسلامي</span>
-            <span>الهاتف: 01100080609 | 01020909498</span>
-            <span>الموقع: www.crystalblinds-eg.com</span>
-          </div>
+              return (
+                <>
+                  <table className={styles.qItemsTable}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '7%' }}>Code</th>
+                        <th style={{ width: '31%' }}>Product Description</th>
+                        <th style={{ width: '10%' }}>Width (m)</th>
+                        <th style={{ width: '10%' }}>Height (m)</th>
+                        <th style={{ width: '8%' }}>Qty</th>
+                        <th style={{ width: '10%' }}>Area (m²)</th>
+                        <th style={{ width: '12%' }}>Unit Price (EGP)</th>
+                        <th style={{ width: '12%' }}>Total (EGP)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rowsToRender.map((item, idx) => {
+                        if (!item) {
+                          return (
+                            <tr key={idx}>
+                              <td className={styles.textCenter}>{idx + 1}</td>
+                              <td className={styles.textStart}>&nbsp;</td>
+                              <td className={styles.textCenter}></td>
+                              <td className={styles.textCenter}></td>
+                              <td className={styles.textCenter}></td>
+                              <td className={styles.textRight}>0.00</td>
+                              <td className={styles.textRight}>0.00</td>
+                              <td className={styles.textRight}>0.00</td>
+                            </tr>
+                          );
+                        }
 
-          <div className={styles.thankYouNew}>
-            شكراً لاختياركم كريستال بليندز مصر — يسعدنا خدمتكم دائماً
+                        const w = Number(item.width) || 0;
+                        const h = Number(item.height) || 0;
+                        const q = Number(item.quantity) || 1;
+                        const p = Number(item.price) || 0;
+                        const mode = item.calcType || 'square_meter';
+
+                        let calculatedArea = 0;
+                        if (mode === 'square_meter') {
+                          const pieceArea = (w > 0 && h > 0) ? Math.max(2, w * h) : (w * h);
+                          calculatedArea = pieceArea * q;
+                        } else if (mode === 'linear_width') {
+                          calculatedArea = w * q;
+                        } else if (mode === 'linear_height') {
+                          calculatedArea = h * q;
+                        } else {
+                          calculatedArea = q;
+                        }
+
+                        const calculatedTotal = Number(item.total) || (mode === 'square_meter' ? calculatedArea * p : q * p);
+
+                        return (
+                          <tr key={idx}>
+                            <td className={styles.textCenter} style={{ fontWeight: 'bold' }}>{idx + 1}</td>
+                            <td className={styles.textStart} style={{ fontWeight: '600' }}>{item.name}</td>
+                            <td className={styles.textCenter}>{mode === 'unit' || mode === 'linear_height' ? '—' : w.toFixed(2)}</td>
+                            <td className={styles.textCenter}>{mode === 'unit' || mode === 'linear_width' ? '—' : h.toFixed(2)}</td>
+                            <td className={styles.textCenter}>{q}</td>
+                            <td className={styles.textRight}>{calculatedArea.toFixed(2)}</td>
+                            <td className={styles.textRight}>{p.toFixed(2)}</td>
+                            <td className={styles.textRight} style={{ fontWeight: 'bold', color: '#3E2723' }}>
+                              {calculatedTotal.toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* Bottom Layout: Signatures & QR (Left) + Totals Table & Company Stamp (Right) */}
+                  <div className={styles.qBottomGrid}>
+                    {/* Left: QR Code and Customer Signature (No terms and conditions) */}
+                    <div className={styles.qNotesBox}>
+                      {/* QR Code */}
+                      <div className={styles.qQrRow}>
+                        <div className={styles.qQrFrame}>
+                          <svg viewBox="0 0 100 100" width="38" height="38">
+                            <rect width="100" height="100" fill="white" />
+                            <rect x="5" y="5" width="30" height="30" fill="#3E2723" />
+                            <rect x="10" y="10" width="20" height="20" fill="white" />
+                            <rect x="15" y="15" width="10" height="10" fill="#3E2723" />
+                            <rect x="65" y="5" width="30" height="30" fill="#3E2723" />
+                            <rect x="70" y="10" width="20" height="20" fill="white" />
+                            <rect x="75" y="15" width="10" height="10" fill="#3E2723" />
+                            <rect x="5" y="65" width="30" height="30" fill="#3E2723" />
+                            <rect x="10" y="70" width="20" height="20" fill="white" />
+                            <rect x="15" y="75" width="10" height="10" fill="#3E2723" />
+                            <rect x="42" y="10" width="16" height="8" fill="#3E2723" />
+                            <rect x="42" y="24" width="8" height="16" fill="#3E2723" />
+                            <rect x="54" y="24" width="6" height="6" fill="#3E2723" />
+                            <rect x="10" y="42" width="10" height="14" fill="#3E2723" />
+                            <rect x="25" y="42" width="10" height="6" fill="#3E2723" />
+                            <rect x="42" y="45" width="16" height="16" fill="#3E2723" />
+                            <rect x="65" y="42" width="12" height="10" fill="#3E2723" />
+                            <rect x="82" y="42" width="12" height="18" fill="#3E2723" />
+                            <rect x="42" y="68" width="10" height="12" fill="#3E2723" />
+                            <rect x="58" y="68" width="14" height="8" fill="#3E2723" />
+                            <rect x="76" y="68" width="18" height="26" fill="#3E2723" />
+                            <rect x="42" y="85" width="20" height="10" fill="#3E2723" />
+                          </svg>
+                        </div>
+                        <div className={styles.qQrText}>
+                          Scan to visit<br />our website
+                        </div>
+                      </div>
+
+                      {/* Customer Signature */}
+                      <div className={styles.qSignBlock}>
+                        <div className={styles.qSignLabel}>Customer Signature</div>
+                        <div className={styles.qSignUnderline}></div>
+                      </div>
+                    </div>
+
+                    {/* Right: Summary Table & Company Stamp */}
+                    <div>
+                      <table className={styles.qSummaryTable}>
+                        <tbody>
+                          <tr>
+                            <td className={styles.qSumKey}>Subtotal</td>
+                            <td className={styles.qSumVal}>EGP {subtotal.toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td className={styles.qSumKey}>Discount Percentage (%)</td>
+                            <td className={styles.qSumVal}>{discountPct}%</td>
+                          </tr>
+                          <tr>
+                            <td className={styles.qSumKey}>Discount Amount</td>
+                            <td className={styles.qSumVal}>EGP {discountAmt.toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td className={styles.qSumKey}>Advance Payment</td>
+                            <td className={styles.qSumVal}>EGP {deposit.toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td className={styles.qSumKey}>Remaining Balance</td>
+                            <td className={styles.qSumVal}>EGP {remainingBalance.toFixed(2)}</td>
+                          </tr>
+                          <tr className={styles.qGrandTotalTr}>
+                            <td className={styles.qSumKey} style={{ color: '#ffffff' }}>Grand Total</td>
+                            <td className={styles.qSumVal}>EGP {finalTotal.toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Company Stamp & Signature */}
+                      <div className={styles.qSignBlock} style={{ textAlign: 'left' }}>
+                        <div className={styles.qSignLabel}>Company Stamp & Signature</div>
+                        <div className={styles.qSignUnderline}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Bar at the very bottom of the Invoice */}
+                  <div className={styles.qFooterBar}>
+                    <div className={styles.qFooterGreeting}>
+                      شكراً لاختياركم كريستال للستائر - يسعدنا خدمتكم دائماً
+                    </div>
+                    <div className={styles.qFooterContactRow}>
+                      <span>📞 +20 110 008 0609 | +20 102 090 9498 | +20 24 2245 466</span>
+                      <span>📍 شبرا الخيمة - 74 شارع 15 مايو أمام مجمع الصوالحة الإسلامي</span>
+                      <span>🌐 www.crystalblinds.com</span>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

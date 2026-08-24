@@ -196,17 +196,17 @@ export default function ReservationSection({ isAr }: Props) {
                 alt={isAr ? "احجز المعاينه مجانا" : "Book Free Measurement"} 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 absolute inset-0" 
               />
-              <div className="absolute inset-0 bg-[#3E2723]/85 flex flex-col justify-end p-8 text-white z-10">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1F120E]/90 via-[#1F120E]/30 to-transparent flex flex-col justify-end p-6 md:p-8 text-white z-10">
                 <span className="text-[#d4af37] uppercase tracking-widest text-[10px] font-bold mb-2">
                   {isAr ? "دقة واحترافية" : "Precision & Care"}
                 </span>
-                <h3 className="font-headline text-2xl font-bold mb-2">
-                  {isAr ? "احجز المعاينه مجانا" : "Book Free Measurement"}
+                <h3 className="font-headline text-2xl font-bold mb-2 drop-shadow-md">
+                  {isAr ? "احجز المعاينة مجاناً (القاهرة والجيزة)" : "Book Free Measurement (Cairo & Giza)"}
                 </h3>
-                <p className="text-white/80 font-light text-xs leading-relaxed">
+                <p className="text-white/90 font-normal text-xs leading-relaxed drop-shadow-sm">
                   {isAr 
-                    ? "مهندسونا سيقومون برفع المقاسات وعرض كتالوجات الأقمشة مباشرة في مساحتك الخاصة لضمان نتيجة مثالية." 
-                    : "Our designers will measure your windows and showcase fabric catalogs in your space to guarantee a flawless fit."}
+                    ? "المعاينة مجانية بالكامل داخل محافظتي القاهرة والجيزة. مهندسونا سيقومون برفع المقاسات وعرض كتالوجات الأقمشة مباشرة في مساحتك الخاصة." 
+                    : "Measurement is 100% free inside Cairo & Giza governorates. Our designers will measure your windows and showcase fabric catalogs on-site."}
                 </p>
               </div>
             </div>

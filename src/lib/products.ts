@@ -35,6 +35,17 @@ export interface Product {
   colors: ProductColor[];
 }
 
+export const DEFAULT_CATEGORIES: ProductCategory[] = [
+  { id: 'cat-zebra', slug: 'zebra', nameEn: 'Zebra', nameAr: 'زيبرا', sort_order: 1 },
+  { id: 'cat-blackout', slug: 'blackout', nameEn: 'Blackout', nameAr: 'بلاك أوت', sort_order: 2 },
+  { id: 'cat-roller', slug: 'roller', nameEn: 'Roller', nameAr: 'رولر', sort_order: 3 },
+  { id: 'cat-bamboo', slug: 'bamboo', nameEn: 'Bamboo', nameAr: 'بامبو', sort_order: 4 },
+  { id: 'cat-sunscreen', slug: 'sunscreen', nameEn: 'Sunscreen', nameAr: 'صن سكرين', sort_order: 5 },
+  { id: 'cat-roman', slug: 'roman', nameEn: 'Roman', nameAr: 'رومان', sort_order: 6 },
+  { id: 'cat-dream', slug: 'dream', nameEn: 'Dream', nameAr: 'دريم', sort_order: 7 },
+  { id: 'cat-printed', slug: 'printed', nameEn: 'Printed', nameAr: 'مطبوعة', sort_order: 8 },
+];
+
 export async function getCategories(): Promise<ProductCategory[]> {
   try {
     const { data, error } = await supabase
@@ -43,23 +54,20 @@ export async function getCategories(): Promise<ProductCategory[]> {
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching categories:', error);
-      return [];
+    if (error || !data || data.length === 0) {
+      return DEFAULT_CATEGORIES;
     }
-
-    if (!data) return [];
 
     return data.map((row: any) => ({
       id: row.id,
-      slug: row.slug,
-      nameAr: row.name_ar,
-      nameEn: row.name_en,
+      slug: row.slug || slugify(row.name_en || row.name_ar || ''),
+      nameAr: row.name_ar || row.nameAr || '',
+      nameEn: row.name_en || row.nameEn || '',
       sort_order: row.sort_order || 0,
     }));
   } catch (err) {
     console.error('Unexpected error fetching categories:', err);
-    return [];
+    return DEFAULT_CATEGORIES;
   }
 }
 
@@ -211,7 +219,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
 function mapProductRow(row: any): Product {
   const labelEn = row.label_en || '';
   const labelAr = row.label_ar || '';
-  const computedSlug = row.slug || getProductSlug({ slug: row.slug, labelEn, labelAr, id: row.id });
+  const computedSlug = getProductSlug({ slug: row.slug, labelEn, labelAr, id: row.id });
 
   return {
     id: String(row.id),
@@ -266,22 +274,9 @@ export async function getProductBySlugOrId(identifier: string): Promise<{
   const normalizedSlug = slugify(decoded);
 
   try {
-    // 1. Try direct database match by slug or id
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .or(`slug.eq.${decoded},id.eq.${decoded},slug.eq.${normalizedSlug}`)
-      .limit(1);
-
-    if (data && data.length > 0 && !error) {
-      const product = mapProductRow(data[0]);
-      const canonicalSlug = product.slug || getProductSlug(product);
-      const isLegacy = decoded === product.id && decoded !== canonicalSlug;
-      return { product, isLegacy, canonicalSlug };
-    }
-
-    // 2. If not matched, query all products and match against derived slugs
     const allProducts = await getProducts();
+    
+    // Exact match on canonical slug, normalized slug, or ID
     const matched = allProducts.find(
       p =>
         p.slug === decoded ||
@@ -295,6 +290,19 @@ export async function getProductBySlugOrId(identifier: string): Promise<{
       const canonicalSlug = matched.slug || getProductSlug(matched);
       const isLegacy = decoded === matched.id && decoded !== canonicalSlug;
       return { product: matched, isLegacy, canonicalSlug };
+    }
+
+    // Fallback: match if slug contains the model token
+    const tokenMatch = allProducts.find(
+      p =>
+        Boolean(p.slug && (normalizedSlug.includes(p.slug) || p.slug.includes(normalizedSlug))) &&
+        normalizedSlug.length > 3
+    );
+
+    if (tokenMatch) {
+      const canonicalSlug = tokenMatch.slug || getProductSlug(tokenMatch);
+      const isLegacy = decoded === tokenMatch.id && decoded !== canonicalSlug;
+      return { product: tokenMatch, isLegacy, canonicalSlug };
     }
   } catch (err) {
     console.error('Error in getProductBySlugOrId:', err);

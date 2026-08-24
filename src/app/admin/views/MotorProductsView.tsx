@@ -410,13 +410,13 @@ export default function MotorProductsView({ userRole }: Props) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>
                   السعر (ج.م)
-                  <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                  <input type="number" value={form.price || ''} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
                     placeholder="0"
                     style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
                 </label>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>
                   ترتيب العرض
-                  <input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))}
+                  <input type="number" value={form.sort_order || ''} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))}
                     placeholder="0"
                     style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
                 </label>

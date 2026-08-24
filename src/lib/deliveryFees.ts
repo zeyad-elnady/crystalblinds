@@ -39,19 +39,29 @@ export const GOVERNORATES: Governorate[] = [
 
 export async function getDeliveryFees(): Promise<Governorate[]> {
   try {
+    // Try fetching from direct API route first (fast & bypasses client RLS caching)
+    if (typeof window !== 'undefined') {
+      const res = await fetch('/api/delivery-fees');
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list) && list.length > 0) {
+          const map = new Map(list.map((item: any) => [item.id, Number(item.fee)]));
+          return GOVERNORATES.map(gov => ({
+            ...gov,
+            fee: map.has(gov.id) ? map.get(gov.id)! : gov.fee
+          }));
+        }
+      }
+    }
+
     const { data, error } = await supabase.from('delivery_fees').select('*');
-    if (error) {
-      console.warn("Could not fetch delivery fees from Supabase, using defaults:", error.message);
+    if (error || !data || data.length === 0) {
       return GOVERNORATES;
     }
-    if (!data || data.length === 0) {
-      return GOVERNORATES;
-    }
-    return data.map((row: any) => ({
-      id: row.id,
-      nameEn: row.name_en,
-      nameAr: row.name_ar,
-      fee: Number(row.fee)
+    const dbMap = new Map(data.map((row: any) => [row.id, Number(row.fee)]));
+    return GOVERNORATES.map(gov => ({
+      ...gov,
+      fee: dbMap.has(gov.id) ? dbMap.get(gov.id)! : gov.fee
     }));
   } catch (err) {
     console.warn("Unexpected error fetching delivery fees, using defaults:", err);
@@ -61,6 +71,18 @@ export async function getDeliveryFees(): Promise<Governorate[]> {
 
 export async function updateDeliveryFeeInDb(id: string, fee: number): Promise<boolean> {
   try {
+    // Call API route
+    const res = await fetch('/api/delivery-fees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, fee })
+    });
+    if (res.ok) {
+      const json = await res.json();
+      return !!json.success;
+    }
+
+    // Direct Supabase fallback
     const { error } = await supabase
       .from('delivery_fees')
       .update({ fee })
@@ -72,6 +94,24 @@ export async function updateDeliveryFeeInDb(id: string, fee: number): Promise<bo
     return true;
   } catch (err) {
     console.error("Unexpected error updating delivery fee:", err);
+    return false;
+  }
+}
+
+export async function resetAllDeliveryFeesInDb(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/delivery-fees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resetDefaults: true })
+    });
+    if (res.ok) {
+      const json = await res.json();
+      return !!json.success;
+    }
+    return false;
+  } catch (err) {
+    console.error("Failed to reset delivery fees:", err);
     return false;
   }
 }
